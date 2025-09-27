@@ -1,11 +1,10 @@
-import 'user_model.dart';
-
 class GroupModel {
   final String id;
   final String name;
   final String description;
   final String createdBy;
   final List<String> memberIds;
+  final Map<String, String> memberRoles; // userId -> role ('admin' or 'user')
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isActive;
@@ -16,6 +15,7 @@ class GroupModel {
     required this.description,
     required this.createdBy,
     required this.memberIds,
+    required this.memberRoles,
     required this.createdAt,
     required this.updatedAt,
     this.isActive = true,
@@ -29,6 +29,7 @@ class GroupModel {
       description: json['description'] ?? '',
       createdBy: json['createdBy'] ?? '',
       memberIds: List<String>.from(json['memberIds'] ?? []),
+      memberRoles: Map<String, String>.from(json['memberRoles'] ?? {}),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       isActive: json['isActive'] ?? true,
@@ -43,6 +44,7 @@ class GroupModel {
       'description': description,
       'createdBy': createdBy,
       'memberIds': memberIds,
+      'memberRoles': memberRoles,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'isActive': isActive,
@@ -56,6 +58,7 @@ class GroupModel {
     String? description,
     String? createdBy,
     List<String>? memberIds,
+    Map<String, String>? memberRoles,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
@@ -66,6 +69,7 @@ class GroupModel {
       description: description ?? this.description,
       createdBy: createdBy ?? this.createdBy,
       memberIds: memberIds ?? this.memberIds,
+      memberRoles: memberRoles ?? this.memberRoles,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
@@ -76,13 +80,36 @@ class GroupModel {
   int get memberCount => memberIds.length;
 
   // Üye ekle
-  GroupModel addMember(String userId) {
+  GroupModel addMember(String userId, {String role = 'user'}) {
     if (memberIds.contains(userId)) return this;
-    return copyWith(memberIds: [...memberIds, userId], updatedAt: DateTime.now());
+    final newMemberIds = [...memberIds, userId];
+    final newMemberRoles = {...memberRoles, userId: role};
+    return copyWith(memberIds: newMemberIds, memberRoles: newMemberRoles, updatedAt: DateTime.now());
   }
 
   // Üye çıkar
   GroupModel removeMember(String userId) {
-    return copyWith(memberIds: memberIds.where((id) => id != userId).toList(), updatedAt: DateTime.now());
+    final newMemberIds = memberIds.where((id) => id != userId).toList();
+    final newMemberRoles = Map<String, String>.from(memberRoles);
+    newMemberRoles.remove(userId);
+    return copyWith(memberIds: newMemberIds, memberRoles: newMemberRoles, updatedAt: DateTime.now());
   }
+
+  // Kullanıcının gruptaki rolünü al
+  String getUserRole(String userId) {
+    return memberRoles[userId] ?? 'user';
+  }
+
+  // Kullanıcı grup admin'i mi?
+  bool isGroupAdmin(String userId) {
+    return getUserRole(userId) == 'admin';
+  }
+
+  // Kullanıcı grup üyesi mi?
+  bool isGroupMember(String userId) {
+    return memberIds.contains(userId);
+  }
+
+  // Admin sayısı
+  int get adminCount => memberRoles.values.where((role) => role == 'admin').length;
 }

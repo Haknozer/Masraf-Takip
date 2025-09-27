@@ -60,6 +60,7 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         description: description,
         createdBy: user.uid,
         memberIds: [user.uid],
+        memberRoles: {user.uid: 'admin'}, // Grup oluşturan otomatik admin olur
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -71,14 +72,14 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
   }
 
   // Gruba üye ekle
-  Future<void> addMember(String groupId, String userId) async {
+  Future<void> addMember(String groupId, String userId, {String role = 'user'}) async {
     try {
       final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
       if (!groupDoc.exists) return;
 
       final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
 
-      final updatedGroup = group.addMember(userId);
+      final updatedGroup = group.addMember(userId, role: role);
       await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
@@ -119,6 +120,43 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
     }
+  }
+
+  // Kullanıcının rolünü güncelle
+  Future<void> updateUserRole(String groupId, String userId, String newRole) async {
+    try {
+      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+      if (!groupDoc.exists) return;
+
+      final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+
+      // Sadece admin rol güncelleyebilir
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser == null || !group.isGroupAdmin(currentUser.uid)) {
+        throw Exception('Bu işlem için admin yetkisi gereklidir');
+      }
+
+      final updatedMemberRoles = {...group.memberRoles, userId: newRole};
+      final updatedGroup = group.copyWith(memberRoles: updatedMemberRoles, updatedAt: DateTime.now());
+
+      await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+    }
+  }
+
+  // Kullanıcının gruptaki rolünü al
+  String getUserRole(String groupId, String userId) {
+    final groups = state.value ?? [];
+    final group = groups.firstWhere((g) => g.id == groupId, orElse: () => throw Exception('Grup bulunamadı'));
+    return group.getUserRole(userId);
+  }
+
+  // Kullanıcı grup admin'i mi?
+  bool isGroupAdmin(String groupId, String userId) {
+    final groups = state.value ?? [];
+    final group = groups.firstWhere((g) => g.id == groupId, orElse: () => throw Exception('Grup bulunamadı'));
+    return group.isGroupAdmin(userId);
   }
 }
 
