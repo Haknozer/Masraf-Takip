@@ -40,6 +40,21 @@ class ErrorUtils {
 
   /// Tam hata mesajını işle ve kullanıcı dostu mesaj döndür
   static String processError(dynamic error) {
+    // Middleware exception'larını kontrol et
+    if (error.toString().contains('UnauthorizedException:')) {
+      return 'Bu işlem için giriş yapmalısınız';
+    }
+    if (error.toString().contains('ForbiddenException:')) {
+      return 'Bu işlem için yetkiniz yok';
+    }
+    if (error.toString().contains('NotFoundException:')) {
+      return 'Aradığınız kaynak bulunamadı';
+    }
+    if (error.toString().contains('InvalidOperationException:')) {
+      return 'Geçersiz işlem';
+    }
+
+    // Firebase hatalarını işle
     final errorString = error.toString();
     final errorCode = extractErrorCode(errorString);
     return getErrorMessage(errorCode);

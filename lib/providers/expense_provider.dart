@@ -1,6 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/expense_model.dart';
+import '../models/group_model.dart';
 import '../services/firebase_service.dart';
+import '../middleware/auth_middleware.dart';
+import '../middleware/permission_middleware.dart';
+import '../exceptions/middleware_exceptions.dart';
+import 'auth_provider.dart';
 
 // Group Expenses Provider
 final groupExpensesProvider = StreamProvider.family<List<ExpenseModel>, String>((ref, groupId) {
@@ -21,10 +26,8 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
   ExpenseNotifier(this.ref) : super(const AsyncValue.loading());
 
   final Ref ref;
-  String? _currentGroupId;
 
   void loadExpenses(String groupId) {
-    _currentGroupId = groupId;
     FirebaseService.listenToCollection('expenses').listen((snapshot) {
       final expenses =
           snapshot.docs
@@ -49,7 +52,23 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
     required List<String> sharedBy,
     String? imageUrl,
   }) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
     try {
+      // Grup bilgisini al
+      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
+
+      final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+
+      // Middleware: Permission kontrolü
+      PermissionMiddleware.requireCanAddExpense(user, group);
+
       final expense = ExpenseModel(
         id: '', // Firebase otomatik ID verecek
         groupId: groupId,
@@ -80,7 +99,31 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
     required List<String> sharedBy,
     String? imageUrl,
   }) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
     try {
+      // Masraf bilgisini al
+      final expenseDoc = await FirebaseService.getDocumentSnapshot('expenses/$expenseId');
+      if (!expenseDoc.exists) {
+        throw const NotFoundException('Masraf bulunamadı');
+      }
+
+      final expense = ExpenseModel.fromJson({'id': expenseDoc.id, ...expenseDoc.data() as Map<String, dynamic>});
+
+      // Grup bilgisini al
+      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/${expense.groupId}');
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
+
+      final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+
+      // Middleware: Permission kontrolü
+      PermissionMiddleware.requireCanEditExpense(user, group, expense);
+
       await FirebaseService.updateDocument(
         path: 'expenses/$expenseId',
         data: {
@@ -100,7 +143,31 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
 
   // Masraf sil
   Future<void> deleteExpense(String expenseId) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
     try {
+      // Masraf bilgisini al
+      final expenseDoc = await FirebaseService.getDocumentSnapshot('expenses/$expenseId');
+      if (!expenseDoc.exists) {
+        throw const NotFoundException('Masraf bulunamadı');
+      }
+
+      final expense = ExpenseModel.fromJson({'id': expenseDoc.id, ...expenseDoc.data() as Map<String, dynamic>});
+
+      // Grup bilgisini al
+      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/${expense.groupId}');
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
+
+      final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+
+      // Middleware: Permission kontrolü
+      PermissionMiddleware.requireCanDeleteExpense(user, group, expense);
+
       await FirebaseService.deleteDocument('expenses/$expenseId');
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);

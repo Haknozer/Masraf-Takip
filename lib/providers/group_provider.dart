@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/group_model.dart';
 import '../services/firebase_service.dart';
+import '../middleware/auth_middleware.dart';
+import '../middleware/permission_middleware.dart';
+import '../exceptions/middleware_exceptions.dart';
 import 'auth_provider.dart';
 
 // User Groups Provider
@@ -51,14 +54,16 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
   // Grup oluştur
   Future<void> createGroup(String name, String description) async {
     final user = ref.read(currentUserProvider);
-    if (user == null) return;
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
 
     try {
       final group = GroupModel(
         id: '', // Firebase otomatik ID verecek
         name: name,
         description: description,
-        createdBy: user.uid,
+        createdBy: user!.uid,
         memberIds: [user.uid],
         memberRoles: {user.uid: 'admin'}, // Grup oluşturan otomatik admin olur
         createdAt: DateTime.now(),
@@ -73,11 +78,21 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
 
   // Gruba üye ekle
   Future<void> addMember(String groupId, String userId, {String role = 'user'}) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
     try {
       final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
-      if (!groupDoc.exists) return;
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
 
       final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+
+      // Middleware: Permission kontrolü
+      PermissionMiddleware.requireCanAddMember(user, group);
 
       final updatedGroup = group.addMember(userId, role: role);
       await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
@@ -88,11 +103,21 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
 
   // Gruptan üye çıkar
   Future<void> removeMember(String groupId, String userId) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
     try {
       final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
-      if (!groupDoc.exists) return;
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
 
       final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+
+      // Middleware: Permission kontrolü
+      PermissionMiddleware.requireCanRemoveMember(user, group, userId);
 
       final updatedGroup = group.removeMember(userId);
       await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
@@ -103,7 +128,22 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
 
   // Grup güncelle
   Future<void> updateGroup(String groupId, String name, String description) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
     try {
+      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
+
+      final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+
+      // Middleware: Permission kontrolü
+      PermissionMiddleware.requireCanEditGroup(user, group);
+
       await FirebaseService.updateDocument(
         path: 'groups/$groupId',
         data: {'name': name, 'description': description, 'updatedAt': DateTime.now().toIso8601String()},
@@ -115,7 +155,22 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
 
   // Grup sil
   Future<void> deleteGroup(String groupId) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
     try {
+      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
+
+      final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+
+      // Middleware: Permission kontrolü
+      PermissionMiddleware.requireCanDeleteGroup(user, group);
+
       await FirebaseService.deleteDocument('groups/$groupId');
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
@@ -124,17 +179,21 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
 
   // Kullanıcının rolünü güncelle
   Future<void> updateUserRole(String groupId, String userId, String newRole) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
     try {
       final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
-      if (!groupDoc.exists) return;
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
 
       final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
 
-      // Sadece admin rol güncelleyebilir
-      final currentUser = ref.read(currentUserProvider);
-      if (currentUser == null || !group.isGroupAdmin(currentUser.uid)) {
-        throw Exception('Bu işlem için admin yetkisi gereklidir');
-      }
+      // Middleware: Permission kontrolü (sadece admin rol güncelleyebilir)
+      PermissionMiddleware.requireGroupAdmin(user, group);
 
       final updatedMemberRoles = {...group.memberRoles, userId: newRole};
       final updatedGroup = group.copyWith(memberRoles: updatedMemberRoles, updatedAt: DateTime.now());
