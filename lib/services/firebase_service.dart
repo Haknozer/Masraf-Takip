@@ -11,9 +11,7 @@ class FirebaseService {
 
   /// Firebase'i başlat
   static Future<void> initialize() async {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   }
 
   /// Kullanıcı giriş durumunu kontrol et
@@ -23,14 +21,8 @@ class FirebaseService {
   static User? get currentUser => auth.currentUser;
 
   /// Kullanıcı giriş yap
-  static Future<UserCredential> signInWithEmailAndPassword({
-    required String email,
-    required String password,
-  }) async {
-    return await auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+  static Future<UserCredential> signInWithEmailAndPassword({required String email, required String password}) async {
+    return await auth.signInWithEmailAndPassword(email: email, password: password);
   }
 
   /// Kullanıcı kayıt ol
@@ -38,10 +30,7 @@ class FirebaseService {
     required String email,
     required String password,
   }) async {
-    return await auth.createUserWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
+    return await auth.createUserWithEmailAndPassword(email: email, password: password);
   }
 
   /// Kullanıcı çıkış yap
@@ -65,18 +54,12 @@ class FirebaseService {
   }
 
   /// Firestore'da veri ekle
-  static Future<DocumentReference> addDocument({
-    required String collection,
-    required Map<String, dynamic> data,
-  }) async {
+  static Future<DocumentReference> addDocument({required String collection, required Map<String, dynamic> data}) async {
     return await firestore.collection(collection).add(data);
   }
 
   /// Firestore'da veri güncelle
-  static Future<void> updateDocument({
-    required String path,
-    required Map<String, dynamic> data,
-  }) async {
+  static Future<void> updateDocument({required String path, required Map<String, dynamic> data}) async {
     await firestore.doc(path).update(data);
   }
 
@@ -86,7 +69,7 @@ class FirebaseService {
   }
 
   /// Firestore'dan veri oku
-  static Future<DocumentSnapshot> getDocument(String path) async {
+  static Future<DocumentSnapshot> getDocumentSnapshot(String path) async {
     return await firestore.doc(path).get();
   }
 
