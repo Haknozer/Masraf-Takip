@@ -75,6 +75,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       state = AsyncValue.data(credential.user);
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
+      rethrow; // Hatayı tekrar fırlat
     }
   }
 
