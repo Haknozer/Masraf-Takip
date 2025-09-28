@@ -1,4 +1,3 @@
-import 'package:expense_tracker_app/models/user_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Bu satırı ekleyin
 import '../models/group_model.dart';
@@ -55,7 +54,6 @@ final userDocumentIdProvider = FutureProvider<String?>((ref) async {
     }
     return null;
   } catch (e) {
-    print('Kullanıcı doküman ID bulma hatası: $e');
     return null;
   }
 });
@@ -96,20 +94,17 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     AuthMiddleware.requireAuth(user);
 
     try {
-      print('Kullanıcı UID: ${user!.uid}'); // Debug log
-
       // Kullanıcının doküman ID'sini al
       final userDocId = await ref.read(userDocumentIdProvider.future);
       if (userDocId == null) {
         throw Exception('Kullanıcı dokümanı bulunamadı');
       }
-      print('Kullanıcı doküman ID: $userDocId'); // Debug log
 
       final group = GroupModel(
         id: '', // Firebase otomatik ID verecek
         name: name,
         description: description,
-        createdBy: user.uid,
+        createdBy: user!.uid,
         memberIds: [user.uid],
         memberRoles: {user.uid: 'admin'}, // Grup oluşturan otomatik admin olur
         createdAt: DateTime.now(),
@@ -118,7 +113,6 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
 
       // Grubu oluştur
       final docRef = await FirebaseService.addDocument(collection: 'groups', data: group.toJson());
-      print('Grup oluşturuldu: ${docRef.id}'); // Debug log
 
       // Kullanıcının groups array'ine ekle
       await FirebaseService.updateDocument(
@@ -128,9 +122,7 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
           'updatedAt': DateTime.now().toIso8601String(),
         },
       );
-      print('Kullanıcının groups array\'ine eklendi'); // Debug log
     } catch (e) {
-      print('Grup oluşturma hatası: $e'); // Debug log
       state = AsyncValue.error(e, StackTrace.current);
     }
   }

@@ -2,12 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/firebase_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/group_model.dart';
-import '../middleware/auth_middleware.dart';
-import '../middleware/permission_middleware.dart';
-import '../exceptions/middleware_exceptions.dart';
-import 'auth_provider.dart';
 
 // Firebase Auth State Provider
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -50,7 +44,6 @@ final userDocumentIdProvider = FutureProvider<String?>((ref) async {
     }
     return null;
   } catch (e) {
-    print('Kullanıcı doküman ID bulma hatası: $e');
     return null;
   }
 });
