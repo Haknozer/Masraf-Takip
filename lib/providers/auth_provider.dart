@@ -70,7 +70,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
         updatedAt: DateTime.now(),
       );
 
-      await FirebaseService.updateDocument(path: 'users/${credential.user!.uid}', data: userModel.toJson());
+      // ✅ DOĞRU: addDocument kullan (yeni doküman oluştur)
+      await FirebaseService.addDocument(collection: 'users', data: userModel.toJson());
 
       state = AsyncValue.data(credential.user);
     } catch (e) {

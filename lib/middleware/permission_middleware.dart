@@ -89,7 +89,7 @@ class PermissionMiddleware {
       throw const UnauthorizedException('Bu işlem için giriş yapmalısınız');
     }
 
-    if (!RoleUtils.canEditExpense(group, user.uid, expense)) {
+    if (!RoleUtils.canEditExpense(group, expense, user.uid)) {
       throw const ForbiddenException('Bu masrafı düzenleme yetkiniz yok');
     }
   }
@@ -100,7 +100,7 @@ class PermissionMiddleware {
       throw const UnauthorizedException('Bu işlem için giriş yapmalısınız');
     }
 
-    if (!RoleUtils.canDeleteExpense(group, user.uid, expense)) {
+    if (!RoleUtils.canDeleteExpense(group, expense, user.uid)) {
       throw const ForbiddenException('Bu masrafı silme yetkiniz yok');
     }
   }
@@ -145,7 +145,7 @@ class PermissionMiddleware {
     }
 
     if (!RoleUtils.hasPermission(group, user.uid, permission)) {
-      throw const ForbiddenException('Bu işlem için $permission yetkisi gereklidir');
+      throw ForbiddenException('Bu işlem için $permission yetkisi gereklidir');
     }
   }
 }

@@ -31,7 +31,7 @@ class AuthMiddleware {
     requireAuth(user);
 
     if (!user!.email!.endsWith(domain)) {
-      throw const ForbiddenException('Bu işlem için $domain email adresi gereklidir');
+      throw ForbiddenException('Bu işlem için $domain email adresi gereklidir');
     }
   }
 
