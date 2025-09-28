@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../providers/auth_provider.dart';
+import '../groups/create_group_page.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -58,6 +59,49 @@ class HomePage extends ConsumerWidget {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showGroupOptions(context);
+        },
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: AppColors.white),
+      ),
+    );
+  }
+
+  void _showGroupOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder:
+          (context) => Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Grup İşlemleri', style: AppTextStyles.h3),
+                const SizedBox(height: 24),
+                ListTile(
+                  leading: const Icon(Icons.create, color: AppColors.primary),
+                  title: const Text('Grup Oluştur'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateGroupPage()));
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.group_add, color: AppColors.primary),
+                  title: const Text('Gruba Katıl'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    // TODO: Gruba katılma sayfası
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text('Gruba katılma özelliği yakında eklenecek')));
+                  },
+                ),
+              ],
+            ),
+          ),
     );
   }
 }
