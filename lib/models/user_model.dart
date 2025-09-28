@@ -5,6 +5,7 @@ class UserModel {
   final String? photoUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
+  List<String> groups; // Grup ID'leri
 
   UserModel({
     required this.id,
@@ -13,6 +14,7 @@ class UserModel {
     this.photoUrl,
     required this.createdAt,
     required this.updatedAt,
+    required this.groups,
   });
 
   // JSON'dan UserModel oluştur
@@ -24,6 +26,7 @@ class UserModel {
       photoUrl: json['photoUrl'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
+      groups: List<String>.from(json['groups'] ?? []),
     );
   }
 
@@ -36,6 +39,7 @@ class UserModel {
       'photoUrl': photoUrl,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'groups': groups,
     };
   }
 
@@ -47,6 +51,7 @@ class UserModel {
     String? photoUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
+    List<String>? groups,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -55,6 +60,7 @@ class UserModel {
       photoUrl: photoUrl ?? this.photoUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      groups: groups ?? this.groups,
     );
   }
 }

@@ -3,7 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/group_provider.dart';
+import '../../models/group_model.dart';
 import '../groups/create_group_page.dart';
+import '../groups/group_list_page.dart';
+import '../groups/group_detail_page.dart';
+import '../../widgets/cards/welcome_card.dart';
+import '../../widgets/cards/group_card.dart';
+import '../../widgets/cards/empty_groups_card.dart';
+import '../../widgets/cards/error_card.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -11,6 +19,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
+    final groupsState = ref.watch(userGroupsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -28,33 +37,46 @@ class HomePage extends ConsumerWidget {
           ),
         ],
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.home, size: 100, color: AppColors.primary),
+            // Hoş Geldiniz Bölümü - AppBar'ın hemen altında
+            WelcomeCard(authState: authState),
+
             const SizedBox(height: 24),
-            Text('Ana Sayfa', style: AppTextStyles.h1),
-            const SizedBox(height: 16),
-            Text('Hoş geldiniz!', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: 32),
-            authState.when(
-              data: (user) {
-                if (user != null) {
-                  return Column(
-                    children: [
-                      Text('Kullanıcı: ${user.email}', style: AppTextStyles.bodyMedium),
-                      const SizedBox(height: 8),
-                      Text('UID: ${user.uid}', style: AppTextStyles.caption),
-                    ],
-                  );
-                }
-                return const Text('Kullanıcı bulunamadı');
-              },
-              loading: () => const CircularProgressIndicator(),
-              error:
-                  (error, stack) =>
-                      Text('Hata: $error', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
+
+            // Gruplarım Bölümü
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Gruplarım', style: AppTextStyles.h3),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const GroupListPage()));
+                    },
+                    icon: const Icon(Icons.arrow_forward, size: 16),
+                    label: const Text('Tümünü Gör'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Grup Listesi
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: groupsState.when(
+                data: (groups) {
+                  if (groups.isEmpty) {
+                    return const EmptyGroupsCard();
+                  }
+                  return _buildGroupsList(groups);
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => ErrorCard(error: error.toString()),
+              ),
             ),
           ],
         ),
@@ -69,6 +91,10 @@ class HomePage extends ConsumerWidget {
     );
   }
 
+  Widget _buildGroupsList(List<GroupModel> groups) {
+    return Column(children: groups.take(3).map((group) => GroupCard(group: group)).toList());
+  }
+
   void _showGroupOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -80,6 +106,14 @@ class HomePage extends ConsumerWidget {
               children: [
                 Text('Grup İşlemleri', style: AppTextStyles.h3),
                 const SizedBox(height: 24),
+                ListTile(
+                  leading: const Icon(Icons.group, color: AppColors.primary),
+                  title: const Text('Gruplarım'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const GroupListPage()));
+                  },
+                ),
                 ListTile(
                   leading: const Icon(Icons.create, color: AppColors.primary),
                   title: const Text('Grup Oluştur'),
@@ -93,7 +127,6 @@ class HomePage extends ConsumerWidget {
                   title: const Text('Gruba Katıl'),
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Gruba katılma sayfası
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(const SnackBar(content: Text('Gruba katılma özelliği yakında eklenecek')));

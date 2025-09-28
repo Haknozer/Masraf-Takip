@@ -53,9 +53,14 @@ class FirebaseService {
     return firestore.doc(path);
   }
 
-  /// Firestore'da veri ekle
+  /// Firestore'da veri ekle (otomatik ID)
   static Future<DocumentReference> addDocument({required String collection, required Map<String, dynamic> data}) async {
     return await firestore.collection(collection).add(data);
+  }
+
+  /// Firestore'da veri ekle/güncelle (belirli ID ile)
+  static Future<void> setDocument({required String path, required Map<String, dynamic> data}) async {
+    await firestore.doc(path).set(data);
   }
 
   /// Firestore'da veri güncelle

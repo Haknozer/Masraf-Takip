@@ -1,4 +1,6 @@
+import 'package:expense_tracker_app/models/user_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Bu satırı ekleyin
 import '../models/group_model.dart';
 import '../services/firebase_service.dart';
 import '../middleware/auth_middleware.dart';
@@ -6,21 +8,56 @@ import '../middleware/permission_middleware.dart';
 import '../exceptions/middleware_exceptions.dart';
 import 'auth_provider.dart';
 
-// User Groups Provider
+// Kullanıcının gruplarını getir
 final userGroupsProvider = StreamProvider<List<GroupModel>>((ref) {
   final user = ref.watch(currentUserProvider);
   if (user == null) return Stream.value([]);
 
-  return FirebaseService.listenToCollection('groups').map(
-    (snapshot) =>
-        snapshot.docs
-            .where((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              return data['memberIds']?.contains(user.uid) == true;
-            })
-            .map((doc) => GroupModel.fromJson({'id': doc.id, ...doc.data() as Map<String, dynamic>}))
-            .toList(),
-  );
+  return FirebaseService.listenToDocument('users/${user.uid}').asyncMap((snapshot) async {
+    if (!snapshot.exists) return <GroupModel>[];
+
+    final userData = snapshot.data() as Map<String, dynamic>;
+    final groupIds = List<String>.from(userData['groups'] ?? []);
+
+    if (groupIds.isEmpty) return <GroupModel>[];
+
+    // Her grup ID'si için grup bilgilerini getir
+    final groups = await Future.wait(
+      groupIds.map((groupId) async {
+        try {
+          final doc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+          if (doc.exists) {
+            return GroupModel.fromJson({'id': doc.id, ...doc.data() as Map<String, dynamic>});
+          }
+          return null;
+        } catch (e) {
+          return null;
+        }
+      }),
+    );
+
+    return groups.where((g) => g != null).cast<GroupModel>().toList();
+  });
+});
+
+// Kullanıcının doküman ID'sini al
+final userDocumentIdProvider = FutureProvider<String?>((ref) async {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) return null;
+
+  try {
+    // Users koleksiyonundan kullanıcının dokümanını bul
+    final snapshot =
+        await FirebaseService.firestore.collection('users').where('id', isEqualTo: user.uid).limit(1).get();
+
+    if (snapshot.docs.isNotEmpty) {
+      return snapshot.docs.first.id; // Doküman ID'sini döndür
+    }
+    return null;
+  } catch (e) {
+    print('Kullanıcı doküman ID bulma hatası: $e');
+    return null;
+  }
 });
 
 // Group Notifier
@@ -59,19 +96,41 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     AuthMiddleware.requireAuth(user);
 
     try {
+      print('Kullanıcı UID: ${user!.uid}'); // Debug log
+
+      // Kullanıcının doküman ID'sini al
+      final userDocId = await ref.read(userDocumentIdProvider.future);
+      if (userDocId == null) {
+        throw Exception('Kullanıcı dokümanı bulunamadı');
+      }
+      print('Kullanıcı doküman ID: $userDocId'); // Debug log
+
       final group = GroupModel(
         id: '', // Firebase otomatik ID verecek
         name: name,
         description: description,
-        createdBy: user!.uid,
+        createdBy: user.uid,
         memberIds: [user.uid],
         memberRoles: {user.uid: 'admin'}, // Grup oluşturan otomatik admin olur
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      await FirebaseService.addDocument(collection: 'groups', data: group.toJson());
+      // Grubu oluştur
+      final docRef = await FirebaseService.addDocument(collection: 'groups', data: group.toJson());
+      print('Grup oluşturuldu: ${docRef.id}'); // Debug log
+
+      // Kullanıcının groups array'ine ekle
+      await FirebaseService.updateDocument(
+        path: 'users/$userDocId', // Doküman ID'sini kullan
+        data: {
+          'groups': FieldValue.arrayUnion([docRef.id]),
+          'updatedAt': DateTime.now().toIso8601String(),
+        },
+      );
+      print('Kullanıcının groups array\'ine eklendi'); // Debug log
     } catch (e) {
+      print('Grup oluşturma hatası: $e'); // Debug log
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
@@ -222,4 +281,21 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
 // Group Notifier Provider
 final groupNotifierProvider = StateNotifierProvider<GroupNotifier, AsyncValue<List<GroupModel>>>((ref) {
   return GroupNotifier(ref);
+});
+
+final groupProvider = Provider.family<AsyncValue<GroupModel?>, String>((ref, groupId) {
+  return ref
+      .watch(groupNotifierProvider)
+      .when(
+        data: (groups) {
+          try {
+            final group = groups.firstWhere((g) => g.id == groupId);
+            return AsyncValue.data(group);
+          } catch (e) {
+            return const AsyncValue.data(null);
+          }
+        },
+        loading: () => const AsyncValue.loading(),
+        error: (error, stack) => AsyncValue.error(error, stack),
+      );
 });
