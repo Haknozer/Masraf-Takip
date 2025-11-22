@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../constants/app_colors.dart';
 import '../../providers/group_provider.dart';
 import '../../widgets/app_bars/group_list_app_bar.dart';
 import '../../widgets/states/empty_groups_state.dart';
 import '../../widgets/states/error_state.dart';
 import '../../widgets/lists/groups_list.dart';
+import '../../widgets/common/base_page.dart';
+import '../../widgets/common/async_value_builder.dart';
 
 class GroupListPage extends ConsumerWidget {
   const GroupListPage({super.key});
@@ -14,11 +15,12 @@ class GroupListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final groupsState = ref.watch(userGroupsProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return BasePage(
       appBar: const GroupListAppBar(),
-      body: groupsState.when(
-        data: (groups) {
+      useScrollView: false,
+      body: AsyncValueBuilder(
+        value: groupsState,
+        dataBuilder: (context, groups) {
           if (groups.isEmpty) {
             return const EmptyGroupsState();
           }
@@ -29,14 +31,12 @@ class GroupListPage extends ConsumerWidget {
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error:
-            (error, stack) => ErrorState(
-              error: error.toString(),
-              onRetry: () {
-                // Retry logic
-              },
-            ),
+        errorBuilder: (context, error, stack) => ErrorState(
+          error: error.toString(),
+          onRetry: () {
+            // Retry logic
+          },
+        ),
       ),
     );
   }

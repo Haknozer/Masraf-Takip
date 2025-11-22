@@ -1,13 +1,14 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import '../../constants/app_colors.dart';
+import '../../constants/app_spacing.dart';
 import '../../providers/group_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../widgets/forms/custom_text_field.dart';
 import '../../widgets/forms/custom_button.dart';
+import '../../widgets/common/image_picker_widget.dart';
+import '../../widgets/common/image_source_dialog.dart';
+import '../../widgets/common/error_snackbar.dart';
 
 class CreateGroupForm extends ConsumerStatefulWidget {
   final VoidCallback onSuccess;
@@ -37,37 +38,7 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
   Future<void> _showImageSourceDialog() async {
     if (!mounted) return;
 
-    final ImageSource? source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder:
-          (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Galeriden Seç'),
-                  onTap: () => Navigator.pop(context, ImageSource.gallery),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.camera_alt),
-                  title: const Text('Kameradan Çek'),
-                  onTap: () => Navigator.pop(context, ImageSource.camera),
-                ),
-                if (_selectedImage != null)
-                  ListTile(
-                    leading: const Icon(Icons.delete, color: AppColors.error),
-                    title: const Text('Resmi Kaldır', style: TextStyle(color: AppColors.error)),
-                    onTap: () {
-                      Navigator.pop(context);
-                      setState(() => _selectedImage = null);
-                    },
-                  ),
-              ],
-            ),
-          ),
-    );
+    final ImageSource? source = await ImageSourceDialog.show(context, showRemoveOption: _selectedImage != null);
 
     if (source == null) return;
 
@@ -85,9 +56,7 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Resim seçme hatası: ${e.toString()}'), backgroundColor: AppColors.error),
-        );
+        ErrorSnackBar.show(context, e);
       }
     }
   }
@@ -113,13 +82,7 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
             print('Resim yükleme hatası (grup yine de oluşturulacak): $uploadError');
             // Resim yükleme hatası olsa bile grup oluşturulacak (resim olmadan)
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Resim yüklenemedi, grup resim olmadan oluşturuluyor.'),
-                  backgroundColor: AppColors.warning,
-                  duration: Duration(seconds: 3),
-                ),
-              );
+              ErrorSnackBar.showWarning(context, 'Resim yüklenemedi, grup resim olmadan oluşturuluyor.');
             }
           }
         }
@@ -130,39 +93,13 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
           .createGroup(_nameController.text.trim(), _descriptionController.text.trim(), imageUrl: imageUrl);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Grup başarıyla oluşturuldu!'), backgroundColor: AppColors.success),
-        );
+        ErrorSnackBar.showSuccess(context, 'Grup başarıyla oluşturuldu!');
         widget.onSuccess();
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Grup oluşturma hatası: ';
-
-        // Middleware exception kontrolü
-        if (e.toString().contains('UnauthorizedException')) {
-          errorMessage = 'Giriş yapmanız gerekiyor. Lütfen giriş yapıp tekrar deneyin.';
-        } else if (e.toString().contains('ForbiddenException')) {
-          errorMessage = 'Bu işlem için yetkiniz yok.';
-        } else if (e.toString().contains('NotFoundException')) {
-          errorMessage = 'Kullanıcı dokümanı bulunamadı. Lütfen tekrar giriş yapın.';
-        } else if (e is FirebaseException) {
-          if (e.code == 'permission-denied' || e.code == '-13021') {
-            errorMessage =
-                'Resim yükleme izni yok. Lütfen Firebase Console\'da Storage Security Rules\'ı kontrol edin.';
-          } else if (e.code == 'unauthorized') {
-            errorMessage = 'Giriş yapmanız gerekiyor.';
-          } else {
-            errorMessage = 'Firebase hatası: ${e.message ?? e.code}';
-          }
-        } else {
-          errorMessage = 'Grup oluşturma hatası: ${e.toString()}';
-        }
-
         print('Grup oluşturma hatası detayı: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error, duration: const Duration(seconds: 5)),
-        );
+        ErrorSnackBar.show(context, e);
       }
     } finally {
       if (mounted) {
@@ -179,52 +116,12 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Grup Resmi Seçme
-          Center(
-            child: Stack(
-              children: [
-                GestureDetector(
-                  onTap: _showImageSourceDialog,
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.greyLight,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.grey, width: 2, strokeAlign: BorderSide.strokeAlignInside),
-                    ),
-                    child:
-                        _selectedImage != null
-                            ? ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
-                              child: Image.file(File(_selectedImage!.path), fit: BoxFit.cover),
-                            )
-                            : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_photo_alternate, size: 40, color: AppColors.textSecondary),
-                                const SizedBox(height: 8),
-                                Text('Resim Ekle', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                              ],
-                            ),
-                  ),
-                ),
-                if (_selectedImage != null)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedImage = null),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
-                        child: const Icon(Icons.close, color: AppColors.white, size: 16),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+          ImagePickerWidget(
+            selectedImage: _selectedImage,
+            onImageTap: _showImageSourceDialog,
+            onRemoveImage: _selectedImage != null ? () => setState(() => _selectedImage = null) : null,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.sectionMargin),
 
           // Grup Adı
           CustomTextField(
@@ -243,7 +140,7 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
             },
             textInputAction: TextInputAction.next,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.textSpacing * 2),
 
           // Grup Açıklaması
           CustomTextField(
@@ -254,7 +151,7 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
             maxLines: 3,
             textInputAction: TextInputAction.done,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.sectionMargin),
 
           // Grup Oluştur Butonu
           CustomButton(text: 'Grup Oluştur', onPressed: _isLoading ? null : _createGroup, isLoading: _isLoading),

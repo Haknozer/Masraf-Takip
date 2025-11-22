@@ -17,6 +17,10 @@ class GroupCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
+          print('GroupCard tıklandı - GroupId: ${group.id}, isEmpty: ${group.id.isEmpty}');
+          if (group.id.isEmpty) {
+            print('UYARI: GroupCard\'dan boş groupId geçiriliyor!');
+          }
           Navigator.push(context, MaterialPageRoute(builder: (context) => GroupDetailPage(groupId: group.id)));
         },
         borderRadius: BorderRadius.circular(12),
@@ -26,34 +30,34 @@ class GroupCard extends StatelessWidget {
             children: [
               group.imageUrl != null
                   ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        group.imageUrl!,
-                        width: 48,
-                        height: 48,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 48,
-                            height: 48,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(Icons.group, color: AppColors.primary, size: 24),
-                          );
-                        },
-                      ),
-                    )
-                  : Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(Icons.group, color: AppColors.primary, size: 24),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      group.imageUrl!,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 48,
+                          height: 48,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.group, color: AppColors.primary, size: 24),
+                        );
+                      },
                     ),
+                  )
+                  : Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.group, color: AppColors.primary, size: 24),
+                  ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

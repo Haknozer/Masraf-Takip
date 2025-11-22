@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../constants/app_colors.dart';
+import '../../constants/app_spacing.dart';
 import '../../utils/validators.dart';
 import '../../utils/error_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/forms/custom_text_field.dart';
 import '../../widgets/forms/custom_button.dart';
+import '../../widgets/common/error_snackbar.dart';
 
 class RegisterForm extends ConsumerStatefulWidget {
   final VoidCallback onSuccess;
@@ -47,9 +48,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           .signUp(_emailController.text.trim(), _passwordController.text, _nameController.text.trim());
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kayıt başarılı! Giriş yapabilirsiniz.'), backgroundColor: AppColors.success),
-        );
+        ErrorSnackBar.showSuccess(context, 'Kayıt başarılı! Giriş yapabilirsiniz.');
         widget.onSuccess();
       }
     } catch (e) {
@@ -63,9 +62,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
           errorMessage = 'Firestore izin hatası. Lütfen Firebase Console\'da Firestore Rules\'ı kontrol edin.';
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error, duration: const Duration(seconds: 5)),
-        );
+        ErrorSnackBar.show(context, errorMessage);
       }
     } finally {
       if (mounted) {
@@ -90,7 +87,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             validator: Validators.validateName,
             textInputAction: TextInputAction.next,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.textSpacing * 2),
 
           // Email Alanı
           CustomTextField(
@@ -102,7 +99,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             validator: Validators.validateEmail,
             textInputAction: TextInputAction.next,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.textSpacing * 2),
 
           // Şifre Alanı
           CustomTextField(
@@ -120,7 +117,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             validator: Validators.validatePassword,
             textInputAction: TextInputAction.next,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.textSpacing * 2),
 
           // Şifre Tekrar Alanı
           CustomTextField(
@@ -138,7 +135,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
             validator: (value) => Validators.validateConfirmPassword(value, _passwordController.text),
             textInputAction: TextInputAction.done,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.sectionMargin),
 
           // Kayıt Ol Butonu
           CustomButton(text: 'Kayıt Ol', onPressed: _isLoading ? null : _register, isLoading: _isLoading),

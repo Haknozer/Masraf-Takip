@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../constants/app_colors.dart';
 import '../../constants/app_spacing.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/cards/welcome_card.dart';
@@ -8,6 +7,7 @@ import '../../widgets/app_bars/home_app_bar.dart';
 import '../../widgets/sections/groups_section_header.dart';
 import '../../widgets/sections/groups_list_section.dart';
 import '../../widgets/buttons/group_options_fab.dart';
+import '../../widgets/common/base_page.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -16,9 +16,9 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return BasePage(
       appBar: const HomeAppBar(),
+      useScrollView: false,
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -32,7 +32,7 @@ class HomePage extends ConsumerWidget {
             const SizedBox(height: AppSpacing.textSpacing),
 
             // Grup Listesi
-            const GroupsListSection(), // Yeni widget'ı kullan
+            const GroupsListSection(),
           ],
         ),
       ),
