@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Herkese açık - tüm dosyalar okunabilir ve yazılabilir
+    // ⚠️ UYARI: Bu sadece geliştirme/test için kullanılmalıdır!
+    match /{allPaths=**} {
+      allow read, write: if true;
+    }
+  }
+}
+

@@ -46,8 +46,11 @@ final userDocumentIdProvider = FutureProvider<String?>((ref) async {
 
   try {
     // Users koleksiyonundan kullanıcının dokümanını bul
-    final snapshot =
-        await FirebaseService.firestore.collection('users').where('id', isEqualTo: user.uid).limit(1).get();
+    final snapshot = await FirebaseService.firestore
+        .collection('users')
+        .where('id', isEqualTo: user.uid)
+        .limit(1)
+        .get();
 
     if (snapshot.docs.isNotEmpty) {
       return snapshot.docs.first.id; // Doküman ID'sini döndür
@@ -74,20 +77,19 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     }
 
     FirebaseService.listenToCollection('groups').listen((snapshot) {
-      final groups =
-          snapshot.docs
-              .where((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                return data['memberIds']?.contains(user.uid) == true;
-              })
-              .map((doc) => GroupModel.fromJson({'id': doc.id, ...doc.data() as Map<String, dynamic>}))
-              .toList();
+      final groups = snapshot.docs
+          .where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return data['memberIds']?.contains(user.uid) == true;
+          })
+          .map((doc) => GroupModel.fromJson({'id': doc.id, ...doc.data() as Map<String, dynamic>}))
+          .toList();
       state = AsyncValue.data(groups);
     });
   }
 
   // Grup oluştur
-  Future<void> createGroup(String name, String description) async {
+  Future<void> createGroup(String name, String description, {String? imageUrl}) async {
     final user = ref.read(currentUserProvider);
 
     // Middleware: Authentication kontrolü
@@ -109,6 +111,7 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         memberRoles: {user.uid: 'admin'}, // Grup oluşturan otomatik admin olur
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        imageUrl: imageUrl,
       );
 
       // Grubu oluştur

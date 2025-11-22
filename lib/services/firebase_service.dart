@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import '../firebase_options.dart';
 
 class FirebaseService {
@@ -86,5 +88,13 @@ class FirebaseService {
   /// Firestore dokümanını dinle
   static Stream<DocumentSnapshot> listenToDocument(String path) {
     return firestore.doc(path).snapshots();
+  }
+
+  /// Firebase Storage'a dosya yükle (XFile ile)
+  static Future<String> uploadFile({required String path, required XFile file}) async {
+    final ref = storage.ref().child(path);
+    final fileToUpload = File(file.path);
+    await ref.putFile(fileToUpload);
+    return await ref.getDownloadURL();
   }
 }

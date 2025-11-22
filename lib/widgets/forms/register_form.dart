@@ -54,9 +54,18 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(ErrorUtils.processError(e)), backgroundColor: AppColors.error));
+        // Hata mesajını daha detaylı göster
+        String errorMessage = ErrorUtils.processError(e);
+        print('Kayıt hatası: $e');
+
+        // Firestore permission hatası kontrolü
+        if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {
+          errorMessage = 'Firestore izin hatası. Lütfen Firebase Console\'da Firestore Rules\'ı kontrol edin.';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage), backgroundColor: AppColors.error, duration: const Duration(seconds: 5)),
+        );
       }
     } finally {
       if (mounted) {

@@ -8,6 +8,7 @@ class GroupModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isActive;
+  final String? imageUrl;
 
   GroupModel({
     required this.id,
@@ -19,6 +20,7 @@ class GroupModel {
     required this.createdAt,
     required this.updatedAt,
     this.isActive = true,
+    this.imageUrl,
   });
 
   // JSON'dan GroupModel oluştur
@@ -33,6 +35,7 @@ class GroupModel {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       isActive: json['isActive'] ?? true,
+      imageUrl: json['imageUrl'],
     );
   }
 
@@ -48,6 +51,7 @@ class GroupModel {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'isActive': isActive,
+      if (imageUrl != null) 'imageUrl': imageUrl,
     };
   }
 
@@ -62,6 +66,7 @@ class GroupModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isActive,
+    String? imageUrl,
   }) {
     return GroupModel(
       id: id ?? this.id,
@@ -73,6 +78,7 @@ class GroupModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 

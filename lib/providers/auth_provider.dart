@@ -8,9 +8,10 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return FirebaseService.authStateChanges;
 });
 
-// Current User Provider
+// Current User Provider - authStateProvider'dan türetilmiş
 final currentUserProvider = Provider<User?>((ref) {
-  return FirebaseService.currentUser;
+  final authState = ref.watch(authStateProvider);
+  return authState.valueOrNull;
 });
 
 // User Model Provider
@@ -78,7 +79,12 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       final credential = await FirebaseService.createUserWithEmailAndPassword(email: email, password: password);
 
       // Kullanıcı profilini güncelle
-      await credential.user?.updateDisplayName(displayName);
+      try {
+        await credential.user?.updateDisplayName(displayName);
+      } catch (e) {
+        // Display name güncelleme hatası kritik değil, devam et
+        print('Display name güncelleme hatası: $e');
+      }
 
       // Firestore'da kullanıcı dokümanı oluştur
       final userModel = UserModel(
@@ -90,11 +96,21 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
         groups: [], // Boş groups array'i ekle
       );
 
-      // ✅ DOĞRU: setDocument kullan (belirli ID ile)
-      await FirebaseService.setDocument(path: 'users/${credential.user!.uid}', data: userModel.toJson());
+      // Firestore'a kullanıcı dokümanını ekle
+      try {
+        await FirebaseService.setDocument(path: 'users/${credential.user!.uid}', data: userModel.toJson());
+        print('Kullanıcı Firestore\'a eklendi: ${credential.user!.uid}');
+      } catch (e) {
+        print('Firestore ekleme hatası: $e');
+        // Firestore hatası olsa bile kullanıcı oluşturuldu, state'i güncelle
+        state = AsyncValue.data(credential.user);
+        // Hatayı tekrar fırlat ki kullanıcı görsün
+        rethrow;
+      }
 
       state = AsyncValue.data(credential.user);
     } catch (e) {
+      print('SignUp genel hatası: $e');
       state = AsyncValue.error(e, StackTrace.current);
       rethrow; // Hatayı tekrar fırlat
     }
