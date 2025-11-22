@@ -71,7 +71,7 @@ class GroupDetailPage extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sectionMargin),
 
           // Recent Expenses
-          const RecentExpensesSection(),
+          RecentExpensesSection(groupId: group.id),
         ],
       ),
     );

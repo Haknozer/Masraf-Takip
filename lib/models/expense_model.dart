@@ -7,6 +7,7 @@ class ExpenseModel {
   final String category;
   final DateTime date;
   final List<String> sharedBy; // Paylaşan kullanıcı ID'leri
+  final Map<String, double>? manualAmounts; // Manuel dağılım için: userId -> amount
   final String? imageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -20,6 +21,7 @@ class ExpenseModel {
     required this.category,
     required this.date,
     required this.sharedBy,
+    this.manualAmounts,
     this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
@@ -36,6 +38,10 @@ class ExpenseModel {
       category: json['category'] ?? '',
       date: DateTime.parse(json['date']),
       sharedBy: List<String>.from(json['sharedBy'] ?? []),
+      manualAmounts: json['manualAmounts'] != null
+          ? Map<String, double>.from(
+              (json['manualAmounts'] as Map).map((key, value) => MapEntry(key.toString(), (value as num).toDouble())))
+          : null,
       imageUrl: json['imageUrl'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
@@ -53,6 +59,7 @@ class ExpenseModel {
       'category': category,
       'date': date.toIso8601String(),
       'sharedBy': sharedBy,
+      if (manualAmounts != null) 'manualAmounts': manualAmounts,
       'imageUrl': imageUrl,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -69,6 +76,7 @@ class ExpenseModel {
     String? category,
     DateTime? date,
     List<String>? sharedBy,
+    Map<String, double>? manualAmounts,
     String? imageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -82,6 +90,7 @@ class ExpenseModel {
       category: category ?? this.category,
       date: date ?? this.date,
       sharedBy: sharedBy ?? this.sharedBy,
+      manualAmounts: manualAmounts ?? this.manualAmounts,
       imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -90,6 +99,21 @@ class ExpenseModel {
 
   // Kişi başına düşen miktar
   double get amountPerPerson {
+    if (sharedBy.isEmpty) return amount;
+    // Manuel dağılım varsa, kullanıcıya özel tutarı döndür
+    if (manualAmounts != null && manualAmounts!.isNotEmpty) {
+      // Bu method bir userId parametresi almalı, şimdilik eşit dağılım döndürüyoruz
+      return amount / sharedBy.length;
+    }
+    return amount / sharedBy.length;
+  }
+
+  // Belirli bir kullanıcı için tutar (manuel dağılım varsa)
+  double getAmountForUser(String userId) {
+    if (manualAmounts != null && manualAmounts!.containsKey(userId)) {
+      return manualAmounts![userId]!;
+    }
+    // Eşit dağılım
     if (sharedBy.isEmpty) return amount;
     return amount / sharedBy.length;
   }

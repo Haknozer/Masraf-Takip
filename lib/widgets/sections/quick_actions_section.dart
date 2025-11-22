@@ -3,6 +3,7 @@ import '../../constants/app_text_styles.dart';
 import '../../models/group_model.dart';
 import '../../widgets/dialogs/add_member_dialog.dart';
 import '../../widgets/cards/action_card.dart';
+import '../../screens/expenses/create_expense_page.dart';
 
 class QuickActionsSection extends StatelessWidget {
   final GroupModel group;
@@ -23,7 +24,12 @@ class QuickActionsSection extends StatelessWidget {
                 icon: Icons.add,
                 title: 'Masraf Ekle',
                 onTap: () {
-                  // Add expense
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CreateExpensePage(group: group),
+                    ),
+                  );
                 },
               ),
             ),
