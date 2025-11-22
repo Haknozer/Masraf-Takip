@@ -67,7 +67,7 @@ class GroupDetailPage extends ConsumerWidget {
           const SizedBox(height: AppSpacing.sectionMargin),
 
           // Quick Actions
-          const QuickActionsSection(),
+          QuickActionsSection(group: group),
           const SizedBox(height: AppSpacing.sectionMargin),
 
           // Recent Expenses

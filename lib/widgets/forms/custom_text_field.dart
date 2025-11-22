@@ -17,6 +17,7 @@ class CustomTextField extends StatelessWidget {
   final bool readOnly;
   final int maxLines;
   final int? maxLength;
+  final TextCapitalization textCapitalization;
 
   const CustomTextField({
     super.key,
@@ -34,6 +35,7 @@ class CustomTextField extends StatelessWidget {
     this.readOnly = false,
     this.maxLines = 1,
     this.maxLength,
+    this.textCapitalization = TextCapitalization.none,
   });
 
   @override
@@ -48,6 +50,7 @@ class CustomTextField extends StatelessWidget {
           obscureText: obscureText,
           keyboardType: keyboardType,
           textInputAction: textInputAction,
+          textCapitalization: textCapitalization,
           validator: validator,
           onChanged: onChanged,
           onTap: onTap,

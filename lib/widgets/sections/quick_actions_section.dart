@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
-import '../../constants/app_spacing.dart';
+import '../../models/group_model.dart';
+import '../../widgets/dialogs/add_member_dialog.dart';
+import '../../widgets/cards/action_card.dart';
 
 class QuickActionsSection extends StatelessWidget {
-  const QuickActionsSection({super.key});
+  final GroupModel group;
+
+  const QuickActionsSection({super.key, required this.group});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +19,7 @@ class QuickActionsSection extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: _buildActionCard(
+              child: ActionCard(
                 icon: Icons.add,
                 title: 'Masraf Ekle',
                 onTap: () {
@@ -26,36 +29,17 @@ class QuickActionsSection extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildActionCard(
+              child: ActionCard(
                 icon: Icons.people_alt,
                 title: 'Üye Ekle',
                 onTap: () {
-                  // Add member
+                  showDialog(context: context, builder: (context) => AddMemberDialog(group: group));
                 },
               ),
             ),
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildActionCard({required IconData icon, required String title, required VoidCallback onTap}) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.cardPadding),
-          child: Column(
-            children: [
-              Icon(icon, color: AppColors.primary, size: 32),
-              const SizedBox(height: 8),
-              Text(title, style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

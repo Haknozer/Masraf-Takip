@@ -9,6 +9,8 @@ class GroupModel {
   final DateTime updatedAt;
   final bool isActive;
   final String? imageUrl;
+  final String inviteCode; // Davet kodu
+  final DateTime inviteCodeExpiresAt; // Davet kodunun geçerlilik süresi
 
   GroupModel({
     required this.id,
@@ -21,6 +23,8 @@ class GroupModel {
     required this.updatedAt,
     this.isActive = true,
     this.imageUrl,
+    required this.inviteCode,
+    required this.inviteCodeExpiresAt,
   });
 
   // JSON'dan GroupModel oluştur
@@ -36,6 +40,11 @@ class GroupModel {
       updatedAt: DateTime.parse(json['updatedAt']),
       isActive: json['isActive'] ?? true,
       imageUrl: json['imageUrl'],
+      inviteCode: json['inviteCode'] ?? '',
+      inviteCodeExpiresAt:
+          json['inviteCodeExpiresAt'] != null
+              ? DateTime.parse(json['inviteCodeExpiresAt'])
+              : DateTime.now().add(const Duration(days: 7)),
     );
   }
 
@@ -52,6 +61,8 @@ class GroupModel {
       'updatedAt': updatedAt.toIso8601String(),
       'isActive': isActive,
       if (imageUrl != null) 'imageUrl': imageUrl,
+      'inviteCode': inviteCode,
+      'inviteCodeExpiresAt': inviteCodeExpiresAt.toIso8601String(),
     };
   }
 
@@ -67,6 +78,8 @@ class GroupModel {
     DateTime? updatedAt,
     bool? isActive,
     String? imageUrl,
+    String? inviteCode,
+    DateTime? inviteCodeExpiresAt,
   }) {
     return GroupModel(
       id: id ?? this.id,
@@ -79,6 +92,8 @@ class GroupModel {
       updatedAt: updatedAt ?? this.updatedAt,
       isActive: isActive ?? this.isActive,
       imageUrl: imageUrl ?? this.imageUrl,
+      inviteCode: inviteCode ?? this.inviteCode,
+      inviteCodeExpiresAt: inviteCodeExpiresAt ?? this.inviteCodeExpiresAt,
     );
   }
 
@@ -118,4 +133,9 @@ class GroupModel {
 
   // Admin sayısı
   int get adminCount => memberRoles.values.where((role) => role == 'admin').length;
+
+  // Davet kodu geçerli mi?
+  bool get isInviteCodeValid {
+    return inviteCode.isNotEmpty && DateTime.now().isBefore(inviteCodeExpiresAt);
+  }
 }

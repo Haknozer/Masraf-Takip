@@ -50,6 +50,9 @@ dependencies:
   # Image Picker
   image_picker: ^1.2.1
   
+  # QR Code
+  qr_flutter: ^4.1.0
+  
   # Firebase
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1

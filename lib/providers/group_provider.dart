@@ -95,6 +95,10 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         throw Exception('Kullanıcı dokümanı bulunamadı');
       }
 
+      // Davet kodu oluştur (6 karakter, büyük harf ve rakam)
+      final inviteCode = _generateInviteCode();
+      final inviteCodeExpiresAt = DateTime.now().add(const Duration(days: 7)); // 7 gün geçerli
+
       final group = GroupModel(
         id: '', // Firebase otomatik ID verecek
         name: name,
@@ -105,6 +109,8 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         imageUrl: imageUrl,
+        inviteCode: inviteCode,
+        inviteCodeExpiresAt: inviteCodeExpiresAt,
       );
 
       // Grubu oluştur
@@ -317,6 +323,106 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     final groups = state.value ?? [];
     final group = groups.firstWhere((g) => g.id == groupId, orElse: () => throw Exception('Grup bulunamadı'));
     return group.getUserRole(userId);
+  }
+
+  // Davet kodu oluştur (6 karakter, büyük harf ve rakam)
+  String _generateInviteCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = DateTime.now().millisecondsSinceEpoch;
+    final code = StringBuffer();
+
+    for (int i = 0; i < 6; i++) {
+      code.write(chars[(random + i) % chars.length]);
+    }
+
+    // Daha rastgele bir kod için timestamp kullan
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final randomCode = StringBuffer();
+    for (int i = 0; i < 6; i++) {
+      final index = (timestamp + i * 7) % chars.length;
+      randomCode.write(chars[index]);
+    }
+
+    return randomCode.toString();
+  }
+
+  // Davet kodu ile gruba katıl
+  Future<void> joinGroupByInviteCode(String inviteCode) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
+    try {
+      // Davet koduna sahip grubu bul
+      final groupsSnapshot =
+          await FirebaseService.firestore
+              .collection('groups')
+              .where('inviteCode', isEqualTo: inviteCode)
+              .limit(1)
+              .get();
+
+      if (groupsSnapshot.docs.isEmpty) {
+        throw const NotFoundException('Geçersiz davet kodu');
+      }
+
+      final groupDoc = groupsSnapshot.docs.first;
+      final groupData = groupDoc.data();
+      final group = GroupModel.fromJson({...groupData, 'id': groupDoc.id});
+
+      // Davet kodu geçerli mi?
+      if (!group.isInviteCodeValid) {
+        throw const NotFoundException('Davet kodu süresi dolmuş');
+      }
+
+      // Kullanıcı zaten üye mi?
+      if (group.isGroupMember(user!.uid)) {
+        throw const InvalidOperationException('Bu grubun zaten üyesisiniz');
+      }
+
+      // Gruba üye ekle
+      await addMember(group.id, user.uid, role: 'user');
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+      rethrow;
+    }
+  }
+
+  // Davet kodunu yenile (sadece admin)
+  Future<void> refreshInviteCode(String groupId) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
+    try {
+      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
+
+      final groupData = groupDoc.data() as Map<String, dynamic>;
+      final group = GroupModel.fromJson({...groupData, 'id': groupDoc.id});
+
+      // Middleware: Permission kontrolü (sadece admin)
+      PermissionMiddleware.requireGroupAdmin(user, group);
+
+      // Yeni davet kodu oluştur
+      final newInviteCode = _generateInviteCode();
+      final newExpiresAt = DateTime.now().add(const Duration(days: 7));
+
+      await FirebaseService.updateDocument(
+        path: 'groups/$groupId',
+        data: {
+          'inviteCode': newInviteCode,
+          'inviteCodeExpiresAt': newExpiresAt.toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+        },
+      );
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+      rethrow;
+    }
   }
 
   // Kullanıcı grup admin'i mi?
