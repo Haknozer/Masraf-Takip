@@ -5,6 +5,7 @@ import '../services/firebase_service.dart';
 import '../middleware/auth_middleware.dart';
 import '../middleware/permission_middleware.dart';
 import '../exceptions/middleware_exceptions.dart';
+import '../utils/expense_utils.dart';
 import 'auth_provider.dart';
 
 // Group Expenses Provider
@@ -16,9 +17,34 @@ final groupExpensesProvider = StreamProvider.family<List<ExpenseModel>, String>(
               final data = doc.data() as Map<String, dynamic>;
               return data['groupId'] == groupId;
             })
-            .map((doc) => ExpenseModel.fromJson({'id': doc.id, ...doc.data() as Map<String, dynamic>}))
+            .map((doc) => ExpenseUtils.fromDocumentSnapshot(doc))
+            .whereType<ExpenseModel>()
             .toList(),
   );
+});
+
+// Single Expense Provider
+final expenseProvider = StreamProvider.family<ExpenseModel?, String>((ref, expenseId) {
+  // ExpenseId validasyonu
+  final sanitizedId = ExpenseUtils.sanitizeExpenseId(expenseId);
+  if (sanitizedId == null) {
+    return Stream.value(null);
+  }
+
+  final path = 'expenses/$sanitizedId';
+
+  try {
+    return FirebaseService.listenToDocument(path).map((doc) => ExpenseUtils.fromDocumentSnapshot(doc)).handleError((
+      error,
+      stackTrace,
+    ) {
+      // Hata durumunda Stream'i durdurma
+      // StreamProvider otomatik olarak AsyncValue.error'a çevirecek
+    });
+  } catch (e) {
+    // Path oluşturulurken hata oluşursa null döndür
+    return Stream.value(null);
+  }
 });
 
 // Expense Notifier
@@ -35,7 +61,8 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
                 final data = doc.data() as Map<String, dynamic>;
                 return data['groupId'] == groupId;
               })
-              .map((doc) => ExpenseModel.fromJson({'id': doc.id, ...doc.data() as Map<String, dynamic>}))
+              .map((doc) => ExpenseUtils.fromDocumentSnapshot(doc))
+              .whereType<ExpenseModel>()
               .toList();
       state = AsyncValue.data(expenses);
     });
@@ -99,6 +126,8 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
     required String category,
     required DateTime date,
     required List<String> sharedBy,
+    required String paidBy,
+    Map<String, double>? manualAmounts,
     String? imageUrl,
   }) async {
     final user = ref.read(currentUserProvider);
@@ -113,7 +142,10 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
         throw const NotFoundException('Masraf bulunamadı');
       }
 
-      final expense = ExpenseModel.fromJson({'id': expenseDoc.id, ...expenseDoc.data() as Map<String, dynamic>});
+      final expense = ExpenseUtils.fromDocumentSnapshot(expenseDoc);
+      if (expense == null) {
+        throw const NotFoundException('Masraf bulunamadı');
+      }
 
       // Grup bilgisini al
       final groupDoc = await FirebaseService.getDocumentSnapshot('groups/${expense.groupId}');
@@ -126,18 +158,27 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
       // Middleware: Permission kontrolü
       PermissionMiddleware.requireCanEditExpense(user, group, expense);
 
-      await FirebaseService.updateDocument(
-        path: 'expenses/$expenseId',
-        data: {
-          'description': description,
-          'amount': amount,
-          'category': category,
-          'date': date.toIso8601String(),
-          'sharedBy': sharedBy,
-          'imageUrl': imageUrl,
-          'updatedAt': DateTime.now().toIso8601String(),
-        },
-      );
+      final updateData = <String, dynamic>{
+        'description': description,
+        'amount': amount,
+        'category': category,
+        'date': date.toIso8601String(),
+        'paidBy': paidBy,
+        'sharedBy': sharedBy,
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      if (manualAmounts != null) {
+        updateData['manualAmounts'] = manualAmounts;
+      } else {
+        updateData['manualAmounts'] = null;
+      }
+
+      if (imageUrl != null) {
+        updateData['imageUrl'] = imageUrl;
+      }
+
+      await FirebaseService.updateDocument(path: 'expenses/$expenseId', data: updateData);
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
     }
@@ -157,7 +198,10 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
         throw const NotFoundException('Masraf bulunamadı');
       }
 
-      final expense = ExpenseModel.fromJson({'id': expenseDoc.id, ...expenseDoc.data() as Map<String, dynamic>});
+      final expense = ExpenseUtils.fromDocumentSnapshot(expenseDoc);
+      if (expense == null) {
+        throw const NotFoundException('Masraf bulunamadı');
+      }
 
       // Grup bilgisini al
       final groupDoc = await FirebaseService.getDocumentSnapshot('groups/${expense.groupId}');

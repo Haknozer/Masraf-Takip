@@ -7,12 +7,14 @@ class ExpensesList extends StatelessWidget {
   final List<ExpenseModel> expenses;
   final Function(ExpenseModel)? onExpenseTap;
   final bool showDividers;
+  final bool showEditIcon;
 
   const ExpensesList({
     super.key,
     required this.expenses,
     this.onExpenseTap,
     this.showDividers = true,
+    this.showEditIcon = false,
   });
 
   @override
@@ -27,6 +29,7 @@ class ExpensesList extends StatelessWidget {
           ExpenseItem(
             expense: expenses[i],
             onTap: onExpenseTap != null ? () => onExpenseTap!(expenses[i]) : null,
+            showEditIcon: showEditIcon,
           ),
           if (showDividers && i < expenses.length - 1) const Divider(),
         ],

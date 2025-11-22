@@ -9,11 +9,13 @@ import '../../utils/date_utils.dart' as DateUtils;
 class ExpenseItem extends StatelessWidget {
   final ExpenseModel expense;
   final VoidCallback? onTap;
+  final bool showEditIcon;
 
   const ExpenseItem({
     super.key,
     required this.expense,
     this.onTap,
+    this.showEditIcon = false,
   });
 
   @override
@@ -22,21 +24,32 @@ class ExpenseItem extends StatelessWidget {
     final icon = category?.icon ?? Icons.receipt;
     final color = category?.color ?? AppColors.primary;
 
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(expense.description, style: AppTextStyles.bodyMedium),
-      subtitle: Text(
-        DateUtils.AppDateUtils.formatDate(expense.date),
-        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-      ),
-      trailing: Text(
-        '${expense.amount.toStringAsFixed(2)} ₺',
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.success,
-          fontWeight: FontWeight.bold,
+    return InkWell(
+      onTap: onTap,
+      child: ListTile(
+        leading: Icon(icon, color: color),
+        title: Text(expense.description, style: AppTextStyles.bodyMedium),
+        subtitle: Text(
+          DateUtils.AppDateUtils.formatDate(expense.date),
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${expense.amount.toStringAsFixed(2)} ₺',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.success,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (showEditIcon && onTap != null) ...[
+              const SizedBox(width: 8),
+              Icon(Icons.edit, size: 18, color: AppColors.textSecondary),
+            ],
+          ],
         ),
       ),
-      onTap: onTap,
     );
   }
 }
