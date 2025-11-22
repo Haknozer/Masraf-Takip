@@ -253,9 +253,34 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       // Middleware: Permission kontrolü
       PermissionMiddleware.requireCanDeleteGroup(user, group);
 
+      // Grubu sil
       await FirebaseService.deleteDocument('groups/$groupId');
+
+      // Tüm üyelerin users dokümanlarından bu grubu kaldır
+      for (final memberId in group.memberIds) {
+        try {
+          // Kullanıcının doküman ID'sini bul
+          final userSnapshot =
+              await FirebaseService.firestore.collection('users').where('id', isEqualTo: memberId).limit(1).get();
+
+          if (userSnapshot.docs.isNotEmpty) {
+            final userDocId = userSnapshot.docs.first.id;
+            await FirebaseService.updateDocument(
+              path: 'users/$userDocId',
+              data: {
+                'groups': FieldValue.arrayRemove([groupId]),
+                'updatedAt': DateTime.now().toIso8601String(),
+              },
+            );
+          }
+        } catch (e) {
+          // Kullanıcı dokümanı bulunamazsa devam et
+          print('Kullanıcı dokümanı güncellenemedi: $memberId - $e');
+        }
+      }
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
+      rethrow;
     }
   }
 
