@@ -346,6 +346,36 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     return randomCode.toString();
   }
 
+  // Grup ID ile direkt gruba katıl (QR kod için)
+  Future<void> joinGroupById(String groupId) async {
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
+    try {
+      // Grup bilgisini al
+      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+      if (!groupDoc.exists) {
+        throw const NotFoundException('Grup bulunamadı');
+      }
+
+      final groupData = groupDoc.data() as Map<String, dynamic>;
+      final group = GroupModel.fromJson({...groupData, 'id': groupDoc.id});
+
+      // Kullanıcı zaten üye mi?
+      if (group.isGroupMember(user!.uid)) {
+        throw const InvalidOperationException('Bu grubun zaten üyesisiniz');
+      }
+
+      // Gruba üye ekle
+      await addMember(group.id, user.uid, role: 'user');
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+      rethrow;
+    }
+  }
+
   // Davet kodu ile gruba katıl
   Future<void> joinGroupByInviteCode(String inviteCode) async {
     final user = ref.read(currentUserProvider);

@@ -6,6 +6,7 @@ import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/group_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/group_id_encoder.dart';
 import '../../widgets/common/copy_button.dart';
 import '../../widgets/common/copyable_text_field.dart';
 import '../../widgets/common/tab_button_widget.dart';
@@ -109,9 +110,8 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
   }
 
   Widget _buildQRCodeTab() {
-    final inviteCode = widget.group.inviteCode;
-    // QR kod verisi: Deep link formatı veya sadece invite code
-    final qrData = inviteCode; // Veya 'expense_tracker://join?code=$inviteCode' formatında
+    // QR kod verisi: Şifrelenmiş grup ID'si
+    final qrData = GroupIdEncoder.encodeGroupId(widget.group.id);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -135,7 +135,11 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
         const SizedBox(height: AppSpacing.sectionMargin),
         Text('QR kodu taratın', style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
         const SizedBox(height: 8),
-        Text('Kod: $inviteCode', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+        Text(
+          'QR kod okutulduğunda kullanıcı direkt gruba katılacak',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
