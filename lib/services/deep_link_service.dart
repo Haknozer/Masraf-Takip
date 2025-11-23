@@ -1,7 +1,6 @@
 import 'package:app_links/app_links.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/group_provider.dart';
-import '../utils/group_id_encoder.dart';
 import '../widgets/common/error_snackbar.dart';
 import 'package:flutter/material.dart';
 
@@ -31,22 +30,33 @@ class DeepLinkService {
   /// Deep link'i parse et ve gruba katıl
   static Future<void> handleDeepLink(Uri uri, BuildContext context, WidgetRef ref) async {
     try {
-      // Web URL formatı: https://masraftakipuygulamasi.web.app/join?groupId={encodedGroupId}
+      // Web URL formatı: https://masraftakipuygulamasi.web.app/join?code={inviteCode}
       // Sadece web URL'leri destekliyoruz (App Links)
 
       if (uri.path == '/join' || uri.pathSegments.contains('join')) {
-        final groupIdParam = uri.queryParameters['groupId'];
+        // Invite code parametresini al
+        final codeParam = uri.queryParameters['code'];
 
-        if (groupIdParam != null && groupIdParam.isNotEmpty) {
-          // Şifrelenmiş grup ID'sini çöz
-          final groupId = GroupIdEncoder.decodeGroupId(groupIdParam);
+        if (codeParam != null && codeParam.isNotEmpty) {
+          // Invite code ile gruba katıl
+          await ref.read(groupNotifierProvider.notifier).joinGroupByInviteCode(codeParam);
 
-          if (groupId != null) {
-            // Gruba katıl
-            await ref.read(groupNotifierProvider.notifier).joinGroupById(groupId);
+          if (context.mounted) {
+            // ScaffoldMessenger hazır olana kadar bekle
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (context.mounted) {
+                ErrorSnackBar.showSuccess(context, 'Gruba başarıyla katıldınız!');
+              }
+            });
+          }
+        } else {
+          // Eski format desteği: groupId parametresi (geriye dönük uyumluluk)
+          final groupIdParam = uri.queryParameters['groupId'];
+          if (groupIdParam != null && groupIdParam.isNotEmpty) {
+            // Eski format - direkt grup ID ile katıl
+            await ref.read(groupNotifierProvider.notifier).joinGroupById(groupIdParam);
 
             if (context.mounted) {
-              // ScaffoldMessenger hazır olana kadar bekle
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (context.mounted) {
                   ErrorSnackBar.showSuccess(context, 'Gruba başarıyla katıldınız!');
@@ -58,21 +68,6 @@ class DeepLinkService {
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (context.mounted) {
                   ErrorSnackBar.show(context, 'Geçersiz grup linki.');
-                }
-              });
-            }
-          }
-        } else {
-          // Eski format desteği: code parametresi
-          final codeParam = uri.queryParameters['code'];
-          if (codeParam != null && codeParam.isNotEmpty) {
-            // Invite code artık grup ID olduğu için direkt kullan
-            await ref.read(groupNotifierProvider.notifier).joinGroupById(codeParam);
-
-            if (context.mounted) {
-              Future.delayed(const Duration(milliseconds: 300), () {
-                if (context.mounted) {
-                  ErrorSnackBar.showSuccess(context, 'Gruba başarıyla katıldınız!');
                 }
               });
             }
