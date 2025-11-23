@@ -158,12 +158,19 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       // Middleware: Permission kontrolü
       PermissionMiddleware.requireCanAddMember(user, group);
 
+      // 1. Groups koleksiyonunda memberIds ve memberRoles'e ekle
       final updatedGroup = group.addMember(userId, role: role);
       await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
 
-      // Kullanıcının doküman ID'sini al ve groups array'ine ekle
-      final userDocId = await ref.read(userDocumentIdProvider.future);
-      if (userDocId != null) {
+      // 2. Users koleksiyonunda katılan kullanıcının groups array'ine grup ID'sini ekle
+      final userDocSnapshot = await FirebaseService.firestore
+          .collection('users')
+          .where('id', isEqualTo: userId)
+          .limit(1)
+          .get();
+
+      if (userDocSnapshot.docs.isNotEmpty) {
+        final userDocId = userDocSnapshot.docs.first.id;
         await FirebaseService.updateDocument(
           path: 'users/$userDocId',
           data: {
@@ -369,8 +376,29 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         throw const InvalidOperationException('Bu grubun zaten üyesisiniz');
       }
 
-      // Gruba üye ekle
-      await addMember(group.id, user.uid, role: 'user');
+      // 1. Groups koleksiyonunda memberIds ve memberRoles'e ekle
+      final updatedGroup = group.addMember(user.uid, role: 'user');
+      await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
+
+      // 2. Users koleksiyonunda kullanıcının groups array'ine grup ID'sini ekle
+      final userDocSnapshot = await FirebaseService.firestore
+          .collection('users')
+          .where('id', isEqualTo: user.uid)
+          .limit(1)
+          .get();
+
+      if (userDocSnapshot.docs.isNotEmpty) {
+        final userDocId = userDocSnapshot.docs.first.id;
+        await FirebaseService.updateDocument(
+          path: 'users/$userDocId',
+          data: {
+            'groups': FieldValue.arrayUnion([groupId]),
+            'updatedAt': DateTime.now().toIso8601String(),
+          },
+        );
+      } else {
+        throw Exception('Kullanıcı dokümanı bulunamadı');
+      }
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
       rethrow;
