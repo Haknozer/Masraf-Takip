@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "4DXJHZ4TK6.com.expensetracker.app.expense_tracker_app",
+        "paths": [ "*" ]
+      }
+    ]
+  }
+}
