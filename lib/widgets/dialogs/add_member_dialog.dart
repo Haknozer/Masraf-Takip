@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
@@ -54,7 +55,7 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
             const SizedBox(height: AppSpacing.sectionMargin),
 
             // Tab Content
-            Expanded(child: _buildTabContent()),
+            _buildTabContent(),
           ],
         ),
       ),
@@ -109,6 +110,8 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
 
   Widget _buildQRCodeTab() {
     final inviteCode = widget.group.inviteCode;
+    // QR kod verisi: Deep link formatı veya sadece invite code
+    final qrData = inviteCode; // Veya 'expense_tracker://join?code=$inviteCode' formatında
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -121,18 +124,13 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.greyLight),
           ),
-          child: const SizedBox(
-            width: 200,
-            height: 200,
-            child: Center(child: Icon(Icons.qr_code, size: 100, color: AppColors.primary)),
+          child: QrImageView(
+            data: qrData,
+            version: QrVersions.auto,
+            size: 200,
+            backgroundColor: Colors.white,
+            errorCorrectionLevel: QrErrorCorrectLevel.M,
           ),
-          // TODO: flutter pub get çalıştırıldıktan sonra QR kod gösterimi aktif edilecek
-          // child: QrImageView(
-          //   data: qrData,
-          //   version: QrVersions.auto,
-          //   size: 200,
-          //   backgroundColor: Colors.white,
-          // ),
         ),
         const SizedBox(height: AppSpacing.sectionMargin),
         Text('QR kodu taratın', style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
