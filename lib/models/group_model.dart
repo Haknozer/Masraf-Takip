@@ -11,6 +11,8 @@ class GroupModel {
   final String? imageUrl;
   final String inviteCode; // Davet kodu
   final DateTime inviteCodeExpiresAt; // Davet kodunun geçerlilik süresi
+  final Set<String>
+  settledUserIds; // "Kimseden alacağım yok" işaretleyen kullanıcılar
 
   GroupModel({
     required this.id,
@@ -25,7 +27,8 @@ class GroupModel {
     this.imageUrl,
     required this.inviteCode,
     required this.inviteCodeExpiresAt,
-  });
+    Set<String>? settledUserIds,
+  }) : settledUserIds = settledUserIds ?? {};
 
   // JSON'dan GroupModel oluştur
   factory GroupModel.fromJson(Map<String, dynamic> json) {
@@ -45,6 +48,7 @@ class GroupModel {
           json['inviteCodeExpiresAt'] != null
               ? DateTime.parse(json['inviteCodeExpiresAt'])
               : DateTime.now().add(const Duration(days: 7)),
+      settledUserIds: Set<String>.from(json['settledUserIds'] ?? []),
     );
   }
 
@@ -63,6 +67,7 @@ class GroupModel {
       if (imageUrl != null) 'imageUrl': imageUrl,
       'inviteCode': inviteCode,
       'inviteCodeExpiresAt': inviteCodeExpiresAt.toIso8601String(),
+      'settledUserIds': settledUserIds.toList(),
     };
   }
 
@@ -80,6 +85,7 @@ class GroupModel {
     String? imageUrl,
     String? inviteCode,
     DateTime? inviteCodeExpiresAt,
+    Set<String>? settledUserIds,
   }) {
     return GroupModel(
       id: id ?? this.id,
@@ -94,6 +100,7 @@ class GroupModel {
       imageUrl: imageUrl ?? this.imageUrl,
       inviteCode: inviteCode ?? this.inviteCode,
       inviteCodeExpiresAt: inviteCodeExpiresAt ?? this.inviteCodeExpiresAt,
+      settledUserIds: settledUserIds ?? this.settledUserIds,
     );
   }
 
@@ -105,7 +112,11 @@ class GroupModel {
     if (memberIds.contains(userId)) return this;
     final newMemberIds = [...memberIds, userId];
     final newMemberRoles = {...memberRoles, userId: role};
-    return copyWith(memberIds: newMemberIds, memberRoles: newMemberRoles, updatedAt: DateTime.now());
+    return copyWith(
+      memberIds: newMemberIds,
+      memberRoles: newMemberRoles,
+      updatedAt: DateTime.now(),
+    );
   }
 
   // Üye çıkar
@@ -113,7 +124,11 @@ class GroupModel {
     final newMemberIds = memberIds.where((id) => id != userId).toList();
     final newMemberRoles = Map<String, String>.from(memberRoles);
     newMemberRoles.remove(userId);
-    return copyWith(memberIds: newMemberIds, memberRoles: newMemberRoles, updatedAt: DateTime.now());
+    return copyWith(
+      memberIds: newMemberIds,
+      memberRoles: newMemberRoles,
+      updatedAt: DateTime.now(),
+    );
   }
 
   // Kullanıcının gruptaki rolünü al
@@ -132,11 +147,23 @@ class GroupModel {
   }
 
   // Admin sayısı
-  int get adminCount => memberRoles.values.where((role) => role == 'admin').length;
+  int get adminCount =>
+      memberRoles.values.where((role) => role == 'admin').length;
 
   // Davet kodu geçerli mi? (Artık invite code = grup ID olduğu için sadece expiry kontrolü yapılır)
   bool get isInviteCodeValid {
     // Invite code = grup ID olduğu için sadece expiry date kontrolü yeterli
-    return inviteCode.isNotEmpty && DateTime.now().isBefore(inviteCodeExpiresAt);
+    return inviteCode.isNotEmpty &&
+        DateTime.now().isBefore(inviteCodeExpiresAt);
+  }
+
+  // Kullanıcı "kimseden alacağım yok" işaretledi mi?
+  bool isUserSettled(String userId) {
+    return settledUserIds.contains(userId);
+  }
+
+  // Tüm üyeler hesaplaşmayı tamamladı mı?
+  bool get isAllMembersSettled {
+    return settledUserIds.length == memberIds.length;
   }
 }
