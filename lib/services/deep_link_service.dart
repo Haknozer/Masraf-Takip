@@ -46,11 +46,20 @@ class DeepLinkService {
             await ref.read(groupNotifierProvider.notifier).joinGroupById(groupId);
 
             if (context.mounted) {
-              ErrorSnackBar.showSuccess(context, 'Gruba başarıyla katıldınız!');
+              // ScaffoldMessenger hazır olana kadar bekle
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (context.mounted) {
+                  ErrorSnackBar.showSuccess(context, 'Gruba başarıyla katıldınız!');
+                }
+              });
             }
           } else {
             if (context.mounted) {
-              ErrorSnackBar.show(context, 'Geçersiz grup linki.');
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (context.mounted) {
+                  ErrorSnackBar.show(context, 'Geçersiz grup linki.');
+                }
+              });
             }
           }
         } else {
@@ -61,7 +70,11 @@ class DeepLinkService {
             await ref.read(groupNotifierProvider.notifier).joinGroupById(codeParam);
 
             if (context.mounted) {
-              ErrorSnackBar.showSuccess(context, 'Gruba başarıyla katıldınız!');
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (context.mounted) {
+                  ErrorSnackBar.showSuccess(context, 'Gruba başarıyla katıldınız!');
+                }
+              });
             }
           }
         }
@@ -77,7 +90,11 @@ class DeepLinkService {
           errorMessage = 'Gruba katılma hatası: ${e.toString()}';
         }
 
-        ErrorSnackBar.show(context, errorMessage);
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (context.mounted) {
+            ErrorSnackBar.show(context, errorMessage);
+          }
+        });
       }
     }
   }
