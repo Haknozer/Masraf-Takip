@@ -7,6 +7,7 @@ import '../../widgets/app_bars/group_detail_app_bar.dart';
 import '../../widgets/cards/group_header_card.dart';
 import '../../widgets/sections/quick_actions_section.dart';
 import '../../widgets/sections/recent_expenses_section.dart';
+import '../../widgets/sections/group_members_section.dart';
 import '../../widgets/common/base_page.dart';
 import '../../widgets/common/async_value_builder.dart';
 
@@ -68,6 +69,10 @@ class GroupDetailPage extends ConsumerWidget {
 
           // Quick Actions
           QuickActionsSection(group: group),
+          const SizedBox(height: AppSpacing.sectionMargin),
+
+          // Group Members
+          GroupMembersSection(group: group),
           const SizedBox(height: AppSpacing.sectionMargin),
 
           // Recent Expenses
