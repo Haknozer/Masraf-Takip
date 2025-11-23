@@ -6,6 +6,7 @@ import '../../widgets/cards/welcome_card.dart';
 import '../../widgets/app_bars/home_app_bar.dart';
 import '../../widgets/sections/groups_section_header.dart';
 import '../../widgets/sections/groups_list_section.dart';
+import '../../widgets/sections/debt_summary_section.dart';
 import '../../widgets/buttons/group_options_fab.dart';
 import '../../widgets/common/base_page.dart';
 
@@ -24,6 +25,11 @@ class HomePage extends ConsumerWidget {
           children: [
             // Hoş Geldiniz Bölümü - AppBar'ın hemen altında
             WelcomeCard(authState: authState),
+
+            const SizedBox(height: AppSpacing.sectionMargin),
+
+            // Borç Özeti Bölümü
+            const DebtSummarySection(),
 
             const SizedBox(height: AppSpacing.sectionMargin),
 
