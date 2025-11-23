@@ -95,8 +95,8 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         throw Exception('Kullanıcı dokümanı bulunamadı');
       }
 
-      // Geçici invite code (grup oluşturulduktan sonra grup ID ile değiştirilecek)
-      final tempInviteCode = 'temp';
+      // Rastgele invite code oluştur (4-5 haneli)
+      final inviteCode = _generateInviteCode();
       final inviteCodeExpiresAt = DateTime.now().add(const Duration(days: 365)); // 1 yıl geçerli
 
       final group = GroupModel(
@@ -109,22 +109,12 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         imageUrl: imageUrl,
-        inviteCode: tempInviteCode, // Geçici, sonra grup ID ile değiştirilecek
+        inviteCode: inviteCode, // Rastgele 4-5 haneli kod
         inviteCodeExpiresAt: inviteCodeExpiresAt,
       );
 
       // Grubu oluştur
       final docRef = await FirebaseService.addDocument(collection: 'groups', data: group.toJson());
-
-      // Invite code'u grup ID olarak güncelle
-      await FirebaseService.updateDocument(
-        path: 'groups/${docRef.id}',
-        data: {
-          'inviteCode': docRef.id, // Invite code = grup ID
-          'inviteCodeExpiresAt': DateTime.now().add(const Duration(days: 365)).toIso8601String(), // 1 yıl geçerli
-          'updatedAt': DateTime.now().toIso8601String(),
-        },
-      );
 
       // Kullanıcının groups array'ine ekle
       await FirebaseService.updateDocument(
@@ -163,11 +153,8 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
 
       // 2. Users koleksiyonunda katılan kullanıcının groups array'ine grup ID'sini ekle
-      final userDocSnapshot = await FirebaseService.firestore
-          .collection('users')
-          .where('id', isEqualTo: userId)
-          .limit(1)
-          .get();
+      final userDocSnapshot =
+          await FirebaseService.firestore.collection('users').where('id', isEqualTo: userId).limit(1).get();
 
       if (userDocSnapshot.docs.isNotEmpty) {
         final userDocId = userDocSnapshot.docs.first.id;
@@ -354,6 +341,23 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     return group.getUserRole(userId);
   }
 
+  // Davet kodu oluştur (4-5 haneli, büyük harf ve rakam)
+  String _generateInviteCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = DateTime.now().millisecondsSinceEpoch;
+
+    // 4 veya 5 haneli kod (rastgele)
+    final codeLength = (random % 2) + 4; // 4 veya 5
+    final code = StringBuffer();
+
+    for (int i = 0; i < codeLength; i++) {
+      final index = (random + i * 7 + i * 13) % chars.length;
+      code.write(chars[index]);
+    }
+
+    return code.toString();
+  }
+
   // Grup ID ile direkt gruba katıl (QR kod için)
   Future<void> joinGroupById(String groupId) async {
     final user = ref.read(currentUserProvider);
@@ -381,11 +385,8 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
 
       // 2. Users koleksiyonunda kullanıcının groups array'ine grup ID'sini ekle
-      final userDocSnapshot = await FirebaseService.firestore
-          .collection('users')
-          .where('id', isEqualTo: user.uid)
-          .limit(1)
-          .get();
+      final userDocSnapshot =
+          await FirebaseService.firestore.collection('users').where('id', isEqualTo: user.uid).limit(1).get();
 
       if (userDocSnapshot.docs.isNotEmpty) {
         final userDocId = userDocSnapshot.docs.first.id;
@@ -405,13 +406,67 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
     }
   }
 
-  // Davet kodu ile gruba katıl (artık invite code = grup ID)
+  // Davet kodu ile gruba katıl
   Future<void> joinGroupByInviteCode(String inviteCode) async {
-    // Invite code artık grup ID olduğu için direkt joinGroupById çağır
-    await joinGroupById(inviteCode);
+    final user = ref.read(currentUserProvider);
+
+    // Middleware: Authentication kontrolü
+    AuthMiddleware.requireAuth(user);
+
+    try {
+      // Davet koduna sahip grubu bul
+      final groupsSnapshot =
+          await FirebaseService.firestore
+              .collection('groups')
+              .where('inviteCode', isEqualTo: inviteCode.toUpperCase())
+              .limit(1)
+              .get();
+
+      if (groupsSnapshot.docs.isEmpty) {
+        throw const NotFoundException('Geçersiz davet kodu');
+      }
+
+      final groupDoc = groupsSnapshot.docs.first;
+      final groupData = groupDoc.data();
+      final group = GroupModel.fromJson({...groupData, 'id': groupDoc.id});
+
+      // Davet kodu geçerli mi?
+      if (!group.isInviteCodeValid) {
+        throw const NotFoundException('Davet kodu süresi dolmuş');
+      }
+
+      // Kullanıcı zaten üye mi?
+      if (group.isGroupMember(user!.uid)) {
+        throw const InvalidOperationException('Bu grubun zaten üyesisiniz');
+      }
+
+      // 1. Groups koleksiyonunda memberIds ve memberRoles'e ekle
+      final updatedGroup = group.addMember(user.uid, role: 'user');
+      await FirebaseService.updateDocument(path: 'groups/${group.id}', data: updatedGroup.toJson());
+
+      // 2. Users koleksiyonunda kullanıcının groups array'ine grup ID'sini ekle
+      final userDocSnapshot =
+          await FirebaseService.firestore.collection('users').where('id', isEqualTo: user.uid).limit(1).get();
+
+      if (userDocSnapshot.docs.isNotEmpty) {
+        final userDocId = userDocSnapshot.docs.first.id;
+        await FirebaseService.updateDocument(
+          path: 'users/$userDocId',
+          data: {
+            'groups': FieldValue.arrayUnion([group.id]),
+            'updatedAt': DateTime.now().toIso8601String(),
+          },
+        );
+      } else {
+        throw Exception('Kullanıcı dokümanı bulunamadı');
+      }
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+      rethrow;
+    }
   }
 
-  // Davet kodunu yenile (sadece admin) - Artık invite code = grup ID olduğu için sadece expiry date güncellenir
+  // Davet kodunu yenile (sadece admin)
   Future<void> refreshInviteCode(String groupId) async {
     final user = ref.read(currentUserProvider);
 
@@ -430,13 +485,14 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       // Middleware: Permission kontrolü (sadece admin)
       PermissionMiddleware.requireGroupAdmin(user, group);
 
-      // Invite code = grup ID olduğu için sadece expiry date güncelle
+      // Yeni rastgele invite code oluştur
+      final newInviteCode = _generateInviteCode();
       final newExpiresAt = DateTime.now().add(const Duration(days: 365)); // 1 yıl geçerli
 
       await FirebaseService.updateDocument(
         path: 'groups/$groupId',
         data: {
-          'inviteCode': groupId, // Invite code = grup ID
+          'inviteCode': newInviteCode,
           'inviteCodeExpiresAt': newExpiresAt.toIso8601String(),
           'updatedAt': DateTime.now().toIso8601String(),
         },

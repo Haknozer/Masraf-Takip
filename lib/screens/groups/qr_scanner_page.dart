@@ -5,7 +5,6 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_spacing.dart';
 import '../../constants/app_text_styles.dart';
 import '../../providers/group_provider.dart';
-import '../../utils/group_id_encoder.dart';
 import '../../widgets/common/error_snackbar.dart';
 import '../../widgets/app_bars/qr_scanner_app_bar.dart';
 
@@ -50,18 +49,18 @@ class _QRScannerPageState extends ConsumerState<QRScannerPage> {
     setState(() => _isProcessing = true);
 
     try {
-      // Şifrelenmiş grup ID'sini çöz
-      final groupId = GroupIdEncoder.decodeGroupId(scannedData);
+      // QR kod içinde invite code var (direkt kullan)
+      final inviteCode = scannedData.trim().toUpperCase();
 
-      if (groupId == null) {
+      if (inviteCode.isEmpty || inviteCode.length < 4 || inviteCode.length > 5) {
         if (mounted) {
           ErrorSnackBar.show(context, 'Geçersiz QR kod. Lütfen grup QR kodunu tarayın.');
         }
         return;
       }
 
-      // Gruba katıl
-      await ref.read(groupNotifierProvider.notifier).joinGroupById(groupId);
+      // Invite code ile gruba katıl
+      await ref.read(groupNotifierProvider.notifier).joinGroupByInviteCode(inviteCode);
 
       if (mounted) {
         ErrorSnackBar.showSuccess(context, 'Gruba başarıyla katıldınız!');

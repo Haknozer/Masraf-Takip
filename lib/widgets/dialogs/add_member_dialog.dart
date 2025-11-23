@@ -6,7 +6,6 @@ import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/group_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../utils/group_id_encoder.dart';
 import '../../widgets/common/copy_button.dart';
 import '../../widgets/common/copyable_text_field.dart';
 import '../../widgets/common/tab_button_widget.dart';
@@ -112,8 +111,8 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
   }
 
   Widget _buildQRCodeTab() {
-    // QR kod verisi: Şifrelenmiş grup ID'si
-    final qrData = GroupIdEncoder.encodeGroupId(widget.group.id);
+    // QR kod verisi: Invite code (direkt kullan, şifreleme gerekmez)
+    final qrData = widget.group.inviteCode;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -148,10 +147,9 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
   }
 
   Widget _buildLinkTab() {
-    // Web URL formatı: https://masraftakipuygulamasi.web.app/join?groupId={encodedGroupId}
+    // Web URL formatı: https://masraftakipuygulamasi.web.app/join?code={inviteCode}
     // Bu link hem web'de hem uygulamada çalışır (App Links)
-    final encodedGroupId = GroupIdEncoder.encodeGroupId(widget.group.id);
-    final webLink = 'https://masraftakipuygulamasi.web.app/join?groupId=$encodedGroupId';
+    final webLink = 'https://masraftakipuygulamasi.web.app/join?code=${widget.group.inviteCode}';
 
     return Column(
       mainAxisSize: MainAxisSize.min,
