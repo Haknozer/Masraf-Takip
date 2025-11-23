@@ -14,13 +14,21 @@ import '../../widgets/common/member_selector.dart';
 import '../../widgets/common/manual_distribution_input.dart';
 import '../../widgets/common/error_snackbar.dart';
 import '../../widgets/common/async_value_builder.dart';
+import '../../widgets/dialogs/delete_expense_dialog.dart';
+import '../../controllers/expense_controller.dart';
 import '../../utils/date_utils.dart' as DateUtils;
 
 class EditExpenseForm extends ConsumerStatefulWidget {
   final String expenseId;
   final VoidCallback onSuccess;
+  final VoidCallback? onDelete;
 
-  const EditExpenseForm({super.key, required this.expenseId, required this.onSuccess});
+  const EditExpenseForm({
+    super.key,
+    required this.expenseId,
+    required this.onSuccess,
+    this.onDelete,
+  });
 
   @override
   ConsumerState<EditExpenseForm> createState() => _EditExpenseFormState();
@@ -71,7 +79,8 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
           _selectedPayerId = expense.paidBy;
 
           // Manuel dağılım kontrolü
-          if (expense.manualAmounts != null && expense.manualAmounts!.isNotEmpty) {
+          if (expense.manualAmounts != null &&
+              expense.manualAmounts!.isNotEmpty) {
             _distributionType = DistributionType.manual;
             _manualAmounts = Map.from(expense.manualAmounts!);
           } else {
@@ -118,7 +127,8 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
       return;
     }
 
-    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+    final amount =
+        double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
     if (amount <= 0) {
       ErrorSnackBar.showWarning(context, 'Tutar 0\'dan büyük olmalıdır');
       return;
@@ -153,7 +163,10 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
       if (_distributionType == DistributionType.manual) {
         final total = _manualAmounts.values.fold(0.0, (sum, amt) => sum + amt);
         if ((total - amount).abs() > 0.01) {
-          ErrorSnackBar.showWarning(context, 'Manuel dağılım toplamı tutara eşit olmalıdır');
+          ErrorSnackBar.showWarning(
+            context,
+            'Manuel dağılım toplamı tutara eşit olmalıdır',
+          );
           return;
         }
       }
@@ -241,12 +254,15 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                     label: 'Tutar (TL)',
                     hint: '0.00',
                     prefixIcon: Icons.currency_lira,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Tutar gereklidir';
                       }
-                      final amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
+                      final amount =
+                          double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
                       if (amount <= 0) {
                         return 'Tutar 0\'dan büyük olmalıdır';
                       }
@@ -276,7 +292,9 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                   // Kategori
                   CategorySelector(
                     selectedCategoryId: _selectedCategoryId,
-                    onCategorySelected: (categoryId) => setState(() => _selectedCategoryId = categoryId),
+                    onCategorySelected:
+                        (categoryId) =>
+                            setState(() => _selectedCategoryId = categoryId),
                   ),
                   const SizedBox(height: AppSpacing.sectionMargin),
 
@@ -314,9 +332,14 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                   // Ödeme tipine göre içerik
                   if (_paymentType == PaymentType.fullPayment) ...[
                     MemberSelector(
-                      selectedMemberIds: _selectedPayerId != null ? [_selectedPayerId!] : [],
+                      selectedMemberIds:
+                          _selectedPayerId != null ? [_selectedPayerId!] : [],
                       onMembersChanged: (memberIds) {
-                        setState(() => _selectedPayerId = memberIds.isNotEmpty ? memberIds.first : null);
+                        setState(
+                          () =>
+                              _selectedPayerId =
+                                  memberIds.isNotEmpty ? memberIds.first : null,
+                        );
                       },
                       availableMemberIds: group.memberIds,
                     ),
@@ -332,7 +355,9 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                                 _manualAmounts[memberId] = 0.0;
                               }
                             }
-                            _manualAmounts.removeWhere((key, value) => !memberIds.contains(key));
+                            _manualAmounts.removeWhere(
+                              (key, value) => !memberIds.contains(key),
+                            );
                           }
                         });
                       },
@@ -348,21 +373,38 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                           if (type == DistributionType.equal) {
                             _manualAmounts.clear();
                           } else {
-                            final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
-                            final perPerson = _selectedMemberIds.isNotEmpty ? amount / _selectedMemberIds.length : 0.0;
-                            _manualAmounts = {for (final memberId in _selectedMemberIds) memberId: perPerson};
+                            final amount =
+                                double.tryParse(
+                                  _amountController.text.replaceAll(',', '.'),
+                                ) ??
+                                0.0;
+                            final perPerson =
+                                _selectedMemberIds.isNotEmpty
+                                    ? amount / _selectedMemberIds.length
+                                    : 0.0;
+                            _manualAmounts = {
+                              for (final memberId in _selectedMemberIds)
+                                memberId: perPerson,
+                            };
                           }
                         });
                       },
                     ),
                     const SizedBox(height: AppSpacing.sectionMargin),
 
-                    if (_distributionType == DistributionType.manual && _selectedMemberIds.isNotEmpty)
+                    if (_distributionType == DistributionType.manual &&
+                        _selectedMemberIds.isNotEmpty)
                       ManualDistributionInput(
                         selectedMemberIds: _selectedMemberIds,
-                        totalAmount: double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
+                        totalAmount:
+                            double.tryParse(
+                              _amountController.text.replaceAll(',', '.'),
+                            ) ??
+                            0.0,
                         memberAmounts: _manualAmounts,
-                        onAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
+                        onAmountsChanged:
+                            (amounts) =>
+                                setState(() => _manualAmounts = amounts),
                       ),
                   ],
 
@@ -371,8 +413,22 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                   // Güncelle Butonu
                   CustomButton(
                     text: 'Masrafı Güncelle',
-                    onPressed: _isLoading ? null : () => _updateExpense(expense, group),
+                    onPressed:
+                        _isLoading
+                            ? null
+                            : () => _updateExpense(expense, group),
                     isLoading: _isLoading,
+                  ),
+                  const SizedBox(height: AppSpacing.textSpacing),
+
+                  // Sil Butonu
+                  CustomButton(
+                    text: 'Masrafı Sil',
+                    onPressed:
+                        _isLoading ? null : () => _deleteExpense(expense),
+                    isLoading: false,
+                    isSecondary: true,
+                    icon: Icons.delete,
                   ),
                 ],
               ),
@@ -381,5 +437,39 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
         );
       },
     );
+  }
+
+  Future<void> _deleteExpense(ExpenseModel expense) async {
+    // Silme onay dialogu göster
+    final confirmed = await DeleteExpenseDialog.show(
+      context,
+      expenseDescription: expense.description,
+      expenseAmount: expense.amount,
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await ExpenseController.deleteExpense(ref, widget.expenseId);
+
+      if (mounted) {
+        ErrorSnackBar.showSuccess(context, 'Masraf başarıyla silindi!');
+        if (widget.onDelete != null) {
+          widget.onDelete!();
+        } else {
+          widget.onSuccess();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorSnackBar.show(context, e);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }

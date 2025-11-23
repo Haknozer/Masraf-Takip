@@ -7,10 +7,7 @@ import '../../widgets/forms/edit_expense_form.dart';
 class EditExpensePage extends ConsumerWidget {
   final String expenseId;
 
-  const EditExpensePage({
-    super.key,
-    required this.expenseId,
-  });
+  const EditExpensePage({super.key, required this.expenseId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,8 +18,10 @@ class EditExpensePage extends ConsumerWidget {
         onSuccess: () {
           Navigator.pop(context);
         },
+        onDelete: () {
+          Navigator.pop(context);
+        },
       ),
     );
   }
 }
-
