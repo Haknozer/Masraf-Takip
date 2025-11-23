@@ -5,28 +5,49 @@ import '../../constants/app_colors.dart';
 /// Hata mesajlarını işleyen ve SnackBar gösteren utility sınıfı
 class ErrorSnackBar {
   static void show(BuildContext context, Object error, {Duration? duration}) {
-    final message = _processError(error);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        duration: duration ?? const Duration(seconds: 5),
-      ),
-    );
+    try {
+      final message = _processError(error);
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger != null) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.error,
+            duration: duration ?? const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      // ScaffoldMessenger bulunamazsa sessizce devam et
+    }
   }
 
   static void showSuccess(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: AppColors.success));
+    try {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger != null) {
+        messenger.showSnackBar(SnackBar(content: Text(message), backgroundColor: AppColors.success));
+      }
+    } catch (e) {
+      // ScaffoldMessenger bulunamazsa sessizce devam et
+    }
   }
 
   static void showWarning(BuildContext context, String message, {Duration? duration}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.warning,
-        duration: duration ?? const Duration(seconds: 3),
-      ),
-    );
+    try {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger != null) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.warning,
+            duration: duration ?? const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      // ScaffoldMessenger bulunamazsa sessizce devam et
+    }
   }
 
   static String _processError(Object error) {

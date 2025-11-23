@@ -16,12 +16,16 @@ class MyApp extends ConsumerStatefulWidget {
 
 class _MyAppState extends ConsumerState<MyApp> {
   StreamSubscription<Uri?>? _deepLinkSubscription;
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
-    _handleInitialDeepLink();
-    _listenToDeepLinks();
+    // MaterialApp build edildikten sonra deep link'leri handle et
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _handleInitialDeepLink();
+      _listenToDeepLinks();
+    });
   }
 
   @override
@@ -34,10 +38,10 @@ class _MyAppState extends ConsumerState<MyApp> {
   Future<void> _handleInitialDeepLink() async {
     final uri = await DeepLinkService.getInitialLink();
     if (uri != null && mounted) {
-      // Widget tree hazır olduğunda handle et
+      // Navigator hazır olduğunda handle et
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          DeepLinkService.handleDeepLink(uri, context, ref);
+        if (mounted && _navigatorKey.currentContext != null) {
+          DeepLinkService.handleDeepLink(uri, _navigatorKey.currentContext!, ref);
         }
       });
     }
@@ -45,11 +49,11 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   /// Deep link stream'ini dinle
   void _listenToDeepLinks() {
-    // Stream'i direkt dinle (ref.listen build içinde olmalı)
+    // Stream'i direkt dinle
     final deepLinkStream = DeepLinkService.getDeepLinkStream();
     _deepLinkSubscription = deepLinkStream.listen((uri) {
-      if (uri != null && mounted) {
-        DeepLinkService.handleDeepLink(uri, context, ref);
+      if (uri != null && mounted && _navigatorKey.currentContext != null) {
+        DeepLinkService.handleDeepLink(uri, _navigatorKey.currentContext!, ref);
       }
     });
   }
@@ -59,6 +63,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     final authState = ref.watch(authNotifierProvider);
 
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'Masraf Takip Uygulaması',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary), useMaterial3: true),
       home: authState.when(
