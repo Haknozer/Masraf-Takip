@@ -134,8 +134,9 @@ class GroupModel {
   // Admin sayısı
   int get adminCount => memberRoles.values.where((role) => role == 'admin').length;
 
-  // Davet kodu geçerli mi?
+  // Davet kodu geçerli mi? (Artık invite code = grup ID olduğu için sadece expiry kontrolü yapılır)
   bool get isInviteCodeValid {
+    // Invite code = grup ID olduğu için sadece expiry date kontrolü yeterli
     return inviteCode.isNotEmpty && DateTime.now().isBefore(inviteCodeExpiresAt);
   }
 }
