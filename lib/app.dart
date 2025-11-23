@@ -17,6 +17,7 @@ class MyApp extends ConsumerStatefulWidget {
 class _MyAppState extends ConsumerState<MyApp> {
   StreamSubscription<Uri?>? _deepLinkSubscription;
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  Uri? _lastHandledUri; // Son handle edilen URI'yi sakla
 
   @override
   void initState() {
@@ -37,7 +38,8 @@ class _MyAppState extends ConsumerState<MyApp> {
   /// İlk açılışta gelen deep link'i handle et
   Future<void> _handleInitialDeepLink() async {
     final uri = await DeepLinkService.getInitialLink();
-    if (uri != null && mounted) {
+    if (uri != null && mounted && uri != _lastHandledUri) {
+      _lastHandledUri = uri;
       // Navigator hazır olduğunda handle et
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _navigatorKey.currentContext != null) {
@@ -52,7 +54,9 @@ class _MyAppState extends ConsumerState<MyApp> {
     // Stream'i direkt dinle
     final deepLinkStream = DeepLinkService.getDeepLinkStream();
     _deepLinkSubscription = deepLinkStream.listen((uri) {
-      if (uri != null && mounted && _navigatorKey.currentContext != null) {
+      // Aynı URI'yi tekrar handle etme
+      if (uri != null && uri != _lastHandledUri && mounted && _navigatorKey.currentContext != null) {
+        _lastHandledUri = uri;
         DeepLinkService.handleDeepLink(uri, _navigatorKey.currentContext!, ref);
       }
     });

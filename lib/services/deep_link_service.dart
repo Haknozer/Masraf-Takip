@@ -80,12 +80,16 @@ class DeepLinkService {
         }
       }
     } catch (e) {
+      // Kullanıcı zaten üyeyse sessizce devam et (hata gösterme)
+      if (e.toString().contains('InvalidOperationException') && e.toString().contains('Bu grubun zaten üyesisiniz')) {
+        // Kullanıcı zaten üye, sessizce devam et
+        return;
+      }
+
       if (context.mounted) {
         String errorMessage = 'Gruba katılma hatası: ';
         if (e.toString().contains('NotFoundException')) {
           errorMessage = 'Grup bulunamadı.';
-        } else if (e.toString().contains('InvalidOperationException')) {
-          errorMessage = 'Bu grubun zaten üyesisiniz.';
         } else {
           errorMessage = 'Gruba katılma hatası: ${e.toString()}';
         }
