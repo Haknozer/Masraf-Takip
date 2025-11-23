@@ -36,28 +36,30 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.sectionPadding),
-        constraints: const BoxConstraints(maxWidth: 400),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Başlık
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Üye Ekle', style: AppTextStyles.h2),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sectionMargin),
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Başlık
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Üye Ekle', style: AppTextStyles.h2),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sectionMargin),
 
-            // Tab Bar
-            _buildTabBar(),
+              // Tab Bar
+              _buildTabBar(),
 
-            const SizedBox(height: AppSpacing.sectionMargin),
+              const SizedBox(height: AppSpacing.sectionMargin),
 
-            // Tab Content
-            _buildTabContent(),
-          ],
+              // Tab Content
+              _buildTabContent(),
+            ],
+          ),
         ),
       ),
     );
@@ -114,6 +116,7 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
     final qrData = GroupIdEncoder.encodeGroupId(widget.group.id);
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // QR Kod
@@ -145,20 +148,29 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
   }
 
   Widget _buildLinkTab() {
-    final inviteCode = widget.group.inviteCode;
-    final link = 'expense_tracker://join?code=$inviteCode'; // Deep link formatı
+    // Web URL formatı: https://masraftakipuygulamasi.web.app/join?groupId={encodedGroupId}
+    // Bu link hem web'de hem uygulamada çalışır (App Links)
+    final encodedGroupId = GroupIdEncoder.encodeGroupId(widget.group.id);
+    final webLink = 'https://masraftakipuygulamasi.web.app/join?groupId=$encodedGroupId';
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.link, size: 64, color: AppColors.primary),
         const SizedBox(height: AppSpacing.sectionMargin),
         Text('Linki paylaşın', style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
+        const SizedBox(height: 8),
+        Text(
+          'Bu link hem web tarayıcısında hem uygulamada çalışır',
+          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 12),
-        // Link gösterimi
-        CopyableTextField(text: link),
-        const SizedBox(height: 12),
-        CopyButton(text: link, buttonLabel: 'Linki Kopyala', successMessage: 'Link kopyalandı!'),
+        // Web Link gösterimi
+        CopyableTextField(text: webLink),
+        const SizedBox(height: 8),
+        CopyButton(text: webLink, buttonLabel: 'Linki Kopyala', successMessage: 'Link kopyalandı!'),
       ],
     );
   }
@@ -167,6 +179,7 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
     final inviteCode = widget.group.inviteCode;
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.code, size: 64, color: AppColors.primary),
