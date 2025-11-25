@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,7 +24,6 @@ class ProfilePage extends ConsumerStatefulWidget {
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   final _nameController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   XFile? _pickedImage;
   bool _isLoading = false;
@@ -33,7 +33,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   void dispose() {
     _nameController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -49,23 +48,29 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final userAsync = ref.watch(userModelProvider);
 
     return userAsync.when(
-      loading: () => BasePage(
-        appBar: const ProfileAppBar(),
-        body: const Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, s) => BasePage(
-        appBar: const ProfileAppBar(),
-        body: Center(child: Text("Hata: $e")),
-      ),
+      loading: () => BasePage(appBar: const ProfileAppBar(), body: const Center(child: CircularProgressIndicator())),
+      error: (e, s) => BasePage(appBar: const ProfileAppBar(), body: Center(child: Text("Hata: $e"))),
       data: (user) {
-        if (user == null) {
-          return BasePage(
-            appBar: const ProfileAppBar(),
-            body: const Center(child: Text('Kullanıcı bulunamadı')),
+        final firebaseUser = ref.watch(currentUserProvider);
+        UserModel? effectiveUser = user;
+
+        if (effectiveUser == null && firebaseUser != null) {
+          effectiveUser = UserModel(
+            id: firebaseUser.uid,
+            email: firebaseUser.email ?? '',
+            displayName: firebaseUser.displayName ?? 'İsimsiz Kullanıcı',
+            photoUrl: firebaseUser.photoURL,
+            createdAt: firebaseUser.metadata.creationTime ?? DateTime.now(),
+            updatedAt: firebaseUser.metadata.lastSignInTime ?? DateTime.now(),
+            groups: [],
           );
         }
 
-        _initializeFields(user.displayName);
+        if (effectiveUser == null) {
+          return BasePage(appBar: const ProfileAppBar(), body: const Center(child: Text('Kullanıcı bulunamadı')));
+        }
+
+        _initializeFields(effectiveUser.displayName);
 
         return BasePage(
           appBar: const ProfileAppBar(),
@@ -75,7 +80,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: AppSpacing.sectionMargin),
-                _buildProfileInfoCard(user),
+                _buildProfileInfoCard(effectiveUser),
                 const SizedBox(height: AppSpacing.sectionMargin),
                 _buildAccountSettingsCard(),
                 const SizedBox(height: AppSpacing.sectionMargin),
@@ -141,32 +146,27 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           children: [
             Text('Hesap Ayarları', style: AppTextStyles.h3),
             const SizedBox(height: AppSpacing.textSpacing),
-            CustomTextField(
-              controller: _nameController,
-              label: 'Kullanıcı Adı',
-              hint: 'Kullanıcı adınızı girin',
-              prefixIcon: Icons.person,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Lütfen kullanıcı adı girin';
-                }
-                return null;
-              },
+            Text('Kullanıcı Adı', style: AppTextStyles.label),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.greyLight, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.person, color: AppColors.textSecondary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(_nameController.text, style: AppTextStyles.bodyMedium, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.sectionMargin),
-            CustomTextField(
-              controller: _passwordController,
-              label: 'Yeni Şifre',
-              hint: 'Yeni şifrenizi girin (boş bırakabilirsiniz)',
-              prefixIcon: Icons.lock,
-              obscureText: true,
-              validator: (value) {
-                if (value != null && value.isNotEmpty && value.length < 6) {
-                  return 'Şifre en az 6 karakter olmalıdır';
-                }
-                return null;
-              },
-            ),
+            CustomButton(text: 'Şifreyi Değiştir', icon: Icons.lock_reset, onPressed: _showChangePasswordDialog),
           ],
         ),
       ),
@@ -194,25 +194,195 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  Future<void> _showChangePasswordDialog() async {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool isSubmitting = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Şifre Değiştir'),
+              content: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CustomTextField(
+                          controller: currentPasswordController,
+                          label: 'Mevcut Şifre',
+                          hint: 'Mevcut şifrenizi girin',
+                          prefixIcon: Icons.lock_open,
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Mevcut şifrenizi girin';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.sectionMargin),
+                        CustomTextField(
+                          controller: newPasswordController,
+                          label: 'Yeni Şifre',
+                          hint: 'Yeni şifrenizi girin',
+                          prefixIcon: Icons.lock,
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Yeni şifrenizi girin';
+                            }
+                            if (value.length < 6) {
+                              return 'Şifre en az 6 karakter olmalıdır';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.sectionMargin),
+                        CustomTextField(
+                          controller: confirmPasswordController,
+                          label: 'Yeni Şifre (Tekrar)',
+                          hint: 'Yeni şifreyi tekrar girin',
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: true,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Yeni şifreyi tekrar girin';
+                            }
+                            if (value != newPasswordController.text) {
+                              return 'Şifreler eşleşmiyor';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
+                  child: const Text('İptal'),
+                ),
+                TextButton(
+                  onPressed:
+                      isSubmitting
+                          ? null
+                          : () async {
+                            if (!formKey.currentState!.validate()) return;
+
+                            // Loading state'i güncelle
+                            setState(() => isSubmitting = true);
+
+                            try {
+                              // Şifre değiştirme işlemini compute ile arka planda yap
+                              await _performPasswordChange(
+                                currentPassword: currentPasswordController.text.trim(),
+                                newPassword: newPasswordController.text.trim(),
+                              );
+
+                              // Dialog'u güvenli şekilde kapat
+                              if (Navigator.canPop(dialogContext)) {
+                                Navigator.pop(dialogContext);
+                              }
+
+                              // Başarı mesajını ana context'te göster
+                              if (mounted) {
+                                ErrorSnackBar.showSuccess(context, 'Şifre başarıyla güncellendi');
+                              }
+                            } catch (e) {
+                              // Detaylı hata yönetimi
+                              String errorMessage = _getPasswordChangeErrorMessage(e);
+
+                              // Hata durumunda state'i sıfırla
+                              if (mounted) {
+                                setState(() => isSubmitting = false);
+                                ErrorSnackBar.show(context, errorMessage);
+                              }
+                            }
+                          },
+                  child:
+                      isSubmitting
+                          ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
+                          )
+                          : const Text('Kaydet'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _performPasswordChange({required String currentPassword, required String newPassword}) async {
+    try {
+      await ProfileController.changePassword(ref, currentPassword: currentPassword, newPassword: newPassword);
+    } catch (e) {
+      // Hata yönetimi
+      rethrow;
+    }
+  }
+
+  String _getPasswordChangeErrorMessage(dynamic e) {
+    if (e is FirebaseAuthException) {
+      switch (e.code) {
+        case 'wrong-password':
+          return 'Mevcut şifre yanlış. Lütfen kontrol edin.';
+        case 'weak-password':
+          return 'Yeni şifre çok zayıf. Daha güçlü bir şifre seçin.';
+        case 'requires-recent-login':
+          return 'Güvenlik için tekrar giriş yapmanız gerekiyor.';
+        case 'user-mismatch':
+          return 'Kullanıcı bilgileri uyuşmuyor.';
+        case 'user-not-found':
+          return 'Kullanıcı bulunamadı.';
+        case 'invalid-email':
+          return 'Geçersiz e-posta adresi.';
+        case 'invalid-credential':
+          return 'Geçersiz kimlik bilgileri.';
+        case 'network-request-failed':
+          return 'Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edin.';
+        default:
+          return e.message ?? 'Bilinmeyen bir hata oluştu.';
+      }
+    } else if (e is Exception) {
+      return e.toString();
+    } else {
+      return 'Şifre değiştirilemedi. Lütfen tekrar deneyin.';
+    }
+  }
+
   Future<void> _handleLogout() async {
     // Onay dialogu göster
     final shouldLogout = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Çıkış Yap'),
-        content: const Text('Çıkış yapmak istediğinize emin misiniz?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Çıkış Yap'),
+            content: const Text('Çıkış yapmak istediğinize emin misiniz?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('İptal')),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                child: const Text('Çıkış Yap'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Çıkış Yap'),
-          ),
-        ],
-      ),
     );
 
     if (shouldLogout == true) {
@@ -234,19 +404,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     try {
       final displayName = _nameController.text.trim();
-      final password = _passwordController.text.trim();
 
-      await ProfileController.updateProfile(
-        ref,
-        displayName: displayName,
-        newPassword: password.isNotEmpty ? password : null,
-        imageFile: _pickedImage,
-      );
+      await ProfileController.updateProfile(ref, displayName: displayName, imageFile: _pickedImage);
 
       if (mounted) {
         ErrorSnackBar.showSuccess(context, 'Profil başarıyla güncellendi!');
-        // Şifre alanını temizle
-        _passwordController.clear();
         // Seçili resmi temizle
         setState(() => _pickedImage = null);
         // UserModel'i yeniden yükle
@@ -271,4 +433,3 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
   }
 }
-

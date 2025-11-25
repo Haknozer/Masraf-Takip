@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:image_picker/image_picker.dart';
 import '../firebase_options.dart';
 
@@ -14,6 +15,18 @@ class FirebaseService {
   /// Firebase'i başlat
   static Future<void> initialize() async {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+    // Firebase App Check'i başlat - Sadece Debug Provider
+    try {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.debug, // Debug provider kullanılacak
+        appleProvider: AppleProvider.debug,     // iOS için debug provider
+      );
+      print('✅ Firebase App Check başarıyla başlatıldı (Debug provider)');
+    } catch (e) {
+      print('⚠️ Firebase App Check başlatılamadı: $e');
+      print('ℹ️ App Check olmadan uygulama çalışmaya devam edecek');
+    }
   }
 
   /// Kullanıcı giriş durumunu kontrol et
