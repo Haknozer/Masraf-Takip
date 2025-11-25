@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'constants/app_colors.dart';
 import 'providers/auth_provider.dart';
 import 'screens/auth/login_page.dart';
-import 'screens/home/home_page.dart';
+import 'widgets/navigation/main_navigation.dart';
 import 'services/deep_link_service.dart';
 
 class MyApp extends ConsumerStatefulWidget {
@@ -73,7 +73,7 @@ class _MyAppState extends ConsumerState<MyApp> {
       home: authState.when(
         data: (user) {
           if (user != null) {
-            return const HomePage();
+            return const MainNavigation();
           } else {
             return const LoginPage();
           }
