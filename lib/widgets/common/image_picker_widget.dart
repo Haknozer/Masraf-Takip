@@ -32,10 +32,10 @@ class ImagePickerWidget extends StatelessWidget {
               height: size,
               decoration: BoxDecoration(
                 color: AppColors.greyLight,
-                borderRadius: BorderRadius.circular(16),
+                shape: BoxShape.circle,
                 border: Border.all(color: AppColors.grey, width: 2, strokeAlign: BorderSide.strokeAlignInside),
               ),
-              child: _buildImageContent(),
+              child: ClipOval(child: _buildImageContent()),
             ),
           ),
           if (selectedImage != null || currentImageUrl != null)
@@ -50,7 +50,23 @@ class ImagePickerWidget extends StatelessWidget {
                   child: const Icon(Icons.close, color: AppColors.white, size: 16),
                 ),
               ),
+          ),
+          Positioned(
+            bottom: 4,
+            right: 8,
+            child: GestureDetector(
+              onTap: onImageTap,
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.white, width: 2),
+                ),
+                child: const Icon(Icons.photo_camera, size: 16, color: AppColors.white),
+              ),
             ),
+          ),
         ],
       ),
     );
@@ -58,38 +74,30 @@ class ImagePickerWidget extends StatelessWidget {
 
   Widget _buildImageContent() {
     if (selectedImage != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Image.file(File(selectedImage!.path), fit: BoxFit.cover),
-      );
+      return Image.file(File(selectedImage!.path), fit: BoxFit.cover);
     }
 
     if (currentImageUrl != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Image.network(
-          currentImageUrl!,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.broken_image, size: 40, color: AppColors.textSecondary),
-                const SizedBox(height: 8),
-                Text('Resim Yüklenemedi', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              ],
-            );
-          },
-        ),
+      return Image.network(
+        currentImageUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.broken_image, size: 40, color: AppColors.textSecondary),
+              const SizedBox(height: 8),
+              Text('Resim Yüklenemedi', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            ],
+          );
+        },
       );
     }
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.add_photo_alternate, size: 40, color: AppColors.textSecondary),
-        const SizedBox(height: 8),
-        Text('Resim Ekle', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        Icon(Icons.person, size: 48, color: AppColors.textSecondary),
       ],
     );
   }

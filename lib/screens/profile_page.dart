@@ -12,6 +12,7 @@ import '../constants/app_spacing.dart';
 import '../constants/app_text_styles.dart';
 import '../constants/app_colors.dart';
 import '../controllers/profile_controller.dart';
+import '../models/user_model.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -27,6 +28,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   XFile? _pickedImage;
   bool _isLoading = false;
   bool _isInitialized = false;
+  bool _darkModeEnabled = false;
 
   @override
   void dispose() {
@@ -73,82 +75,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: AppSpacing.sectionMargin),
-                // Başlık
-                Text('Profil Bilgileri', style: AppTextStyles.h2, textAlign: TextAlign.center),
-                const SizedBox(height: 8),
-                Text(
-                  'Profil bilgilerinizi güncelleyebilirsiniz',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.sectionMargin * 2),
-
-                // Profil resmi seçme
-                ImagePickerWidget(
-                  selectedImage: _pickedImage,
-                  currentImageUrl: user.photoUrl,
-                  onImageTap: _pickImage,
-                  onRemoveImage: () => setState(() => _pickedImage = null),
-                  size: 120,
-                ),
-                const SizedBox(height: AppSpacing.sectionMargin * 2),
-
-                // Kullanıcı adı
-                CustomTextField(
-                  controller: _nameController,
-                  label: 'Kullanıcı Adı',
-                  hint: 'Kullanıcı adınızı girin',
-                  prefixIcon: Icons.person,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Lütfen kullanıcı adı girin';
-                    }
-                    return null;
-                  },
-                ),
+                _buildProfileInfoCard(user),
                 const SizedBox(height: AppSpacing.sectionMargin),
-
-                // Email (sadece gösterim)
-                Builder(
-                  builder: (context) {
-                    final emailController = TextEditingController(text: user.email);
-                    return CustomTextField(
-                      controller: emailController,
-                      label: 'E-posta',
-                      hint: user.email,
-                      prefixIcon: Icons.email,
-                      readOnly: true,
-                    );
-                  },
-                ),
+                _buildAccountSettingsCard(),
                 const SizedBox(height: AppSpacing.sectionMargin),
-
-                // Şifre (isteğe bağlı değiştirilebilir)
-                CustomTextField(
-                  controller: _passwordController,
-                  label: 'Yeni Şifre',
-                  hint: 'Yeni şifrenizi girin (boş bırakabilirsiniz)',
-                  prefixIcon: Icons.lock,
-                  obscureText: true,
-                  validator: (value) {
-                    if (value != null && value.isNotEmpty && value.length < 6) {
-                      return 'Şifre en az 6 karakter olmalıdır';
-                    }
-                    return null;
-                  },
-                ),
+                _buildAppearanceCard(),
                 const SizedBox(height: AppSpacing.sectionMargin * 2),
-
-                // Kaydet butonu
                 CustomButton(
                   text: 'Kaydet',
                   onPressed: _isLoading ? null : _onSave,
                   isLoading: _isLoading,
                   icon: Icons.save,
                 ),
-                const SizedBox(height: AppSpacing.sectionMargin * 2),
-
-                // Çıkış Yap butonu
+                const SizedBox(height: AppSpacing.sectionMargin),
                 CustomButton(
                   text: 'Çıkış Yap',
                   onPressed: _isLoading ? null : _handleLogout,
@@ -161,6 +100,97 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildProfileInfoCard(UserModel user) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ImagePickerWidget(
+              selectedImage: _pickedImage,
+              currentImageUrl: user.photoUrl,
+              onImageTap: _pickImage,
+              onRemoveImage: () => setState(() => _pickedImage = null),
+              size: 120,
+            ),
+            const SizedBox(height: AppSpacing.sectionMargin),
+            const SizedBox(height: AppSpacing.sectionMargin),
+            Column(
+              children: [
+                Text(user.displayName, style: AppTextStyles.h3),
+                const SizedBox(height: 4),
+                Text(user.email, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountSettingsCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Hesap Ayarları', style: AppTextStyles.h3),
+            const SizedBox(height: AppSpacing.textSpacing),
+            CustomTextField(
+              controller: _nameController,
+              label: 'Kullanıcı Adı',
+              hint: 'Kullanıcı adınızı girin',
+              prefixIcon: Icons.person,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Lütfen kullanıcı adı girin';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: AppSpacing.sectionMargin),
+            CustomTextField(
+              controller: _passwordController,
+              label: 'Yeni Şifre',
+              hint: 'Yeni şifrenizi girin (boş bırakabilirsiniz)',
+              prefixIcon: Icons.lock,
+              obscureText: true,
+              validator: (value) {
+                if (value != null && value.isNotEmpty && value.length < 6) {
+                  return 'Şifre en az 6 karakter olmalıdır';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAppearanceCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Görünüm', style: AppTextStyles.h3),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Karanlık Mod'),
+              subtitle: const Text('Yakında kullanılacak'),
+              value: _darkModeEnabled,
+              onChanged: (value) => setState(() => _darkModeEnabled = value),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -241,3 +271,4 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
   }
 }
+

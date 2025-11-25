@@ -9,7 +9,7 @@ class ProfileAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: AppColors.primary,
       foregroundColor: AppColors.white,
-      title: const Text('Profilim'),
+      title: const Text('Profil Ayarları'),
       elevation: 0,
     );
   }
