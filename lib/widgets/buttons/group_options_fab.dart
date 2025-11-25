@@ -3,6 +3,7 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../screens/groups/create_group_page.dart';
 import '../../screens/groups/group_list_page.dart';
+import '../../screens/groups/join_group_page.dart';
 import '../../screens/groups/qr_scanner_page.dart';
 
 class GroupOptionsFAB extends StatelessWidget {
@@ -57,11 +58,7 @@ class GroupOptionsFAB extends StatelessWidget {
                   title: const Text('Kod ile Katıl'),
                   onTap: () {
                     Navigator.pop(context);
-                    // JoinGroupPage'e yönlendir
-                    // Navigator.push(context, MaterialPageRoute(builder: (context) => const JoinGroupPage()));
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('Kod ile katılma özelliği yakında eklenecek')));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const JoinGroupPage()));
                   },
                 ),
               ],

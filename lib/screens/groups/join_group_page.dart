@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_spacing.dart';
 import '../../constants/app_text_styles.dart';
-import '../../providers/group_provider.dart';
+import '../../services/deep_link_service.dart';
 import '../../widgets/common/base_page.dart';
 import '../../widgets/app_bars/join_group_app_bar.dart';
 import '../../widgets/forms/custom_text_field.dart';
@@ -35,11 +35,18 @@ class _JoinGroupPageState extends ConsumerState<JoinGroupPage> {
 
     try {
       final code = _codeController.text.trim().toUpperCase();
-      await ref.read(groupNotifierProvider.notifier).joinGroupByInviteCode(code);
+      
+      // Girilen kodu URL formatına çevir ve deep link servisiyle işle
+      final joinUrl = Uri.parse('https://masraftakipuygulamasi.web.app/join?code=$code');
+      await DeepLinkService.handleDeepLink(joinUrl, context, ref);
 
       if (mounted) {
-        ErrorSnackBar.showSuccess(context, 'Gruba başarıyla katıldınız!');
-        Navigator.pop(context);
+        // Deep link servisi zaten başarı mesajını gösteriyor, sadece sayfayı kapat
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -85,16 +92,17 @@ class _JoinGroupPageState extends ConsumerState<JoinGroupPage> {
             CustomTextField(
               controller: _codeController,
               label: 'Davet Kodu',
-              hint: 'ABC123',
+              hint: 'ABC12',
               prefixIcon: Icons.code,
               textCapitalization: TextCapitalization.characters,
-              maxLength: 6,
+              maxLength: 5,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Lütfen davet kodunu girin';
                 }
-                if (value.trim().length != 6) {
-                  return 'Davet kodu 6 karakter olmalıdır';
+                final trimmedValue = value.trim();
+                if (trimmedValue.length < 4 || trimmedValue.length > 5) {
+                  return 'Davet kodu 4-5 karakter olmalıdır';
                 }
                 return null;
               },
