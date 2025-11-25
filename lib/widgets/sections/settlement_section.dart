@@ -30,6 +30,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
   final Map<String, TextEditingController> _paymentControllers = {};
   int _selectedTab = 0; // 0: Borç Ödeme, 1: Grup Kapatma
   bool _isProcessing = false;
+  String? _processingUserId;
 
   @override
   void dispose() {
@@ -54,10 +55,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
               children: [
                 Icon(Icons.account_balance_wallet, color: AppColors.primary, size: 24),
                 const SizedBox(width: 8),
-                Text(
-                  'Hesaplaşma',
-                  style: AppTextStyles.h3,
-                ),
+                Text('Hesaplaşma', style: AppTextStyles.h3),
               ],
             ),
             const SizedBox(height: AppSpacing.sectionMargin),
@@ -73,10 +71,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
             ),
             const SizedBox(height: AppSpacing.sectionMargin),
             // Tab Content
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 500),
-              child: _buildTabContent(currentUser.uid),
-            ),
+            ConstrainedBox(constraints: const BoxConstraints(maxHeight: 500), child: _buildTabContent(currentUser.uid)),
           ],
         ),
       ),
@@ -99,14 +94,10 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
 
     return debtSummaryAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Center(
-        child: Text('Hata: $e', style: AppTextStyles.bodyMedium),
-      ),
+      error: (e, s) => Center(child: Text('Hata: $e', style: AppTextStyles.bodyMedium)),
       data: (debtSummary) {
         // Bana borcu olan kişileri filtrele
-        final debtsOwedToMe = debtSummary.debts
-            .where((debt) => debt.toUserId == currentUserId)
-            .toList();
+        final debtsOwedToMe = debtSummary.debts.where((debt) => debt.toUserId == currentUserId).toList();
 
         if (debtsOwedToMe.isEmpty) {
           return Center(
@@ -121,10 +112,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Bana Borcu Olanlar',
-                style: AppTextStyles.h4,
-              ),
+              Text('Bana Borcu Olanlar', style: AppTextStyles.h4),
               const SizedBox(height: AppSpacing.textSpacing),
               ...debtsOwedToMe.map((debt) => _buildDebtPaymentCard(debt)),
             ],
@@ -135,10 +123,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
   }
 
   Widget _buildDebtPaymentCard(DebtBetweenUsers debt) {
-    final controller = _paymentControllers.putIfAbsent(
-      debt.fromUserId,
-      () => TextEditingController(),
-    );
+    final controller = _paymentControllers.putIfAbsent(debt.fromUserId, () => TextEditingController());
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.textSpacing),
@@ -158,19 +143,11 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      debt.fromUserName,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text(debt.fromUserName, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Text(
                       'Toplam Borç: ${debt.amount.toStringAsFixed(2)} ₺',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -178,35 +155,52 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
             ],
           ),
           const SizedBox(height: AppSpacing.textSpacing),
-          Row(
-            children: [
-              Expanded(
-                child: CustomTextField(
-                  controller: controller,
-                  label: 'Ödeme Miktarı (₺)',
-                  hint: '0.00',
-                  prefixIcon: Icons.currency_lira,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return null;
-                    final amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
-                    if (amount < 0) return 'Miktar negatif olamaz';
-                    if (amount > debt.amount) return 'Miktar borçtan fazla olamaz';
-                    return null;
-                  },
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: CustomTextField(
+                    controller: controller,
+                    label: 'Ödeme Miktarı (₺)',
+                    hint: '0.00',
+                    prefixIcon: Icons.currency_lira,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return null;
+                      final amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
+                      if (amount < 0) return 'Miktar negatif olamaz';
+                      if (amount > debt.amount) return 'Miktar borçtan fazla olamaz';
+                      return null;
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              CustomButton(
-                text: 'Kaydet',
-                onPressed: _isProcessing
-                    ? null
-                    : () => _recordPayment(debt.fromUserId, controller.text, debt.amount),
-                isLoading: false,
-                height: 48,
-                width: 100,
-              ),
-            ],
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 120,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: controller,
+                        builder: (context, value, _) {
+                          final hasInput = value.text.trim().isNotEmpty;
+                          final isLoading = _isProcessing && _processingUserId == debt.fromUserId;
+                          final canSave = hasInput && !isLoading;
+                          return CustomButton(
+                            text: 'Kaydet',
+                            onPressed:
+                                canSave ? () => _recordPayment(debt.fromUserId, controller.text, debt.amount) : null,
+                            isLoading: isLoading,
+                            height: 56,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -227,10 +221,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Grup Üyeleri',
-                style: AppTextStyles.h4,
-              ),
+              Text('Grup Üyeleri', style: AppTextStyles.h4),
               const SizedBox(height: AppSpacing.textSpacing),
               Text(
                 'Her üye sadece kendi ismini işaretleyebilir',
@@ -278,25 +269,23 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
       decoration: BoxDecoration(
         color: isSettled ? AppColors.success.withOpacity(0.1) : AppColors.greyLight,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isSettled ? AppColors.success : AppColors.greyLight,
-          width: 1,
-        ),
+        border: Border.all(color: isSettled ? AppColors.success : AppColors.greyLight, width: 1),
       ),
       child: Row(
         children: [
           Checkbox(
             value: isSettled,
-            onChanged: _isProcessing
-                ? null
-                : isCurrentUser
+            onChanged:
+                _isProcessing
+                    ? null
+                    : isCurrentUser
                     ? (value) {
-                        if (value == true) {
-                          _markAsSettled();
-                        } else {
-                          _unmarkAsSettled();
-                        }
+                      if (value == true) {
+                        _markAsSettled();
+                      } else {
+                        _unmarkAsSettled();
                       }
+                    }
                     : null, // Sadece kendi ismini işaretleyebilir
             activeColor: AppColors.success,
           ),
@@ -315,20 +304,13 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       'Kimseden alacağım borç yok',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.success,
-                      ),
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.success),
                     ),
                   ),
               ],
             ),
           ),
-          if (!isCurrentUser && !isSettled)
-            Icon(
-              Icons.lock_outline,
-              size: 18,
-              color: AppColors.textSecondary,
-            ),
+          if (!isCurrentUser && !isSettled) Icon(Icons.lock_outline, size: 18, color: AppColors.textSecondary),
         ],
       ),
     );
@@ -355,16 +337,13 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
       return;
     }
 
-    setState(() => _isProcessing = true);
+    setState(() {
+      _isProcessing = true;
+      _processingUserId = fromUserId;
+    });
 
     try {
-      await SettlementController.recordPayment(
-        ref,
-        widget.group.id,
-        fromUserId,
-        amount,
-        null,
-      );
+      await SettlementController.recordPayment(ref, widget.group.id, fromUserId, amount, null);
 
       if (mounted) {
         ErrorSnackBar.showSuccess(context, 'Ödeme kaydedildi');
@@ -378,7 +357,10 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isProcessing = false);
+        setState(() {
+          _isProcessing = false;
+          _processingUserId = null;
+        });
       }
     }
   }

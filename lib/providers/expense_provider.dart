@@ -148,6 +148,7 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
     required String paidBy,
     Map<String, double>? manualAmounts,
     String? imageUrl,
+    bool imageUpdated = false,
   }) async {
     final user = ref.read(currentUserProvider);
 
@@ -200,7 +201,7 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
         updateData['manualAmounts'] = null;
       }
 
-      if (imageUrl != null) {
+      if (imageUpdated) {
         updateData['imageUrl'] = imageUrl;
       }
 

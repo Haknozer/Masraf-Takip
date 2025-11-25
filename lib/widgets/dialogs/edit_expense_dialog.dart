@@ -184,7 +184,7 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
               return const Center(child: Text('Masraf bulunamadı'));
             }
 
-            final groupState = ref.watch(groupProvider(expense.groupId));
+        final groupState = ref.watch(groupProvider(expense.groupId));
             return groupState.when(
               data: (group) {
                 if (group == null) {
@@ -192,28 +192,7 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                 }
 
                 // Sadece masrafı ekleyen kişi düzenleyebilir
-                if (currentUser == null || expense.paidBy != currentUser.uid) {
-                  return Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.lock, size: 64, color: AppColors.textSecondary),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Bu masrafı sadece masrafı ekleyen kişi düzenleyebilir',
-                          style: AppTextStyles.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 24),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Kapat'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                final canEdit = currentUser != null && expense.paidBy == currentUser.uid;
 
                 if (!_isInitialized) {
                   _initializeForm(expense, group);
@@ -254,111 +233,148 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                             ],
                           ),
                         ),
+                        if (!canEdit)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'Bu masrafı sadece masrafı ekleyen kişi düzenleyebilir. Bilgileri görüntüleyebilirsiniz.',
+                              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                            ),
+                          ),
+
                         // Content
                         Expanded(
-                          child: SingleChildScrollView(
-                            controller: scrollController,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Tutar
-                                CustomTextField(
-                                  controller: _amountController,
-                                  label: 'Tutar (₺)',
-                                  hint: '0.00',
-                                  prefixIcon: Icons.currency_lira,
-                                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Tutar gereklidir';
-                                    }
-                                    final amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
-                                    if (amount <= 0) {
-                                      return 'Tutar 0\'dan büyük olmalıdır';
-                                    }
-                                    return null;
-                                  },
-                                  textInputAction: TextInputAction.next,
-                                ),
-                                const SizedBox(height: AppSpacing.textSpacing * 2),
-
-                                // Açıklama
-                                CustomTextField(
-                                  controller: _descriptionController,
-                                  label: 'Açıklama',
-                                  hint: 'Masraf açıklaması',
-                                  prefixIcon: Icons.description,
-                                  maxLines: 3,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Açıklama gereklidir';
-                                    }
-                                    return null;
-                                  },
-                                  textInputAction: TextInputAction.next,
-                                ),
-                                const SizedBox(height: AppSpacing.textSpacing * 2),
-
-                                // Kategori
-                                CategorySelector(
-                                  selectedCategoryId: _selectedCategoryId,
-                                  onCategorySelected: (categoryId) => setState(() => _selectedCategoryId = categoryId),
-                                ),
-                                const SizedBox(height: AppSpacing.sectionMargin),
-
-                                // Harcamaya dahil edilecek kişiler
-                                MemberSelector(
-                                  selectedMemberIds: _selectedMemberIds,
-                                  onMembersChanged: (memberIds) {
-                                    setState(() {
-                                      _selectedMemberIds = memberIds;
-                                      if (_distributionType == DistributionType.manual) {
-                                        // Manuel dağılım için yeni üyeler için 0.00 ekle (otomatik bölme yok)
-                                        for (final memberId in memberIds) {
-                                          if (!_manualAmounts.containsKey(memberId)) {
-                                            _manualAmounts[memberId] = 0.0;
-                                          }
+                          child: IgnorePointer(
+                            ignoring: !canEdit,
+                            child: Opacity(
+                              opacity: canEdit ? 1 : 0.65,
+                              child: SingleChildScrollView(
+                                controller: scrollController,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    // Tutar
+                                    CustomTextField(
+                                      controller: _amountController,
+                                      label: 'Tutar (₺)',
+                                      hint: '0.00',
+                                      prefixIcon: Icons.currency_lira,
+                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Tutar gereklidir';
                                         }
-                                        // Çıkarılan üyeleri temizle
-                                        _manualAmounts.removeWhere((key, value) => !memberIds.contains(key));
-                                      }
-                                    });
-                                  },
-                                  availableMemberIds: group.memberIds,
+                                        final amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
+                                        if (amount <= 0) {
+                                          return 'Tutar 0\'dan büyük olmalıdır';
+                                        }
+                                        return null;
+                                      },
+                                      readOnly: !canEdit,
+                                      textInputAction: TextInputAction.next,
+                                    ),
+                                    const SizedBox(height: AppSpacing.textSpacing * 2),
+
+                                    // Açıklama
+                                    CustomTextField(
+                                      controller: _descriptionController,
+                                      label: 'Açıklama',
+                                      hint: 'Masraf açıklaması',
+                                      prefixIcon: Icons.description,
+                                      maxLines: 3,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Açıklama gereklidir';
+                                        }
+                                        return null;
+                                      },
+                                      readOnly: !canEdit,
+                                      textInputAction: TextInputAction.next,
+                                    ),
+                                    const SizedBox(height: AppSpacing.textSpacing * 2),
+
+                                    if (expense.imageUrl != null && expense.imageUrl!.isNotEmpty) ...[
+                                      _buildExistingImagePreview(expense.imageUrl!),
+                                      const SizedBox(height: AppSpacing.textSpacing * 2),
+                                    ],
+
+                                    // Kategori
+                                    IgnorePointer(
+                                      ignoring: !canEdit,
+                                      child: CategorySelector(
+                                        selectedCategoryId: _selectedCategoryId,
+                                        onCategorySelected: (categoryId) =>
+                                            setState(() => _selectedCategoryId = categoryId),
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.sectionMargin),
+
+                                    // Harcamaya dahil edilecek kişiler
+                                    IgnorePointer(
+                                      ignoring: !canEdit,
+                                      child: MemberSelector(
+                                        selectedMemberIds: _selectedMemberIds,
+                                        onMembersChanged: (memberIds) {
+                                          setState(() {
+                                            _selectedMemberIds = memberIds;
+                                            if (_distributionType == DistributionType.manual) {
+                                              // Manuel dağılım için yeni üyeler için 0.00 ekle (otomatik bölme yok)
+                                              for (final memberId in memberIds) {
+                                                if (!_manualAmounts.containsKey(memberId)) {
+                                                  _manualAmounts[memberId] = 0.0;
+                                                }
+                                              }
+                                              // Çıkarılan üyeleri temizle
+                                              _manualAmounts.removeWhere((key, value) => !memberIds.contains(key));
+                                            }
+                                          });
+                                        },
+                                        availableMemberIds: group.memberIds,
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.sectionMargin),
+
+                                    // Dağıtım Tipi
+                                    IgnorePointer(
+                                      ignoring: !canEdit,
+                                      child: DistributionTypeSelector(
+                                        selectedType: _distributionType,
+                                        onTypeSelected: (type) {
+                                          setState(() {
+                                            _distributionType = type;
+                                            if (type == DistributionType.equal) {
+                                              _manualAmounts.clear();
+                                            } else {
+                                              // Manuel dağılım için başlangıç değerleri - kullanıcı kendisi belirleyecek
+                                              _manualAmounts = {
+                                                for (final memberId in _selectedMemberIds)
+                                                  memberId: _manualAmounts[memberId] ?? 0.0
+                                              };
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.sectionMargin),
+
+                                    // Manuel dağılım input'u
+                                    if (_distributionType == DistributionType.manual && _selectedMemberIds.isNotEmpty)
+                                      IgnorePointer(
+                                        ignoring: !canEdit,
+                                        child: ManualDistributionInput(
+                                          selectedMemberIds: _selectedMemberIds,
+                                          totalAmount:
+                                              double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
+                                          memberAmounts: _manualAmounts,
+                                          onAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
+                                        ),
+                                      ),
+
+                                    const SizedBox(height: AppSpacing.sectionMargin),
+                                  ],
                                 ),
-                                const SizedBox(height: AppSpacing.sectionMargin),
-
-                                // Dağıtım Tipi
-                                DistributionTypeSelector(
-                                  selectedType: _distributionType,
-                                  onTypeSelected: (type) {
-                                    setState(() {
-                                      _distributionType = type;
-                                      if (type == DistributionType.equal) {
-                                        _manualAmounts.clear();
-                                      } else {
-                                        // Manuel dağılım için başlangıç değerleri - kullanıcı kendisi belirleyecek
-                                        _manualAmounts = {
-                                          for (final memberId in _selectedMemberIds) memberId: _manualAmounts[memberId] ?? 0.0
-                                        };
-                                      }
-                                    });
-                                  },
-                                ),
-                                const SizedBox(height: AppSpacing.sectionMargin),
-
-                                // Manuel dağılım input'u
-                                if (_distributionType == DistributionType.manual && _selectedMemberIds.isNotEmpty)
-                                  ManualDistributionInput(
-                                    selectedMemberIds: _selectedMemberIds,
-                                    totalAmount: double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
-                                    memberAmounts: _manualAmounts,
-                                    onAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
-                                  ),
-
-                                const SizedBox(height: AppSpacing.sectionMargin),
-                              ],
+                              ),
                             ),
                           ),
                         ),
@@ -377,7 +393,7 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                           ),
                           child: CustomButton(
                             text: 'Masrafı Güncelle',
-                            onPressed: _isLoading ? null : () => _updateExpense(expense, group),
+                            onPressed: (!canEdit || _isLoading) ? null : () => _updateExpense(expense, group),
                             isLoading: _isLoading,
                           ),
                         ),
@@ -392,6 +408,44 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
           },
           loadingBuilder: (context) => const Center(child: CircularProgressIndicator()),
           errorBuilder: (context, error, stack) => Center(child: Text('Hata: $error')),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExistingImagePreview(String url) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Fiş / Fotoğraf', style: AppTextStyles.label),
+        const SizedBox(height: AppSpacing.textSpacing),
+        GestureDetector(
+          onTap: () => _showImagePreview(url),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              url,
+              height: 180,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showImagePreview(String url) {
+    showDialog(
+      context: context,
+      builder: (context) => GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Container(
+          color: Colors.black.withOpacity(0.8),
+          alignment: Alignment.center,
+          child: InteractiveViewer(
+            child: Image.network(url),
+          ),
         ),
       ),
     );

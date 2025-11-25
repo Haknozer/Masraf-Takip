@@ -1,20 +1,26 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../../constants/app_spacing.dart';
+import '../../constants/app_text_styles.dart';
 import '../../models/expense_model.dart';
 import '../../models/group_model.dart';
-import '../../providers/expense_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/expense_provider.dart';
 import '../../providers/group_provider.dart';
-import '../../widgets/forms/custom_text_field.dart';
-import '../../widgets/forms/custom_button.dart';
-import '../../widgets/common/category_selector.dart';
-import '../../widgets/common/payment_type_selector.dart';
-import '../../widgets/common/member_selector.dart';
-import '../../widgets/common/manual_distribution_input.dart';
-import '../../widgets/common/error_snackbar.dart';
+import '../../services/firebase_service.dart';
 import '../../widgets/common/async_value_builder.dart';
+import '../../widgets/common/category_selector.dart';
+import '../../widgets/common/error_snackbar.dart';
+import '../../widgets/common/manual_distribution_input.dart';
+import '../../widgets/common/member_selector.dart';
+import '../../widgets/common/payment_type_selector.dart';
 import '../../widgets/dialogs/delete_expense_dialog.dart';
+import '../../widgets/forms/custom_button.dart';
+import '../../widgets/forms/custom_text_field.dart';
 import '../../controllers/expense_controller.dart';
 import '../../utils/date_utils.dart' as DateUtils;
 
@@ -49,6 +55,8 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
   Map<String, double> _manualAmounts = {};
   bool _isLoading = false;
   bool _isInitialized = false;
+  XFile? _receiptImage;
+  String? _existingImageUrl;
 
   @override
   void dispose() {
@@ -69,6 +77,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
         _selectedDate = expense.date;
         _dateController.text = DateUtils.AppDateUtils.formatDate(expense.date);
         _selectedMemberIds = List.from(expense.sharedBy);
+        _existingImageUrl = expense.imageUrl;
 
         // Ödeme tipini belirle
         if (expense.sharedBy.length == 1) {
@@ -106,6 +115,40 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
         _dateController.text = DateUtils.AppDateUtils.formatDate(picked);
       });
     }
+  }
+
+  Future<void> _pickReceiptImage() async {
+    final picker = ImagePicker();
+    final result = await picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+    if (result != null) {
+      setState(() {
+        _receiptImage = result;
+        _existingImageUrl = null;
+      });
+    }
+  }
+
+  void _removeReceiptImage() {
+    setState(() {
+      _receiptImage = null;
+      _existingImageUrl = null;
+    });
+  }
+
+  void _showImagePreview(ImageProvider provider) {
+    showDialog(
+      context: context,
+      builder: (context) => GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Container(
+          color: Colors.black.withOpacity(0.8),
+          alignment: Alignment.center,
+          child: InteractiveViewer(
+            child: Image(image: provider),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _updateExpense(ExpenseModel expense, GroupModel group) async {
@@ -177,6 +220,15 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
     setState(() => _isLoading = true);
 
     try {
+      String? imageUrl = _existingImageUrl;
+      if (_receiptImage != null) {
+        final fileName = '${expense.groupId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        imageUrl = await FirebaseService.uploadFile(
+          path: 'expense_receipts/$fileName',
+          file: _receiptImage!,
+        );
+      }
+
       // Manuel dağılım varsa manualAmounts'ı gönder
       Map<String, double>? manualAmounts;
       if (_paymentType == PaymentType.sharedPayment &&
@@ -204,6 +256,8 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
             sharedBy: sharedBy,
             paidBy: paidBy,
             manualAmounts: manualAmounts,
+            imageUrl: imageUrl,
+            imageUpdated: true,
           );
 
       if (mounted) {
@@ -287,6 +341,9 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                     },
                     textInputAction: TextInputAction.next,
                   ),
+                  const SizedBox(height: AppSpacing.textSpacing * 2),
+
+                  _buildReceiptSection(Theme.of(context).colorScheme),
                   const SizedBox(height: AppSpacing.textSpacing * 2),
 
                   // Kategori
@@ -471,5 +528,105 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Widget _buildReceiptSection(ColorScheme colorScheme) {
+    final hasLocal = _receiptImage != null;
+    final hasRemote = _existingImageUrl != null && _existingImageUrl!.isNotEmpty;
+
+    if (!hasLocal && !hasRemote) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Fiş / Fotoğraf (Opsiyonel)', style: AppTextStyles.label),
+          const SizedBox(height: AppSpacing.textSpacing),
+          OutlinedButton.icon(
+            onPressed: _pickReceiptImage,
+            icon: const Icon(Icons.photo_camera),
+            label: const Text('Fotoğraf Ekle'),
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          ),
+        ],
+      );
+    }
+
+    Widget buildPreview(Widget child) {
+      return Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: child,
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: CircleAvatar(
+              backgroundColor: colorScheme.surface,
+              child: IconButton(
+                icon: const Icon(Icons.close),
+                color: colorScheme.error,
+                onPressed: _removeReceiptImage,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Fiş / Fotoğraf', style: AppTextStyles.label),
+        const SizedBox(height: AppSpacing.textSpacing),
+        if (hasLocal)
+          buildPreview(
+            GestureDetector(
+              onTap: () => _showImagePreview(Image.file(File(_receiptImage!.path)).image),
+              child: Image.file(
+                File(_receiptImage!.path),
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          )
+        else if (hasRemote)
+          buildPreview(
+            GestureDetector(
+              onTap: () => _showImagePreview(NetworkImage(_existingImageUrl!)),
+              child: Image.network(
+                _existingImageUrl!,
+                height: 180,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: CustomButton(
+                text: hasLocal ? 'Fotoğrafı Değiştir' : 'Yeni Fotoğraf Seç',
+                icon: Icons.photo_library,
+                onPressed: _pickReceiptImage,
+                height: 48,
+              ),
+            ),
+            if (hasLocal || hasRemote) ...[
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _removeReceiptImage,
+                  icon: const Icon(Icons.delete_forever),
+                  label: const Text('Kaldır'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
   }
 }
