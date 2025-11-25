@@ -344,12 +344,16 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
               icon: Icon(
                 Icons.filter_list,
                 size: 18,
-                color: _filter.isActive ? AppColors.primary : AppColors.textSecondary,
+                color: _filter.isActive 
+                    ? AppColors.primary 
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               label: Text(
                 'Filtrele',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: _filter.isActive ? AppColors.primary : AppColors.textSecondary,
+                  color: _filter.isActive 
+                      ? AppColors.primary 
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               style: OutlinedButton.styleFrom(
@@ -682,7 +686,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               decoration: InputDecoration(
                                 hintText: 'Min',
                                 filled: true,
-                                fillColor: AppColors.greyLight,
+                                fillColor: Theme.of(context).colorScheme.surfaceVariant,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide.none,
@@ -699,7 +703,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               decoration: InputDecoration(
                                 hintText: 'Max',
                                 filled: true,
-                                fillColor: AppColors.greyLight,
+                                fillColor: Theme.of(context).colorScheme.surfaceVariant,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide.none,
@@ -722,19 +726,25 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: AppColors.greyLight,
+                                  color: Theme.of(context).colorScheme.surfaceVariant,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.calendar_today, size: 18, color: AppColors.textSecondary),
+                                    Icon(
+                                      Icons.calendar_today, 
+                                      size: 18, 
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant
+                                    ),
                                     const SizedBox(width: 12),
                                     Text(
                                       _tempStartDate != null
                                           ? DateUtils.AppDateUtils.formatDate(_tempStartDate!)
                                           : 'Başlangıç',
                                       style: AppTextStyles.bodyMedium.copyWith(
-                                        color: _tempStartDate != null ? AppColors.textPrimary : AppColors.textHint,
+                                        color: _tempStartDate != null 
+                                            ? Theme.of(context).colorScheme.onSurface 
+                                            : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
                                       ),
                                     ),
                                   ],
@@ -749,17 +759,23 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: AppColors.greyLight,
+                                  color: Theme.of(context).colorScheme.surfaceVariant,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.calendar_today, size: 18, color: AppColors.textSecondary),
+                                    Icon(
+                                      Icons.calendar_today, 
+                                      size: 18, 
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant
+                                    ),
                                     const SizedBox(width: 12),
                                     Text(
                                       _tempEndDate != null ? DateUtils.AppDateUtils.formatDate(_tempEndDate!) : 'Bitiş',
                                       style: AppTextStyles.bodyMedium.copyWith(
-                                        color: _tempEndDate != null ? AppColors.textPrimary : AppColors.textHint,
+                                        color: _tempEndDate != null 
+                                            ? Theme.of(context).colorScheme.onSurface 
+                                            : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
                                       ),
                                     ),
                                   ],
@@ -851,21 +867,36 @@ class _CategoryChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? chipColor.withOpacity(0.15) : AppColors.greyLight,
+          color: isSelected 
+              ? chipColor.withOpacity(0.15) 
+              : Theme.of(context).colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? chipColor : AppColors.greyLight, width: isSelected ? 2 : 1),
+          border: Border.all(
+            color: isSelected 
+                ? chipColor 
+                : Theme.of(context).colorScheme.surfaceVariant, 
+            width: isSelected ? 2 : 1
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 18, color: isSelected ? chipColor : AppColors.textSecondary),
+              Icon(
+                icon, 
+                size: 18, 
+                color: isSelected 
+                    ? chipColor 
+                    : Theme.of(context).colorScheme.onSurfaceVariant
+              ),
               const SizedBox(width: 8),
             ],
             Text(
               label,
               style: AppTextStyles.bodySmall.copyWith(
-                color: isSelected ? chipColor : AppColors.textSecondary,
+                color: isSelected 
+                    ? chipColor 
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

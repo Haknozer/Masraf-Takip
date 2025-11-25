@@ -38,4 +38,51 @@ class AppColors {
   static const Color textPrimary = Color(0xFF212121);
   static const Color textSecondary = Color(0xFF757575);
   static const Color textHint = Color(0xFFBDBDBD);
+
+  // Dark Mode Colors
+  static const Color darkBackground = Color(0xFF121212);
+  static const Color darkSurface = Color(0xFF1E1E1E);
+  static const Color darkCardBackground = Color(0xFF1E1E1E);
+  static const Color darkTextPrimary = Color(0xFFE0E0E0);
+  static const Color darkTextSecondary = Color(0xFFB0B0B0);
+  static const Color darkTextHint = Color(0xFF808080);
+  static const Color darkGreyLight = Color(0xFF2C2C2C);
+}
+
+/// Extension to get theme-aware colors from context
+extension AppColorsExtension on BuildContext {
+  Color get backgroundColor {
+    final brightness = Theme.of(this).brightness;
+    return brightness == Brightness.dark ? AppColors.darkBackground : AppColors.background;
+  }
+
+  Color get surfaceColor {
+    final brightness = Theme.of(this).brightness;
+    return brightness == Brightness.dark ? AppColors.darkSurface : AppColors.surface;
+  }
+
+  Color get cardBackgroundColor {
+    final brightness = Theme.of(this).brightness;
+    return brightness == Brightness.dark ? AppColors.darkCardBackground : AppColors.cardBackground;
+  }
+
+  Color get textPrimaryColor {
+    final brightness = Theme.of(this).brightness;
+    return brightness == Brightness.dark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+  }
+
+  Color get textSecondaryColor {
+    final brightness = Theme.of(this).brightness;
+    return brightness == Brightness.dark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+  }
+
+  Color get textHintColor {
+    final brightness = Theme.of(this).brightness;
+    return brightness == Brightness.dark ? AppColors.darkTextHint : AppColors.textHint;
+  }
+
+  Color get greyLightColor {
+    final brightness = Theme.of(this).brightness;
+    return brightness == Brightness.dark ? AppColors.darkGreyLight : AppColors.greyLight;
+  }
 }

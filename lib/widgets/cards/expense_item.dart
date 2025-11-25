@@ -63,7 +63,7 @@ class ExpenseItem extends StatelessWidget {
           children: [
             Text(
               DateUtils.AppDateUtils.formatDate(expense.date),
-              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 4),
             Wrap(
@@ -73,12 +73,12 @@ class ExpenseItem extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.person, size: 14, color: AppColors.textSecondary),
+                    Icon(Icons.person, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         '$paidByName tarafından ödendi',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                        style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
@@ -88,12 +88,12 @@ class ExpenseItem extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.people, size: 14, color: AppColors.textSecondary),
+                    Icon(Icons.people, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         '$participantCount kişi dahil',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                        style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -112,7 +112,7 @@ class ExpenseItem extends StatelessWidget {
             ),
             if (showEditIcon && onTap != null) ...[
               const SizedBox(width: 8),
-              Icon(Icons.edit, size: 18, color: AppColors.textSecondary),
+              Icon(Icons.edit, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ],
             if (showDeleteIcon && onDelete != null && currentUserId != null && expense.paidBy == currentUserId) ...[
               const SizedBox(width: 8),

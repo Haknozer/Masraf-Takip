@@ -79,6 +79,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -104,7 +105,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const SizedBox(height: 8),
                 Text(
                   'Davet kodunu girin',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sectionMargin),
                 // Kod girişi
@@ -145,6 +148,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -204,6 +208,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -292,7 +297,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     onPressed: () => _showGroupOptionsDialog(context, ref),
                     icon: Icons.add,
                     height: 40,
-                    backgroundColor: AppColors.white,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
                   ),
                 ],
               ),

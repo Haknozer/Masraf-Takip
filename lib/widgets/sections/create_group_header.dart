@@ -16,7 +16,9 @@ class CreateGroupHeader extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Arkadaşlarınızla masrafları paylaşın',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 48),

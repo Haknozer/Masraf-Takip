@@ -37,6 +37,7 @@ class PaymentTypeSelector extends StatelessWidget {
           children: [
             Expanded(
               child: _buildTypeButton(
+                context: context,
                 title: 'Tamamını Ödeyen',
                 icon: Icons.person,
                 type: PaymentType.fullPayment,
@@ -46,6 +47,7 @@ class PaymentTypeSelector extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildTypeButton(
+                context: context,
                 title: 'Paylaşımlı',
                 icon: Icons.people,
                 type: PaymentType.sharedPayment,
@@ -59,20 +61,26 @@ class PaymentTypeSelector extends StatelessWidget {
   }
 
   Widget _buildTypeButton({
+    required BuildContext context,
     required String title,
     required IconData icon,
     required PaymentType type,
     required bool isSelected,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => onTypeSelected(type),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.greyLight,
+          color: isSelected 
+              ? AppColors.primary.withOpacity(0.1) 
+              : colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.greyLight,
+            color: isSelected 
+                ? AppColors.primary 
+                : colorScheme.surfaceVariant,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -80,14 +88,18 @@ class PaymentTypeSelector extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              color: isSelected 
+                  ? AppColors.primary 
+                  : colorScheme.onSurfaceVariant,
               size: 32,
             ),
             const SizedBox(height: 8),
             Text(
               title,
               style: AppTextStyles.bodySmall.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected 
+                    ? AppColors.primary 
+                    : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
               textAlign: TextAlign.center,
@@ -121,6 +133,7 @@ class DistributionTypeSelector extends StatelessWidget {
           children: [
             Expanded(
               child: _buildTypeButton(
+                context: context,
                 title: 'Eşit Dağılım',
                 icon: Icons.equalizer,
                 type: DistributionType.equal,
@@ -130,6 +143,7 @@ class DistributionTypeSelector extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _buildTypeButton(
+                context: context,
                 title: 'Manuel Dağılım',
                 icon: Icons.edit,
                 type: DistributionType.manual,
@@ -143,20 +157,26 @@ class DistributionTypeSelector extends StatelessWidget {
   }
 
   Widget _buildTypeButton({
+    required BuildContext context,
     required String title,
     required IconData icon,
     required DistributionType type,
     required bool isSelected,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () => onTypeSelected(type),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.greyLight,
+          color: isSelected 
+              ? AppColors.primary.withOpacity(0.1) 
+              : colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.greyLight,
+            color: isSelected 
+                ? AppColors.primary 
+                : colorScheme.surfaceVariant,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -165,14 +185,18 @@ class DistributionTypeSelector extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              color: isSelected 
+                  ? AppColors.primary 
+                  : colorScheme.onSurfaceVariant,
               size: 20,
             ),
             const SizedBox(width: 8),
             Text(
               title,
               style: AppTextStyles.bodySmall.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected 
+                    ? AppColors.primary 
+                    : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

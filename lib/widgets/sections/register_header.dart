@@ -16,7 +16,9 @@ class RegisterHeader extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Masraf takip uygulamasına katılmak için hesap oluşturun',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 48),

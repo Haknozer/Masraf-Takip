@@ -56,7 +56,7 @@ class DeleteExpenseDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.greyLight,
+              color: Theme.of(context).colorScheme.surfaceVariant,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -83,7 +83,7 @@ class DeleteExpenseDialog extends StatelessWidget {
           Text(
             'Bu işlem geri alınamaz.',
             style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -93,7 +93,9 @@ class DeleteExpenseDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, false),
           child: Text(
             'İptal',
-            style: AppTextStyles.buttonMedium.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.buttonMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant
+            ),
           ),
         ),
         ElevatedButton(

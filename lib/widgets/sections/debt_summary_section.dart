@@ -70,7 +70,7 @@ class DebtSummarySection extends ConsumerWidget {
                                 Text(
                                   'Henüz borç/alacak yok',
                                   style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.textSecondary,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   ),
                                 ),
                             ],
@@ -104,7 +104,7 @@ class DebtSummarySection extends ConsumerWidget {
                           height: 50,
                           margin: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
-                            color: AppColors.greyLight,
+                            color: Theme.of(context).colorScheme.surfaceVariant,
                             borderRadius: BorderRadius.circular(0.5),
                           ),
                         ),
@@ -123,12 +123,12 @@ class DebtSummarySection extends ConsumerWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: summary.netAmount == 0
-                            ? AppColors.greyLight
+                            ? Theme.of(context).colorScheme.surfaceVariant
                             : (summary.netAmount > 0 ? AppColors.success : AppColors.error).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: summary.netAmount == 0
-                              ? AppColors.greyLight
+                              ? Theme.of(context).colorScheme.surfaceVariant
                               : (summary.netAmount > 0 ? AppColors.success : AppColors.error).withOpacity(0.3),
                           width: 1.5,
                         ),
@@ -145,7 +145,7 @@ class DebtSummarySection extends ConsumerWidget {
                                         ? Icons.trending_up
                                         : Icons.trending_down,
                                 color: summary.netAmount == 0
-                                    ? AppColors.textSecondary
+                                    ? Theme.of(context).colorScheme.onSurfaceVariant
                                     : summary.netAmount > 0
                                         ? AppColors.success
                                         : AppColors.error,
@@ -156,7 +156,9 @@ class DebtSummarySection extends ConsumerWidget {
                                 'Net Durum',
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  color: summary.netAmount == 0 ? AppColors.textSecondary : AppColors.textPrimary,
+                                  color: summary.netAmount == 0 
+                                      ? Theme.of(context).colorScheme.onSurfaceVariant 
+                                      : Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                             ],
@@ -167,7 +169,7 @@ class DebtSummarySection extends ConsumerWidget {
                                 : '${summary.netAmount > 0 ? '+' : ''}${summary.netAmount.toStringAsFixed(2)} ₺',
                             style: AppTextStyles.h4.copyWith(
                               color: summary.netAmount == 0
-                                  ? AppColors.textSecondary
+                                  ? Theme.of(context).colorScheme.onSurfaceVariant
                                   : summary.netAmount > 0
                                       ? AppColors.success
                                       : AppColors.error,
@@ -308,7 +310,7 @@ class _DebtSummaryItem extends StatelessWidget {
               Text(
                 label,
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),

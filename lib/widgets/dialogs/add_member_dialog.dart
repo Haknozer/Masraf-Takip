@@ -32,6 +32,7 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
     }
 
     return Dialog(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.sectionPadding),

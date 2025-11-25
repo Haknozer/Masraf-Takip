@@ -30,21 +30,28 @@ class CategoryFilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? chipColor.withOpacity(0.15) : AppColors.greyLight,
+          color: isSelected ? chipColor.withOpacity(0.15) : Theme.of(context).colorScheme.surfaceVariant,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? chipColor : AppColors.greyLight, width: isSelected ? 2 : 1),
+          border: Border.all(
+            color: isSelected ? chipColor : Theme.of(context).colorScheme.surfaceVariant, 
+            width: isSelected ? 2 : 1
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 18, color: isSelected ? chipColor : AppColors.textSecondary),
+              Icon(
+                icon, 
+                size: 18, 
+                color: isSelected ? chipColor : Theme.of(context).colorScheme.onSurfaceVariant
+              ),
               const SizedBox(width: 8),
             ],
             Text(
               label,
               style: AppTextStyles.bodySmall.copyWith(
-                color: isSelected ? chipColor : AppColors.textSecondary,
+                color: isSelected ? chipColor : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

@@ -103,7 +103,9 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
           return Center(
             child: Text(
               'Bana borcu olan kimse yok',
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant
+              ),
             ),
           );
         }
@@ -129,7 +131,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
       margin: const EdgeInsets.only(bottom: AppSpacing.textSpacing),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.greyLight,
+        color: Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.primary.withOpacity(0.3)),
       ),
@@ -225,7 +227,9 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
               const SizedBox(height: AppSpacing.textSpacing),
               Text(
                 'Her üye sadece kendi ismini işaretleyebilir',
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant
+                ),
               ),
               const SizedBox(height: AppSpacing.sectionMargin),
               ...members.map((member) => _buildMemberSettlementCard(member, currentUserId)),
@@ -267,9 +271,16 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isSettled ? AppColors.success.withOpacity(0.1) : AppColors.greyLight,
+        color: isSettled 
+            ? AppColors.success.withOpacity(0.1) 
+            : Theme.of(context).colorScheme.surfaceVariant,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isSettled ? AppColors.success : AppColors.greyLight, width: 1),
+        border: Border.all(
+          color: isSettled 
+              ? AppColors.success 
+              : Theme.of(context).colorScheme.surfaceVariant, 
+          width: 1
+        ),
       ),
       child: Row(
         children: [
@@ -310,7 +321,12 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
               ],
             ),
           ),
-          if (!isCurrentUser && !isSettled) Icon(Icons.lock_outline, size: 18, color: AppColors.textSecondary),
+          if (!isCurrentUser && !isSettled) 
+            Icon(
+              Icons.lock_outline, 
+              size: 18, 
+              color: Theme.of(context).colorScheme.onSurfaceVariant
+            ),
         ],
       ),
     );
