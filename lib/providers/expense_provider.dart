@@ -9,22 +9,27 @@ import '../utils/expense_utils.dart';
 import 'auth_provider.dart';
 
 // Group Expenses Provider
-final groupExpensesProvider = StreamProvider.family<List<ExpenseModel>, String>((ref, groupId) {
-  return FirebaseService.listenToCollection('expenses').map(
-    (snapshot) =>
-        snapshot.docs
-            .where((doc) {
-              final data = doc.data() as Map<String, dynamic>;
-              return data['groupId'] == groupId;
-            })
-            .map((doc) => ExpenseUtils.fromDocumentSnapshot(doc))
-            .whereType<ExpenseModel>()
-            .toList(),
-  );
-});
+final groupExpensesProvider = StreamProvider.family<List<ExpenseModel>, String>(
+  (ref, groupId) {
+    return FirebaseService.listenToCollection('expenses').map(
+      (snapshot) =>
+          snapshot.docs
+              .where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return data['groupId'] == groupId;
+              })
+              .map((doc) => ExpenseUtils.fromDocumentSnapshot(doc))
+              .whereType<ExpenseModel>()
+              .toList(),
+    );
+  },
+);
 
 // Single Expense Provider
-final expenseProvider = StreamProvider.family<ExpenseModel?, String>((ref, expenseId) {
+final expenseProvider = StreamProvider.family<ExpenseModel?, String>((
+  ref,
+  expenseId,
+) {
   // ExpenseId validasyonu
   final sanitizedId = ExpenseUtils.sanitizeExpenseId(expenseId);
   if (sanitizedId == null) {
@@ -34,13 +39,12 @@ final expenseProvider = StreamProvider.family<ExpenseModel?, String>((ref, expen
   final path = 'expenses/$sanitizedId';
 
   try {
-    return FirebaseService.listenToDocument(path).map((doc) => ExpenseUtils.fromDocumentSnapshot(doc)).handleError((
-      error,
-      stackTrace,
-    ) {
-      // Hata durumunda Stream'i durdurma
-      // StreamProvider otomatik olarak AsyncValue.error'a çevirecek
-    });
+    return FirebaseService.listenToDocument(path)
+        .map((doc) => ExpenseUtils.fromDocumentSnapshot(doc))
+        .handleError((error, stackTrace) {
+          // Hata durumunda Stream'i durdurma
+          // StreamProvider otomatik olarak AsyncValue.error'a çevirecek
+        });
   } catch (e) {
     // Path oluşturulurken hata oluşursa null döndür
     return Stream.value(null);
@@ -87,12 +91,24 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
 
     try {
       // Grup bilgisini al
-      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+      final groupDoc = await FirebaseService.getDocumentSnapshot(
+        'groups/$groupId',
+      );
       if (!groupDoc.exists) {
         throw const NotFoundException('Grup bulunamadı');
       }
 
-      final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+      final group = GroupModel.fromJson({
+        'id': groupDoc.id,
+        ...groupDoc.data() as Map<String, dynamic>,
+      });
+
+      // Grup kapalı kontrolü
+      if (!group.isActive) {
+        throw const InvalidOperationException(
+          'Grup kapalı. Yeni masraf eklenemez.',
+        );
+      }
 
       // Middleware: Permission kontrolü
       PermissionMiddleware.requireCanAddExpense(user, group);
@@ -112,7 +128,10 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
         updatedAt: DateTime.now(),
       );
 
-      await FirebaseService.addDocument(collection: 'expenses', data: expense.toJson());
+      await FirebaseService.addDocument(
+        collection: 'expenses',
+        data: expense.toJson(),
+      );
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
     }
@@ -137,7 +156,9 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
 
     try {
       // Masraf bilgisini al
-      final expenseDoc = await FirebaseService.getDocumentSnapshot('expenses/$expenseId');
+      final expenseDoc = await FirebaseService.getDocumentSnapshot(
+        'expenses/$expenseId',
+      );
       if (!expenseDoc.exists) {
         throw const NotFoundException('Masraf bulunamadı');
       }
@@ -148,12 +169,17 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
       }
 
       // Grup bilgisini al
-      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/${expense.groupId}');
+      final groupDoc = await FirebaseService.getDocumentSnapshot(
+        'groups/${expense.groupId}',
+      );
       if (!groupDoc.exists) {
         throw const NotFoundException('Grup bulunamadı');
       }
 
-      final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+      final group = GroupModel.fromJson({
+        'id': groupDoc.id,
+        ...groupDoc.data() as Map<String, dynamic>,
+      });
 
       // Middleware: Permission kontrolü
       PermissionMiddleware.requireCanEditExpense(user, group, expense);
@@ -178,7 +204,10 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
         updateData['imageUrl'] = imageUrl;
       }
 
-      await FirebaseService.updateDocument(path: 'expenses/$expenseId', data: updateData);
+      await FirebaseService.updateDocument(
+        path: 'expenses/$expenseId',
+        data: updateData,
+      );
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
     }
@@ -193,7 +222,9 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
 
     try {
       // Masraf bilgisini al
-      final expenseDoc = await FirebaseService.getDocumentSnapshot('expenses/$expenseId');
+      final expenseDoc = await FirebaseService.getDocumentSnapshot(
+        'expenses/$expenseId',
+      );
       if (!expenseDoc.exists) {
         throw const NotFoundException('Masraf bulunamadı');
       }
@@ -204,12 +235,17 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
       }
 
       // Grup bilgisini al
-      final groupDoc = await FirebaseService.getDocumentSnapshot('groups/${expense.groupId}');
+      final groupDoc = await FirebaseService.getDocumentSnapshot(
+        'groups/${expense.groupId}',
+      );
       if (!groupDoc.exists) {
         throw const NotFoundException('Grup bulunamadı');
       }
 
-      final group = GroupModel.fromJson({'id': groupDoc.id, ...groupDoc.data() as Map<String, dynamic>});
+      final group = GroupModel.fromJson({
+        'id': groupDoc.id,
+        ...groupDoc.data() as Map<String, dynamic>,
+      });
 
       // Middleware: Permission kontrolü
       PermissionMiddleware.requireCanDeleteExpense(user, group, expense);
@@ -223,16 +259,27 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
   // Kategoriye göre masrafları filtrele
   List<ExpenseModel> getExpensesByCategory(String category) {
     return state.when(
-      data: (expenses) => expenses.where((e) => e.category == category).toList(),
+      data:
+          (expenses) => expenses.where((e) => e.category == category).toList(),
       loading: () => [],
       error: (_, __) => [],
     );
   }
 
   // Tarihe göre masrafları filtrele
-  List<ExpenseModel> getExpensesByDateRange(DateTime startDate, DateTime endDate) {
+  List<ExpenseModel> getExpensesByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
     return state.when(
-      data: (expenses) => expenses.where((e) => e.date.isAfter(startDate) && e.date.isBefore(endDate)).toList(),
+      data:
+          (expenses) =>
+              expenses
+                  .where(
+                    (e) =>
+                        e.date.isAfter(startDate) && e.date.isBefore(endDate),
+                  )
+                  .toList(),
       loading: () => [],
       error: (_, __) => [],
     );
@@ -241,7 +288,9 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
   // Toplam masraf hesapla
   double getTotalExpenses() {
     return state.when(
-      data: (expenses) => expenses.fold(0.0, (sum, expense) => sum + expense.amount),
+      data:
+          (expenses) =>
+              expenses.fold(0.0, (sum, expense) => sum + expense.amount),
       loading: () => 0.0,
       error: (_, __) => 0.0,
     );
@@ -266,6 +315,9 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
 }
 
 // Expense Notifier Provider
-final expenseNotifierProvider = StateNotifierProvider<ExpenseNotifier, AsyncValue<List<ExpenseModel>>>((ref) {
-  return ExpenseNotifier(ref);
-});
+final expenseNotifierProvider =
+    StateNotifierProvider<ExpenseNotifier, AsyncValue<List<ExpenseModel>>>((
+      ref,
+    ) {
+      return ExpenseNotifier(ref);
+    });

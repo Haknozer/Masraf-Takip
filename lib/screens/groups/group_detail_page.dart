@@ -8,6 +8,7 @@ import '../../widgets/cards/group_header_card.dart';
 import '../../widgets/sections/quick_actions_section.dart';
 import '../../widgets/sections/recent_expenses_section.dart';
 import '../../widgets/sections/group_members_section.dart';
+import '../../widgets/sections/settlement_section.dart';
 import '../../widgets/common/base_page.dart';
 import '../../widgets/common/async_value_builder.dart';
 
@@ -18,7 +19,9 @@ class GroupDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print('GroupDetailPage build - GroupId: $groupId, isEmpty: ${groupId.isEmpty}');
+    print(
+      'GroupDetailPage build - GroupId: $groupId, isEmpty: ${groupId.isEmpty}',
+    );
     if (groupId.isEmpty) {
       print('UYARI: GroupDetailPage\'e boş groupId geçirildi!');
     }
@@ -73,6 +76,10 @@ class GroupDetailPage extends ConsumerWidget {
 
           // Group Members
           GroupMembersSection(group: group),
+          const SizedBox(height: AppSpacing.sectionMargin),
+
+          // Settlement Section
+          SettlementSection(group: group),
           const SizedBox(height: AppSpacing.sectionMargin),
 
           // Recent Expenses

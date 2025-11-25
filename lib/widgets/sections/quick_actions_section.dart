@@ -24,10 +24,29 @@ class QuickActionsSection extends ConsumerWidget {
             Expanded(
               child: ActionCard(
                 icon: Icons.add,
-                title: 'Masraf Ekle',
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => CreateExpensePage(group: group)));
-                },
+                title: group.isActive ? 'Masraf Ekle' : 'Grup Kapalı',
+                onTap:
+                    group.isActive
+                        ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => CreateExpensePage(group: group),
+                            ),
+                          );
+                        }
+                        : () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Grup kapalı. Yeni masraf eklenemez.',
+                              ),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        },
+                isDisabled: !group.isActive,
               ),
             ),
             const SizedBox(width: 12),
@@ -41,11 +60,18 @@ class QuickActionsSection extends ConsumerWidget {
 
                   // Sadece admin görebilir
                   if (isAdmin) {
-                    showDialog(context: context, builder: (context) => AddMemberDialog(group: group));
+                    showDialog(
+                      context: context,
+                      builder: (context) => AddMemberDialog(group: group),
+                    );
                   } else {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('Sadece grup yöneticileri üye ekleyebilir')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Sadece grup yöneticileri üye ekleyebilir',
+                        ),
+                      ),
+                    );
                   }
                 },
               ),
