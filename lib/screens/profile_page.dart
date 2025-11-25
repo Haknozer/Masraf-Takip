@@ -146,12 +146,48 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   isLoading: _isLoading,
                   icon: Icons.save,
                 ),
+                const SizedBox(height: AppSpacing.sectionMargin * 2),
+
+                // Çıkış Yap butonu
+                CustomButton(
+                  text: 'Çıkış Yap',
+                  onPressed: _isLoading ? null : _handleLogout,
+                  isLoading: false,
+                  icon: Icons.logout,
+                  backgroundColor: AppColors.error,
+                ),
               ],
             ),
           ),
         );
       },
     );
+  }
+
+  Future<void> _handleLogout() async {
+    // Onay dialogu göster
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Çıkış Yap'),
+        content: const Text('Çıkış yapmak istediğinize emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('İptal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Çıkış Yap'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      await ref.read(authNotifierProvider.notifier).signOut();
+    }
   }
 
   Future<void> _pickImage() async {

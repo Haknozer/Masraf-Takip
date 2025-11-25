@@ -10,6 +10,7 @@ class CustomButton extends StatelessWidget {
   final IconData? icon;
   final double? width;
   final double height;
+  final Color? backgroundColor;
 
   const CustomButton({
     super.key,
@@ -20,6 +21,7 @@ class CustomButton extends StatelessWidget {
     this.icon,
     this.width,
     this.height = 56,
+    this.backgroundColor,
   });
 
   @override
@@ -30,11 +32,15 @@ class CustomButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSecondary ? AppColors.secondary : AppColors.primary,
+          backgroundColor:
+              backgroundColor ??
+              (isSecondary ? AppColors.secondary : AppColors.primary),
           foregroundColor: AppColors.white,
           elevation: 2,
-          shadowColor: AppColors.primary.withOpacity(0.3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shadowColor: (backgroundColor ?? AppColors.primary).withOpacity(0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           disabledBackgroundColor: AppColors.greyLight,
           disabledForegroundColor: AppColors.textHint,
         ),
@@ -45,14 +51,24 @@ class CustomButton extends StatelessWidget {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(isSecondary ? AppColors.white : AppColors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isSecondary ? AppColors.white : AppColors.white,
+                    ),
                   ),
                 )
                 : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (icon != null) ...[Icon(icon, size: 20), const SizedBox(width: 8)],
-                    Text(text, style: AppTextStyles.buttonLarge.copyWith(color: AppColors.white)),
+                    if (icon != null) ...[
+                      Icon(icon, size: 20),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      text,
+                      style: AppTextStyles.buttonLarge.copyWith(
+                        color: AppColors.white,
+                      ),
+                    ),
                   ],
                 ),
       ),
