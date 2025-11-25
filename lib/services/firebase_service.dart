@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,18 +15,26 @@ class FirebaseService {
 
   /// Firebase'i başlat
   static Future<void> initialize() async {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
     // Firebase App Check'i başlat - Sadece Debug Provider
+    // Not: Bu opsiyonel bir özellik, hata olsa bile uygulama çalışmaya devam eder
     try {
       await FirebaseAppCheck.instance.activate(
         androidProvider: AndroidProvider.debug, // Debug provider kullanılacak
-        appleProvider: AppleProvider.debug,     // iOS için debug provider
+        appleProvider: AppleProvider.debug, // iOS için debug provider
       );
-      print('✅ Firebase App Check başarıyla başlatıldı (Debug provider)');
+      if (kDebugMode) {
+        print('✅ Firebase App Check başarıyla başlatıldı (Debug provider)');
+      }
     } catch (e) {
-      print('⚠️ Firebase App Check başlatılamadı: $e');
-      print('ℹ️ App Check olmadan uygulama çalışmaya devam edecek');
+      // App Check hatası uygulamanın çalışmasını engellemez
+      // Sadece debug modda log göster
+      if (kDebugMode) {
+        print('⚠️ Firebase App Check başlatılamadı (opsiyonel): $e');
+      }
     }
   }
 
@@ -36,8 +45,14 @@ class FirebaseService {
   static User? get currentUser => auth.currentUser;
 
   /// Kullanıcı giriş yap
-  static Future<UserCredential> signInWithEmailAndPassword({required String email, required String password}) async {
-    return await auth.signInWithEmailAndPassword(email: email, password: password);
+  static Future<UserCredential> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    return await auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
   }
 
   /// Kullanıcı kayıt ol
@@ -45,7 +60,10 @@ class FirebaseService {
     required String email,
     required String password,
   }) async {
-    return await auth.createUserWithEmailAndPassword(email: email, password: password);
+    return await auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
   }
 
   /// Kullanıcı çıkış yap
@@ -69,17 +87,26 @@ class FirebaseService {
   }
 
   /// Firestore'da veri ekle (otomatik ID)
-  static Future<DocumentReference> addDocument({required String collection, required Map<String, dynamic> data}) async {
+  static Future<DocumentReference> addDocument({
+    required String collection,
+    required Map<String, dynamic> data,
+  }) async {
     return await firestore.collection(collection).add(data);
   }
 
   /// Firestore'da veri ekle/güncelle (belirli ID ile)
-  static Future<void> setDocument({required String path, required Map<String, dynamic> data}) async {
+  static Future<void> setDocument({
+    required String path,
+    required Map<String, dynamic> data,
+  }) async {
     await firestore.doc(path).set(data);
   }
 
   /// Firestore'da veri güncelle
-  static Future<void> updateDocument({required String path, required Map<String, dynamic> data}) async {
+  static Future<void> updateDocument({
+    required String path,
+    required Map<String, dynamic> data,
+  }) async {
     await firestore.doc(path).update(data);
   }
 
@@ -104,7 +131,10 @@ class FirebaseService {
   }
 
   /// Firebase Storage'a dosya yükle (XFile ile)
-  static Future<String> uploadFile({required String path, required XFile file}) async {
+  static Future<String> uploadFile({
+    required String path,
+    required XFile file,
+  }) async {
     final ref = storage.ref().child(path);
     final fileToUpload = File(file.path);
     await ref.putFile(fileToUpload);
