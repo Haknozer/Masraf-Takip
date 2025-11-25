@@ -8,8 +8,11 @@ import '../../models/user_model.dart';
 import '../../controllers/group_members_controller.dart';
 import '../../controllers/remove_member_controller.dart';
 import '../../widgets/dialogs/remove_member_dialog.dart';
+import '../../widgets/dialogs/transfer_admin_dialog.dart';
 import '../../widgets/common/error_snackbar.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/group_provider.dart';
+import '../../services/firebase_service.dart';
 
 /// Grup üyeleri listesi section'ı
 class GroupMembersSection extends ConsumerStatefulWidget {
@@ -203,6 +206,17 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
               ],
             ),
           ),
+          // Admin yetkisi devret butonu (sadece admin ve kendisi değilse)
+          if (isCurrentUserAdmin && !isCurrentUser && !isAdmin)
+            IconButton(
+              icon: Icon(
+                Icons.more_vert,
+                color: colorScheme.primary,
+                size: 20,
+              ),
+              onPressed: _isRemoving ? null : () => _giveAdminRole(member),
+              tooltip: 'Admin Yetkisi Ver',
+            ),
           // Çıkarma butonu
           if (canRemove)
             IconButton(
@@ -254,6 +268,26 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
 
       setState(() => _isRemoving = true);
 
+      // Eğer admin ayrılıyorsa ve başka admin yoksa, yetki devri yapılacak
+      final isLeavingAdmin = GroupMembersController.isAdmin(widget.group, member.id);
+      final remainingMembers = widget.group.memberIds.where((id) => id != member.id).toList();
+      final hasOtherAdmin = remainingMembers.any((id) => GroupMembersController.isAdmin(widget.group, id));
+      String? newAdminName;
+
+      if (isLeavingAdmin && !hasOtherAdmin && remainingMembers.isNotEmpty) {
+        // Yeni admin'in adını al
+        try {
+          final newAdminId = remainingMembers.first;
+          final newAdminDoc = await FirebaseService.getDocumentSnapshot('users/$newAdminId');
+          if (newAdminDoc.exists) {
+            final newAdminData = newAdminDoc.data() as Map<String, dynamic>;
+            newAdminName = newAdminData['displayName'] as String?;
+          }
+        } catch (e) {
+          // Hata durumunda devam et
+        }
+      }
+
       // Üyeyi çıkar
       await RemoveMemberController.removeMemberFromGroup(
         ref,
@@ -267,7 +301,14 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
           // Ana sayfaya dön
           Navigator.pop(context);
         } else {
-          ErrorSnackBar.showSuccess(context, '${member.displayName} gruptan çıkarıldı');
+          if (isLeavingAdmin && newAdminName != null) {
+            ErrorSnackBar.showSuccess(
+              context,
+              '${member.displayName} gruptan çıkarıldı. Admin yetkisi $newAdminName\'e devredildi.',
+            );
+          } else {
+            ErrorSnackBar.showSuccess(context, '${member.displayName} gruptan çıkarıldı');
+          }
           // Üye listesini yenile
           _loadMembers();
         }
@@ -278,6 +319,47 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
           context,
           isCurrentUser ? 'Gruptan ayrılamadınız: $e' : 'Üye çıkarılamadı: $e',
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isRemoving = false);
+      }
+    }
+  }
+
+  Future<void> _giveAdminRole(UserModel member) async {
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) return;
+
+    // Onay dialogu göster
+    final confirmed = await TransferAdminDialog.show(
+      context,
+      member: member,
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isRemoving = true);
+
+    try {
+      // Üyeye admin yetkisi ver (kendi adminliğimiz korunur)
+      await ref.read(groupNotifierProvider.notifier).updateUserRole(
+            widget.group.id,
+            member.id,
+            'admin',
+          );
+
+      if (mounted) {
+        ErrorSnackBar.showSuccess(
+          context,
+          '${member.displayName}\'e admin yetkisi verildi',
+        );
+        // Üye listesini yenile
+        _loadMembers();
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorSnackBar.show(context, 'Admin yetkisi verilemedi: $e');
       }
     } finally {
       if (mounted) {
