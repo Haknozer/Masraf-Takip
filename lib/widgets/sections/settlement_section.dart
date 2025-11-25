@@ -14,6 +14,7 @@ import '../../providers/group_provider.dart';
 import '../../widgets/common/error_snackbar.dart';
 import '../../widgets/forms/custom_text_field.dart';
 import '../../widgets/forms/custom_button.dart';
+import '../../widgets/common/segment_control.dart';
 
 /// Hesaplaşma section'ı
 class SettlementSection extends ConsumerStatefulWidget {
@@ -27,6 +28,7 @@ class SettlementSection extends ConsumerStatefulWidget {
 
 class _SettlementSectionState extends ConsumerState<SettlementSection> {
   final Map<String, TextEditingController> _paymentControllers = {};
+  int _selectedTab = 0; // 0: Borç Ödeme, 1: Grup Kapatma
   bool _isProcessing = false;
 
   @override
@@ -41,8 +43,6 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
     if (currentUser == null) return const SizedBox.shrink();
-
-    final debtSummaryAsync = ref.watch(groupDebtSummaryProvider(widget.group.id));
 
     return Card(
       child: Padding(
@@ -61,48 +61,76 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
               ],
             ),
             const SizedBox(height: AppSpacing.sectionMargin),
-            debtSummaryAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Text('Hata: $e', style: AppTextStyles.bodyMedium),
-              data: (debtSummary) {
-                // Bana borcu olan kişileri filtrele
-                final debtsOwedToMe = debtSummary.debts
-                    .where((debt) => debt.toUserId == currentUser.uid)
-                    .toList();
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Borçlar bölümü
-                    if (debtsOwedToMe.isNotEmpty) ...[
-                      Text(
-                        'Bana Borcu Olanlar',
-                        style: AppTextStyles.h4,
-                      ),
-                      const SizedBox(height: AppSpacing.textSpacing),
-                      ...debtsOwedToMe.map((debt) => _buildDebtPaymentCard(debt)),
-                      const SizedBox(height: AppSpacing.sectionMargin),
-                    ] else ...[
-                      Text(
-                        'Bana borcu olan kimse yok',
-                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-                      ),
-                      const SizedBox(height: AppSpacing.sectionMargin),
-                    ],
-
-                    // "Kimseden alacağım yok" bölümü
-                    _buildSettlementCheckbox(),
-                    const SizedBox(height: AppSpacing.sectionMargin),
-
-                    // Diğer üyelerin durumu
-                    _buildOtherMembersStatus(),
-                  ],
-                );
+            // Tab Control
+            SegmentControl(
+              segments: const ['Borç Ödeme', 'Grup Kapatma'],
+              selectedIndex: _selectedTab,
+              onSegmentChanged: (index) {
+                setState(() {
+                  _selectedTab = index;
+                });
               },
+            ),
+            const SizedBox(height: AppSpacing.sectionMargin),
+            // Tab Content
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 500),
+              child: _buildTabContent(currentUser.uid),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTabContent(String currentUserId) {
+    switch (_selectedTab) {
+      case 0: // Borç Ödeme
+        return _buildDebtPaymentTab(currentUserId);
+      case 1: // Grup Kapatma
+        return _buildGroupClosureTab(currentUserId);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildDebtPaymentTab(String currentUserId) {
+    final debtSummaryAsync = ref.watch(groupDebtSummaryProvider(widget.group.id));
+
+    return debtSummaryAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, s) => Center(
+        child: Text('Hata: $e', style: AppTextStyles.bodyMedium),
+      ),
+      data: (debtSummary) {
+        // Bana borcu olan kişileri filtrele
+        final debtsOwedToMe = debtSummary.debts
+            .where((debt) => debt.toUserId == currentUserId)
+            .toList();
+
+        if (debtsOwedToMe.isEmpty) {
+          return Center(
+            child: Text(
+              'Bana borcu olan kimse yok',
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+            ),
+          );
+        }
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Bana Borcu Olanlar',
+                style: AppTextStyles.h4,
+              ),
+              const SizedBox(height: AppSpacing.textSpacing),
+              ...debtsOwedToMe.map((debt) => _buildDebtPaymentCard(debt)),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -185,13 +213,67 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
     );
   }
 
-  Widget _buildSettlementCheckbox() {
-    final currentUser = ref.read(currentUserProvider);
-    if (currentUser == null) return const SizedBox.shrink();
+  Widget _buildGroupClosureTab(String currentUserId) {
+    return FutureBuilder<List<UserModel>>(
+      future: _getGroupMembers(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    final isSettled = widget.group.isUserSettled(currentUser.uid);
+        final members = snapshot.data!;
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Grup Üyeleri',
+                style: AppTextStyles.h4,
+              ),
+              const SizedBox(height: AppSpacing.textSpacing),
+              Text(
+                'Her üye sadece kendi ismini işaretleyebilir',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.sectionMargin),
+              ...members.map((member) => _buildMemberSettlementCard(member, currentUserId)),
+              if (widget.group.isAllMembersSettled) ...[
+                const SizedBox(height: AppSpacing.sectionMargin),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.warning),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info, color: AppColors.warning),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Tüm üyeler hesaplaşmayı tamamladı. Grup kapatıldı ve yeni masraf eklenemez.',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMemberSettlementCard(UserModel member, String currentUserId) {
+    final isSettled = widget.group.isUserSettled(member.id);
+    final isCurrentUser = currentUserId == member.id;
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isSettled ? AppColors.success.withOpacity(0.1) : AppColors.greyLight,
@@ -207,13 +289,15 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
             value: isSettled,
             onChanged: _isProcessing
                 ? null
-                : (value) {
-                    if (value == true) {
-                      _markAsSettled();
-                    } else {
-                      _unmarkAsSettled();
-                    }
-                  },
+                : isCurrentUser
+                    ? (value) {
+                        if (value == true) {
+                          _markAsSettled();
+                        } else {
+                          _unmarkAsSettled();
+                        }
+                      }
+                    : null, // Sadece kendi ismini işaretleyebilir
             activeColor: AppColors.success,
           ),
           Expanded(
@@ -221,109 +305,32 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Kimseden alacağım borç yok',
+                  member.displayName + (isCurrentUser ? ' (Sen)' : ''),
                   style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: isCurrentUser ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
                 if (isSettled)
-                  Text(
-                    'İşaretlendi',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.success,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Kimseden alacağım borç yok',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.success,
+                      ),
                     ),
                   ),
               ],
             ),
           ),
+          if (!isCurrentUser && !isSettled)
+            Icon(
+              Icons.lock_outline,
+              size: 18,
+              color: AppColors.textSecondary,
+            ),
         ],
       ),
-    );
-  }
-
-  Widget _buildOtherMembersStatus() {
-    return FutureBuilder<List<UserModel>>(
-      future: _getGroupMembers(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
-
-        final members = snapshot.data!;
-        final currentUser = ref.read(currentUserProvider);
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Üyelerin Durumu',
-              style: AppTextStyles.h4,
-            ),
-            const SizedBox(height: AppSpacing.textSpacing),
-            ...members.map((member) {
-              final isSettled = widget.group.isUserSettled(member.id);
-              final isCurrentUser = currentUser?.uid == member.id;
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isSettled ? AppColors.success.withOpacity(0.1) : AppColors.greyLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isSettled ? Icons.check_circle : Icons.radio_button_unchecked,
-                      color: isSettled ? AppColors.success : AppColors.textSecondary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        member.displayName + (isCurrentUser ? ' (Sen)' : ''),
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontWeight: isCurrentUser ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                    if (isSettled)
-                      Text(
-                        'İşaretlendi',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.success,
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            }),
-            if (widget.group.isAllMembersSettled) ...[
-              const SizedBox(height: AppSpacing.textSpacing),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.warning),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info, color: AppColors.warning),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Tüm üyeler hesaplaşmayı tamamladı. Grup kapatıldı ve yeni masraf eklenemez.',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        );
-      },
     );
   }
 
@@ -420,4 +427,3 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
     }
   }
 }
-

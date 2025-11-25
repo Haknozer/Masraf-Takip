@@ -28,7 +28,7 @@ class GroupDetailPage extends ConsumerStatefulWidget {
 
 class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
   int _currentIndex = 0; // Bottom navigation için
-  int _selectedTab = 0; // Segment control için (0: Üyeler, 1: Harcamalar, 2: Hesaplaşma)
+  int _selectedTab = 0; // Segment control için (0: Üyeler, 1: Masraflar, 2: Hesaplaşma)
 
   @override
   Widget build(BuildContext context) {
@@ -154,7 +154,7 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
     switch (_selectedTab) {
       case 0: // Üyeler
         return _buildMembersTab(group);
-      case 1: // Harcamalar
+      case 1: // Masraflar
         return _buildExpensesTab(group);
       case 2: // Hesaplaşma
         return _buildSettlementTab(group);

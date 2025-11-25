@@ -45,13 +45,8 @@ class RoleUtils {
 
   // Kullanıcı masrafı düzenleyebilir mi?
   static bool canEditExpense(GroupModel group, ExpenseModel expense, String userId) {
-    // Admin ise tüm masrafları düzenleyebilir
-    if (isGroupAdmin(group, userId)) return true;
-
-    // Kendi masrafını düzenleyebilir
-    if (expense.paidBy == userId) return true;
-
-    return false;
+    // Sadece masrafı ekleyen (ödeyen) kişi düzenleyebilir
+    return expense.paidBy == userId;
   }
 
   // Kullanıcı masrafı silebilir mi?

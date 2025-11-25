@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/expense_model.dart';
+import '../../models/user_model.dart';
 import '../../widgets/cards/expense_item.dart';
 
 /// Masraflar listesi widget'ı
@@ -8,6 +9,7 @@ class ExpensesList extends StatelessWidget {
   final Function(ExpenseModel)? onExpenseTap;
   final bool showDividers;
   final bool showEditIcon;
+  final List<UserModel>? groupMembers;
 
   const ExpensesList({
     super.key,
@@ -15,6 +17,7 @@ class ExpensesList extends StatelessWidget {
     this.onExpenseTap,
     this.showDividers = true,
     this.showEditIcon = false,
+    this.groupMembers,
   });
 
   @override
@@ -30,6 +33,7 @@ class ExpensesList extends StatelessWidget {
             expense: expenses[i],
             onTap: onExpenseTap != null ? () => onExpenseTap!(expenses[i]) : null,
             showEditIcon: showEditIcon,
+            groupMembers: groupMembers,
           ),
           if (showDividers && i < expenses.length - 1) const Divider(),
         ],

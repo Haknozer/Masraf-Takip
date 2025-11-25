@@ -411,6 +411,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
                     }
                   },
                   showEditIcon: true,
+                  groupMembers: _groupMembers,
                 ),
               ),
             );
