@@ -14,7 +14,8 @@ class RoleUtils {
 
   // Kullanıcı gruba üye ekleyebilir mi?
   static bool canAddMember(GroupModel group, String userId) {
-    return isGroupAdmin(group, userId);
+    // Tüm grup üyeleri üye ekleyebilir
+    return isGroupMember(group, userId);
   }
 
   // Kullanıcı gruptan üye çıkarabilir mi?

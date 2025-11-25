@@ -119,10 +119,26 @@ class RemoveMemberController {
       }
     }
 
-    // 2. Grubu güncelle (üyeyi memberIds'den çıkar)
+    // 2. Eğer ayrılan kişi admin ise, başka birine admin yetkisi devret
+    final isLeavingAdmin = group.isGroupAdmin(memberId);
+    if (isLeavingAdmin) {
+      // Kalan üyeleri al (ayrılan kişi hariç)
+      final remainingMembers = group.memberIds.where((id) => id != memberId).toList();
+      
+      // Başka admin var mı kontrol et
+      final hasOtherAdmin = remainingMembers.any((id) => group.isGroupAdmin(id));
+      
+      // Eğer başka admin yoksa, ilk üyeye admin yetkisi ver
+      if (!hasOtherAdmin && remainingMembers.isNotEmpty) {
+        final newAdminId = remainingMembers.first;
+        await ref.read(groupNotifierProvider.notifier).updateUserRole(groupId, newAdminId, 'admin');
+      }
+    }
+
+    // 3. Grubu güncelle (üyeyi memberIds'den çıkar)
     await ref.read(groupNotifierProvider.notifier).removeMember(groupId, memberId);
 
-    // 3. Kullanıcının users dokümanından grubu kaldır
+    // 4. Kullanıcının users dokümanından grubu kaldır
     try {
       final userDocSnapshot = await FirebaseService.firestore
           .collection('users')
