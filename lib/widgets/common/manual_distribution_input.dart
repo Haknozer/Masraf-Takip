@@ -28,11 +28,13 @@ class ManualDistributionInput extends ConsumerStatefulWidget {
 
 class _ManualDistributionInputState extends ConsumerState<ManualDistributionInput> {
   final Map<String, TextEditingController> _controllers = {};
+  late Future<List<UserModel>> _membersFuture;
 
   @override
   void initState() {
     super.initState();
     _initializeControllers();
+    _membersFuture = _getMembers();
   }
 
   void _initializeControllers() {
@@ -62,6 +64,8 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
         }
       }
     }
+    // Not: Controller text'lerini parent'tan gelen değerlerle güncellemiyoruz
+    // çünkü bu focus kaybına neden olur. Kullanıcı girişi controller'da kalır.
   }
 
   @override
@@ -89,10 +93,24 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
   }
 
   void _updateAmount(String memberId, String value) {
-    final amount = double.tryParse(value) ?? 0.0;
+    // Boş string veya sadece nokta/virgül ise 0.0 olarak kabul et
+    final trimmedValue = value.trim();
+    double amount;
+    if (trimmedValue.isEmpty || trimmedValue == '.' || trimmedValue == ',') {
+      amount = 0.0;
+    } else {
+      amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
+    }
+    
     final newAmounts = Map<String, double>.from(widget.memberAmounts);
     newAmounts[memberId] = amount;
-    widget.onAmountsChanged(newAmounts);
+    
+    // Focus kaybını önlemek için callback'i bir sonraki frame'de çağır
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onAmountsChanged(newAmounts);
+      }
+    });
   }
 
   double _calculateTotal() {
@@ -102,7 +120,7 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<UserModel>>(
-      future: _getMembers(),
+      future: _membersFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

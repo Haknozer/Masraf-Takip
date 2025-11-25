@@ -8,12 +8,16 @@ import '../../models/expense_filter_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/expense_provider.dart';
 import '../../providers/group_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../widgets/dialogs/delete_expense_dialog.dart';
+import '../../controllers/expense_controller.dart';
+import '../../widgets/common/error_snackbar.dart';
 import '../../widgets/common/async_value_builder.dart';
 import '../../widgets/common/expenses_list.dart';
 import '../../widgets/states/empty_expenses_state.dart';
 import '../../widgets/common/loading_card.dart';
 import '../../widgets/cards/error_card.dart';
-import '../../screens/expenses/edit_expense_page.dart';
+import '../../widgets/dialogs/edit_expense_dialog.dart';
 import '../../utils/expense_utils.dart';
 import '../../utils/date_utils.dart' as DateUtils;
 import '../../constants/app_colors.dart';
@@ -393,6 +397,8 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
               );
             }
 
+            final currentUser = ref.watch(currentUserProvider);
+            
             return Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -400,18 +406,16 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
                   expenses: displayExpenses,
                   onExpenseTap: (expense) {
                     if (expense.id.isNotEmpty) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => EditExpensePage(expenseId: expense.id)),
-                      ).then((_) {
-                        // Sayfa geri döndüğünde refresh yapılabilir
-                      });
+                      EditExpenseDialog.show(context, expense.id);
                     } else {
                       debugPrint('Expense ID boş: ${expense.id}');
                     }
                   },
+                  onExpenseDelete: (expense) => _deleteExpense(expense),
                   showEditIcon: true,
+                  showDeleteIcon: true,
                   groupMembers: _groupMembers,
+                  currentUserId: currentUser?.uid,
                 ),
               ),
             );
@@ -421,6 +425,40 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
         ),
       ],
     );
+  }
+
+  Future<void> _deleteExpense(ExpenseModel expense) async {
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) {
+      ErrorSnackBar.show(context, 'Giriş yapmanız gerekiyor');
+      return;
+    }
+
+    // Sadece masrafı ekleyen kişi silebilir
+    if (expense.paidBy != currentUser.uid) {
+      ErrorSnackBar.show(context, 'Bu masrafı sadece masrafı ekleyen kişi silebilir');
+      return;
+    }
+
+    final confirmed = await DeleteExpenseDialog.show(
+      context,
+      expenseDescription: expense.description,
+      expenseAmount: expense.amount,
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ExpenseController.deleteExpense(ref, expense.id);
+
+      if (mounted) {
+        ErrorSnackBar.showSuccess(context, 'Masraf başarıyla silindi!');
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorSnackBar.show(context, e);
+      }
+    }
   }
 }
 

@@ -10,15 +10,21 @@ import '../../utils/date_utils.dart' as DateUtils;
 class ExpenseItem extends StatelessWidget {
   final ExpenseModel expense;
   final VoidCallback? onTap;
+  final VoidCallback? onDelete;
   final bool showEditIcon;
+  final bool showDeleteIcon;
   final List<UserModel>? groupMembers;
+  final String? currentUserId;
 
   const ExpenseItem({
     super.key,
     required this.expense,
     this.onTap,
+    this.onDelete,
     this.showEditIcon = false,
+    this.showDeleteIcon = false,
     this.groupMembers,
+    this.currentUserId,
   });
 
   String _getUserName(String userId) {
@@ -110,6 +116,16 @@ class ExpenseItem extends StatelessWidget {
             if (showEditIcon && onTap != null) ...[
               const SizedBox(width: 8),
               Icon(Icons.edit, size: 18, color: AppColors.textSecondary),
+            ],
+            if (showDeleteIcon && 
+                onDelete != null && 
+                currentUserId != null && 
+                expense.paidBy == currentUserId) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: onDelete,
+                child: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+              ),
             ],
           ],
         ),

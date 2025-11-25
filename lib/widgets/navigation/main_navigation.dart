@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../screens/home/home_page.dart';
 import '../../screens/profile_page.dart';
-import '../../screens/expenses/create_expense_page.dart';
 import '../../providers/group_provider.dart';
 import '../../widgets/dialogs/select_group_dialog.dart';
+import '../../widgets/dialogs/create_expense_dialog.dart';
 import 'bottom_navigation_bar.dart';
 
 /// Ana navigasyon wrapper - Bottom navigation bar ile
@@ -70,13 +70,8 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
     );
 
     if (selectedGroup != null && mounted) {
-      // Create expense sayfasına git
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CreateExpensePage(group: selectedGroup),
-        ),
-      );
+      // Masraf ekleme dialog'unu göster
+      await CreateExpenseDialog.show(context, selectedGroup);
     }
   }
 }

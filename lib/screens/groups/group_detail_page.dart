@@ -11,7 +11,7 @@ import '../../widgets/sections/group_members_section.dart';
 import '../../widgets/sections/settlement_section.dart';
 import '../../widgets/common/async_value_builder.dart';
 import '../../widgets/navigation/bottom_navigation_bar.dart';
-import '../../screens/expenses/create_expense_page.dart';
+import '../../widgets/dialogs/create_expense_dialog.dart';
 import '../../screens/profile_page.dart';
 import '../../widgets/common/segment_control.dart';
 import '../../widgets/dialogs/add_member_dialog.dart';
@@ -110,12 +110,7 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
         items: navItems,
         onFabTap: group != null && group.isActive
             ? () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CreateExpensePage(group: group),
-                  ),
-                );
+                CreateExpenseDialog.show(context, group);
               }
             : null,
       ),

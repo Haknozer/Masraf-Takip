@@ -5,7 +5,7 @@ import '../../models/group_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/dialogs/add_member_dialog.dart';
 import '../../widgets/cards/action_card.dart';
-import '../../screens/expenses/create_expense_page.dart';
+import '../../widgets/dialogs/create_expense_dialog.dart';
 
 class QuickActionsSection extends ConsumerWidget {
   final GroupModel group;
@@ -28,13 +28,7 @@ class QuickActionsSection extends ConsumerWidget {
                 onTap:
                     group.isActive
                         ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => CreateExpensePage(group: group),
-                            ),
-                          );
+                          CreateExpenseDialog.show(context, group);
                         }
                         : () {
                           ScaffoldMessenger.of(context).showSnackBar(

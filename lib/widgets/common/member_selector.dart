@@ -55,47 +55,50 @@ class MemberSelector extends ConsumerWidget {
           children: [
             Text('Paylaşan Kişiler', style: AppTextStyles.label),
             const SizedBox(height: AppSpacing.textSpacing),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Column(
               children: members.map((member) {
                 final isSelected = selectedMemberIds.contains(member.id);
-                return GestureDetector(
-                  onTap: () {
-                    final newSelection = List<String>.from(selectedMemberIds);
-                    if (isSelected) {
-                      newSelection.remove(member.id);
-                    } else {
-                      newSelection.add(member.id);
-                    }
-                    onMembersChanged(newSelection);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.greyLight,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? AppColors.primary : AppColors.greyLight,
-                        width: isSelected ? 2 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isSelected)
-                          Icon(Icons.check_circle, color: AppColors.primary, size: 16)
-                        else
-                          Icon(Icons.circle_outlined, color: AppColors.textSecondary, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          member.displayName,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: GestureDetector(
+                    onTap: () {
+                      final newSelection = List<String>.from(selectedMemberIds);
+                      if (isSelected) {
+                        newSelection.remove(member.id);
+                      } else {
+                        newSelection.add(member.id);
+                      }
+                      onMembersChanged(newSelection);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.greyLight,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected ? AppColors.primary : AppColors.greyLight,
+                          width: isSelected ? 2 : 1,
                         ),
-                      ],
+                      ),
+                      child: Row(
+                        children: [
+                          if (isSelected)
+                            Icon(Icons.check_circle, color: AppColors.primary, size: 20)
+                          else
+                            Icon(Icons.circle_outlined, color: AppColors.textSecondary, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              member.displayName,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
