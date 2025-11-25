@@ -119,8 +119,8 @@ class _MyAppState extends ConsumerState<MyApp> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         centerTitle: true,
       ),
@@ -195,8 +195,8 @@ class _MyAppState extends ConsumerState<MyApp> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: const Color(0xFF1E1E1E),
-        foregroundColor: const Color(0xFFE0E0E0),
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
         centerTitle: true,
       ),

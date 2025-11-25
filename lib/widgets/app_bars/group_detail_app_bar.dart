@@ -81,9 +81,10 @@ class GroupDetailAppBar extends ConsumerWidget implements PreferredSizeWidget {
     // Kullanıcının admin olup olmadığını kontrol et
     final isAdmin = group != null ? group!.isGroupAdmin(ref.read(currentUserProvider)?.uid ?? '') : false;
 
+    final theme = Theme.of(context);
     return AppBar(
-      backgroundColor: AppColors.primary,
-      foregroundColor: AppColors.white,
+      backgroundColor: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+      foregroundColor: theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface,
       title: const Text('Grup Detayı'),
       elevation: 0,
       actions: [

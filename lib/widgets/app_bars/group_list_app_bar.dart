@@ -19,20 +19,22 @@ class GroupListAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foregroundColor = theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
     return AppBar(
-      backgroundColor: AppColors.primary,
-      foregroundColor: AppColors.white,
+      backgroundColor: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+      foregroundColor: foregroundColor,
       title: searchController != null && onSearchChanged != null
           ? TextField(
               controller: searchController,
               autofocus: true,
-              style: const TextStyle(color: AppColors.white),
+              style: TextStyle(color: foregroundColor),
               decoration: InputDecoration(
                 hintText: 'Grup ara...',
-                hintStyle: TextStyle(color: AppColors.white.withOpacity(0.7)),
+                hintStyle: TextStyle(color: foregroundColor.withOpacity(0.7)),
                 border: InputBorder.none,
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.clear, color: AppColors.white),
+                  icon: Icon(Icons.clear, color: foregroundColor),
                   onPressed: () {
                     searchController?.clear();
                     onSearchChanged?.call('');

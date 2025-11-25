@@ -17,7 +17,9 @@ import '../models/user_model.dart';
 import '../providers/theme_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
-  const ProfilePage({super.key});
+  final bool showAppBar;
+  
+  const ProfilePage({super.key, this.showAppBar = true});
 
   @override
   ConsumerState<ProfilePage> createState() => _ProfilePageState();
@@ -48,17 +50,26 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final userAsync = ref.watch(userModelProvider);
 
     return userAsync.when(
-      loading: () => BasePage(appBar: const ProfileAppBar(), body: const Center(child: CircularProgressIndicator())),
-      error: (e, s) => BasePage(appBar: const ProfileAppBar(), body: Center(child: Text("Hata: $e"))),
+      loading: () => BasePage(
+        appBar: widget.showAppBar ? const ProfileAppBar() : null, 
+        body: const Center(child: CircularProgressIndicator())
+      ),
+      error: (e, s) => BasePage(
+        appBar: widget.showAppBar ? const ProfileAppBar() : null, 
+        body: Center(child: Text("Hata: $e"))
+      ),
       data: (user) {
         if (user == null) {
-          return BasePage(appBar: const ProfileAppBar(), body: const Center(child: CircularProgressIndicator()));
+          return BasePage(
+            appBar: widget.showAppBar ? const ProfileAppBar() : null, 
+            body: const Center(child: CircularProgressIndicator())
+          );
         }
 
         _initializeFields(user.displayName);
 
         return BasePage(
-          appBar: const ProfileAppBar(),
+          appBar: widget.showAppBar ? const ProfileAppBar() : null,
           body: Form(
             key: _formKey,
             child: Column(

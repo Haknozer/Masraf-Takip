@@ -4,6 +4,7 @@ import '../../constants/app_spacing.dart';
 import '../../providers/group_provider.dart';
 import '../../models/group_model.dart';
 import '../../widgets/app_bars/group_detail_app_bar.dart';
+import '../../widgets/app_bars/profile_app_bar.dart';
 import '../../widgets/cards/group_header_card.dart';
 import '../../widgets/sections/recent_expenses_section.dart';
 import '../../widgets/sections/group_members_section.dart';
@@ -85,11 +86,21 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
 
     final pages = [
       _buildGroupDetailContent(body),
-      const ProfilePage(),
+      const ProfilePage(showAppBar: false), // AppBar'ı burada göstermeyeceğiz
     ];
 
+    // AppBar'ı dinamik olarak değiştir
+    PreferredSizeWidget? currentAppBar;
+    if (_currentIndex == 0) {
+      // Grup detayı sayfasındayken
+      currentAppBar = appBar;
+    } else {
+      // Profil sayfasındayken
+      currentAppBar = const ProfileAppBar();
+    }
+
     return Scaffold(
-      appBar: appBar,
+      appBar: currentAppBar,
       body: IndexedStack(
         index: _currentIndex,
         children: pages,

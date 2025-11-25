@@ -6,9 +6,10 @@ class ProfileAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return AppBar(
-      backgroundColor: AppColors.primary,
-      foregroundColor: AppColors.white,
+      backgroundColor: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+      foregroundColor: theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface,
       title: const Text('Profil Ayarları'),
       elevation: 0,
     );
