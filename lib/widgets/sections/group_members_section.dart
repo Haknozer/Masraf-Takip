@@ -106,7 +106,8 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
   Widget _buildMemberItem(BuildContext context, UserModel member, bool isCurrentUserAdmin, String? currentUserId) {
     final isAdmin = GroupMembersController.isAdmin(widget.group, member.id);
     final isCurrentUser = currentUserId == member.id;
-    final canRemove = isCurrentUserAdmin && !isCurrentUser;
+    // Admin başkalarını çıkarabilir, kullanıcı kendini çıkarabilir
+    final canRemove = (isCurrentUserAdmin && !isCurrentUser) || isCurrentUser;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -202,12 +203,15 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
               ],
             ),
           ),
-          // Çıkarma butonu (sadece admin ve kendisi değilse)
+          // Çıkarma butonu
           if (canRemove)
             IconButton(
-              icon: Icon(Icons.remove_circle_outline, color: AppColors.error),
+              icon: Icon(
+                isCurrentUser ? Icons.exit_to_app : Icons.remove_circle_outline,
+                color: AppColors.error,
+              ),
               onPressed: _isRemoving ? null : () => _removeMember(member),
-              tooltip: 'Üyeyi Çıkar',
+              tooltip: isCurrentUser ? 'Gruptan Ayrıl' : 'Üyeyi Çıkar',
             ),
         ],
       ),
@@ -215,6 +219,9 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
   }
 
   Future<void> _removeMember(UserModel member) async {
+    final currentUser = ref.read(currentUserProvider);
+    final isCurrentUser = currentUser?.uid == member.id;
+
     // Borçları kontrol et
     try {
       final debts = await RemoveMemberController.checkMemberDebts(
@@ -223,8 +230,19 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
         member.id,
       );
 
-      // Eğer borç varsa onay dialogu göster
-      if (debts.isNotEmpty) {
+      // Eğer kullanıcı kendini çıkarıyorsa ve borcu varsa engelle
+      if (isCurrentUser && debts.isNotEmpty) {
+        if (mounted) {
+          ErrorSnackBar.show(
+            context,
+            'Gruptan ayrılamazsınız. Önce ${debts.length} borcunuzu ödemeniz gerekiyor.',
+          );
+        }
+        return;
+      }
+
+      // Eğer başkasını çıkarıyorsa ve borç varsa onay dialogu göster
+      if (!isCurrentUser && debts.isNotEmpty) {
         final confirmed = await RemoveMemberDialog.show(
           context,
           member: member,
@@ -244,13 +262,22 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
       );
 
       if (mounted) {
-        ErrorSnackBar.showSuccess(context, '${member.displayName} gruptan çıkarıldı');
-        // Üye listesini yenile
-        _loadMembers();
+        if (isCurrentUser) {
+          ErrorSnackBar.showSuccess(context, 'Gruptan ayrıldınız');
+          // Ana sayfaya dön
+          Navigator.pop(context);
+        } else {
+          ErrorSnackBar.showSuccess(context, '${member.displayName} gruptan çıkarıldı');
+          // Üye listesini yenile
+          _loadMembers();
+        }
       }
     } catch (e) {
       if (mounted) {
-        ErrorSnackBar.show(context, 'Üye çıkarılamadı: $e');
+        ErrorSnackBar.show(
+          context,
+          isCurrentUser ? 'Gruptan ayrılamadınız: $e' : 'Üye çıkarılamadı: $e',
+        );
       }
     } finally {
       if (mounted) {

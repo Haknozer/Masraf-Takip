@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_spacing.dart';
-import '../../constants/app_colors.dart';
 import '../../providers/group_provider.dart';
 import '../../models/group_model.dart';
 import '../../widgets/app_bars/group_detail_app_bar.dart';
@@ -160,7 +159,7 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
 
   Widget _buildMembersTab(GroupModel group) {
     final currentUser = ref.watch(currentUserProvider);
-    final isAdmin = currentUser != null && group.isGroupAdmin(currentUser.uid);
+    final isMember = currentUser != null && group.isGroupMember(currentUser.uid);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.sectionPadding),
@@ -172,8 +171,8 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
           const SizedBox(height: AppSpacing.sectionMargin),
           // Group Members
           GroupMembersSection(group: group),
-          // Üye Ekle Butonu (Sadece admin)
-          if (isAdmin)
+          // Üye Ekle Butonu (Tüm üyeler)
+          if (isMember)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.sectionMargin),
               child: ElevatedButton.icon(
