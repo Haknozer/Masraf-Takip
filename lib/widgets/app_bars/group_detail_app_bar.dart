@@ -6,6 +6,7 @@ import '../../screens/groups/edit_group_page.dart';
 import '../../screens/home/home_page.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/pdf_report_service.dart';
 
 class GroupDetailAppBar extends ConsumerWidget implements PreferredSizeWidget {
   final String groupId;
@@ -86,6 +87,12 @@ class GroupDetailAppBar extends ConsumerWidget implements PreferredSizeWidget {
       title: const Text('Grup Detayı'),
       elevation: 0,
       actions: [
+        if (group != null)
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Grup raporunu PDF olarak oluştur',
+            onPressed: () => PdfReportService.generateGroupSummary(context: context, group: group!),
+          ),
         IconButton(
           icon: const Icon(Icons.edit),
           onPressed: () {
