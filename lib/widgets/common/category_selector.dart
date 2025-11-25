@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../constants/expense_categories.dart';
-import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 
@@ -17,6 +16,11 @@ class CategorySelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final unselectedBackground = colorScheme.surfaceVariant.withOpacity(0.4);
+    final unselectedBorder = colorScheme.outlineVariant.withOpacity(0.5);
+    final unselectedText = colorScheme.onSurfaceVariant;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -32,10 +36,10 @@ class CategorySelector extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? category.color.withOpacity(0.1) : AppColors.greyLight,
+                  color: isSelected ? category.color.withOpacity(0.15) : unselectedBackground,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? category.color : AppColors.greyLight,
+                    color: isSelected ? category.color : unselectedBorder,
                     width: isSelected ? 2 : 1,
                   ),
                 ),
@@ -44,14 +48,14 @@ class CategorySelector extends StatelessWidget {
                   children: [
                     Icon(
                       category.icon,
-                      color: isSelected ? category.color : AppColors.textSecondary,
+                      color: isSelected ? category.color : unselectedText,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       category.name,
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: isSelected ? category.color : AppColors.textSecondary,
+                        color: isSelected ? category.color : unselectedText,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),

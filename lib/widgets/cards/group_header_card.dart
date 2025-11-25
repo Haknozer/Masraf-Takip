@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/group_model.dart';
@@ -12,6 +11,8 @@ class GroupHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -45,22 +46,22 @@ class GroupHeaderCard extends StatelessWidget {
                     : Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(Icons.group, color: AppColors.primary, size: 32),
+                        child: Icon(Icons.group, color: colorScheme.primary, size: 32),
                       ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(group.name, style: AppTextStyles.h2),
+                      Text(group.name, style: AppTextStyles.h2.copyWith(color: colorScheme.onSurface)),
                       if (group.description.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
                           group.description,
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                          style: AppTextStyles.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ],
@@ -71,9 +72,9 @@ class GroupHeaderCard extends StatelessWidget {
             const SizedBox(height: 16),
             Row(
               children: [
-                _buildInfoItem(Icons.people, '${group.memberIds.length} Üye'),
+                _buildInfoItem(context, Icons.people, '${group.memberIds.length} Üye'),
                 const SizedBox(width: 24),
-                _buildInfoItem(Icons.calendar_today, AppDateUtils.formatDate(group.createdAt)),
+                _buildInfoItem(context, Icons.calendar_today, AppDateUtils.formatDate(group.createdAt)),
               ],
             ),
           ],
@@ -82,13 +83,14 @@ class GroupHeaderCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String text) {
+  Widget _buildInfoItem(BuildContext context, IconData icon, String text) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: AppColors.textSecondary),
+        Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
         const SizedBox(width: 4),
-        Text(text, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+        Text(text, style: AppTextStyles.bodySmall.copyWith(color: colorScheme.onSurfaceVariant)),
       ],
     );
   }

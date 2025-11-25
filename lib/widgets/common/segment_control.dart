@@ -16,10 +16,12 @@ class SegmentControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.greyLight,
+        color: colorScheme.surfaceVariant.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -36,26 +38,21 @@ class SegmentControl extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.white : Colors.transparent,
+                  color: isSelected ? colorScheme.surface : Colors.transparent,
                   borderRadius: BorderRadius.only(
                     topLeft: isFirst ? const Radius.circular(8) : Radius.zero,
                     bottomLeft: isFirst ? const Radius.circular(8) : Radius.zero,
                     topRight: isLast ? const Radius.circular(8) : Radius.zero,
                     bottomRight: isLast ? const Radius.circular(8) : Radius.zero,
                   ),
-                  border: isSelected
-                      ? Border.all(
-                          color: AppColors.greyLight,
-                          width: 1,
-                        )
-                      : null,
+                  border: isSelected ? Border.all(color: colorScheme.primary.withOpacity(0.4), width: 1) : null,
                 ),
                 child: Text(
                   label,
                   textAlign: TextAlign.center,
                   style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                    color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),

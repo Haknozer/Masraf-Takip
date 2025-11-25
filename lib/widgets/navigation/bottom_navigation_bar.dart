@@ -41,9 +41,13 @@ class CustomBottomNavigationBar extends StatelessWidget {
     final horizontalPadding = isSmallScreen ? 8.0 : 16.0;
     final spacing = fabSpacing ?? (isSmallScreen ? 50.0 : 60.0);
 
+    final colorScheme = Theme.of(context).colorScheme;
+    final backgroundColor = colorScheme.surface;
+    final unselectedColor = colorScheme.onSurfaceVariant;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: backgroundColor,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -124,6 +128,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
     required bool isSmallScreen,
   }) {
     final isSelected = currentIndex == item.index;
+    final colorScheme = Theme.of(context).colorScheme;
     final horizontalPadding = isSmallScreen ? 8.0 : 16.0;
 
     // FAB alanında border gösterme - overflow'u önlemek için
@@ -141,15 +146,10 @@ class CustomBottomNavigationBar extends StatelessWidget {
           horizontal: isSelected ? 4 : 0,
         ),
         decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? AppColors.primary.withOpacity(0.1)
-                  : Colors.transparent,
+          color: isSelected ? colorScheme.primary.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border:
-              shouldShowBorder
-                  ? Border.all(color: AppColors.primary, width: 1.5)
-                  : null,
+              shouldShowBorder ? Border.all(color: colorScheme.primary, width: 1.5) : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -157,14 +157,14 @@ class CustomBottomNavigationBar extends StatelessWidget {
           children: [
             Icon(
               item.icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
               size: iconSize,
             ),
             const SizedBox(height: 3),
             Text(
               item.label,
               style: AppTextStyles.bodySmall.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 fontSize: fontSize,
               ),
@@ -182,6 +182,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
     final fabSize = isSmallScreen ? 56.0 : 64.0;
     final iconSize = isSmallScreen ? 26.0 : 30.0;
     final fontSize = isSmallScreen ? 10.0 : 11.0;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -194,11 +195,11 @@ class CustomBottomNavigationBar extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+              colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.85)],
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
+                color: colorScheme.primary.withOpacity(0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
                 spreadRadius: 0,
@@ -210,7 +211,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
             child: InkWell(
               onTap: onFabTap,
               borderRadius: BorderRadius.circular(fabSize / 2),
-              child: Icon(Icons.add, color: AppColors.white, size: iconSize),
+              child: Icon(Icons.add, color: colorScheme.onPrimary, size: iconSize),
             ),
           ),
         ),
@@ -219,7 +220,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
           'Masraf Ekle',
           style: TextStyle(
             fontSize: fontSize,
-            color: AppColors.textSecondary,
+            color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
           ),
         ),

@@ -140,10 +140,12 @@ class _CreateExpenseDialogState extends ConsumerState<CreateExpenseDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: DraggableScrollableSheet(
         initialChildSize: 0.9,
@@ -163,7 +165,7 @@ class _CreateExpenseDialogState extends ConsumerState<CreateExpenseDialog> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.grey,
+                    color: colorScheme.onSurfaceVariant.withOpacity(0.4),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -175,10 +177,10 @@ class _CreateExpenseDialogState extends ConsumerState<CreateExpenseDialog> {
                     children: [
                       Text(
                         'Masraf Ekle',
-                        style: AppTextStyles.h3,
+                        style: AppTextStyles.h3.copyWith(color: colorScheme.onSurface),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -296,7 +298,7 @@ class _CreateExpenseDialogState extends ConsumerState<CreateExpenseDialog> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    color: colorScheme.surface,
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.black.withOpacity(0.05),

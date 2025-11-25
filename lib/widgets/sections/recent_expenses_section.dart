@@ -278,6 +278,9 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
   Widget build(BuildContext context) {
     final expensesState = ref.watch(groupExpensesProvider(widget.groupId));
     final activeFilters = _buildActiveFilterChips();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final borderColor = colorScheme.outlineVariant.withOpacity(0.5);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,27 +303,30 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
                         controller: _searchController,
                         decoration: InputDecoration(
                           hintText: 'Masraf ara...',
-                          hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint),
-                          prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textSecondary),
-                          suffixIcon: value.text.isNotEmpty
-                              ? IconButton(
-                                  icon: Icon(Icons.clear, size: 18, color: AppColors.textSecondary),
-                                  onPressed: _searchController.clear,
-                                )
-                              : null,
+                          hintStyle: AppTextStyles.bodySmall.copyWith(
+                            color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                          ),
+                          prefixIcon: Icon(Icons.search, size: 18, color: colorScheme.onSurfaceVariant),
+                          suffixIcon:
+                              value.text.isNotEmpty
+                                  ? IconButton(
+                                    icon: Icon(Icons.clear, size: 18, color: colorScheme.onSurfaceVariant),
+                                    onPressed: _searchController.clear,
+                                  )
+                                  : null,
                           filled: true,
-                          fillColor: AppColors.surface,
+                          fillColor: colorScheme.surface,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.greyLight, width: 1),
+                            borderSide: BorderSide(color: borderColor, width: 1),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.greyLight, width: 1),
+                            borderSide: BorderSide(color: borderColor, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: AppColors.primary, width: 2),
+                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
                           ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         ),
@@ -369,12 +375,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
         // Aktif filtreler (varsa, ayrı satırda)
         if (activeFilters.isNotEmpty) ...[
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: activeFilters,
-            ),
-          ),
+          SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: activeFilters)),
         ],
         const SizedBox(height: 12),
         AsyncValueBuilder<List<ExpenseModel>>(
@@ -398,7 +399,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
             }
 
             final currentUser = ref.watch(currentUserProvider);
-            
+
             return Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -606,9 +607,9 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
       maxChildSize: 0.95,
       builder:
           (context, scrollController) => Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
               children: [
@@ -807,7 +808,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: Theme.of(context).colorScheme.surface,
                     boxShadow: [
                       BoxShadow(color: AppColors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
                     ],

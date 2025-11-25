@@ -14,6 +14,7 @@ import '../constants/app_text_styles.dart';
 import '../constants/app_colors.dart';
 import '../controllers/profile_controller.dart';
 import '../models/user_model.dart';
+import '../providers/theme_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -28,7 +29,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   XFile? _pickedImage;
   bool _isLoading = false;
   bool _isInitialized = false;
-  bool _darkModeEnabled = false;
 
   @override
   void dispose() {
@@ -136,16 +136,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.greyLight, width: 1),
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5), width: 1),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.person, color: AppColors.textSecondary),
+                  Icon(Icons.person, color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(_nameController.text, style: AppTextStyles.bodyMedium, overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      _nameController.text,
+                      style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurface),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -159,6 +163,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Widget _buildAppearanceCard() {
+    final themeMode = ref.watch(themeNotifierProvider);
+    final isDark = themeMode == ThemeMode.dark;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -169,9 +175,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Karanlık Mod'),
-              subtitle: const Text('Yakında kullanılacak'),
-              value: _darkModeEnabled,
-              onChanged: (value) => setState(() => _darkModeEnabled = value),
+              subtitle: const Text('Uygulamayı koyu tema ile kullan'),
+              value: isDark,
+              onChanged: (value) {
+                ref.read(themeNotifierProvider.notifier).setDarkMode(value);
+              },
             ),
           ],
         ),

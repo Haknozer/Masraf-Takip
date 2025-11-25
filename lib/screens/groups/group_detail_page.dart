@@ -186,8 +186,8 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
                 icon: const Icon(Icons.person_add),
                 label: const Text('Üye Ekle'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.white,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 12,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 import '../../constants/app_spacing.dart';
 
 /// Ortak sayfa yapısı için base widget
@@ -41,8 +40,10 @@ class BasePage extends StatelessWidget {
       content = SafeArea(child: content);
     }
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: backgroundColor ?? AppColors.background,
+      backgroundColor: backgroundColor ?? theme.colorScheme.surface,
       appBar: appBar,
       body: content,
       floatingActionButton: floatingActionButton,

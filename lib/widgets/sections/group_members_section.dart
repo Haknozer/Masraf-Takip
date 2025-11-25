@@ -54,6 +54,8 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
     final currentUser = ref.watch(currentUserProvider);
     final isAdmin = currentUser != null && GroupMembersController.isAdmin(widget.group, currentUser.uid);
 
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.cardPadding),
@@ -65,11 +67,11 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.people, color: AppColors.primary, size: 24),
+                    Icon(Icons.people, color: colorScheme.primary, size: 24),
                     const SizedBox(width: 8),
                     Text(
                       'Üyeler (${_members.length})',
-                      style: AppTextStyles.h3,
+                      style: AppTextStyles.h3.copyWith(color: colorScheme.onSurface),
                     ),
                   ],
                 ),
@@ -89,31 +91,32 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                   padding: const EdgeInsets.all(AppSpacing.sectionMargin),
                   child: Text(
                     'Grupta henüz üye yok',
-                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                 ),
               )
             else
-              ..._members.map((member) => _buildMemberItem(member, isAdmin, currentUser?.uid)),
+              ..._members.map((member) => _buildMemberItem(context, member, isAdmin, currentUser?.uid)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMemberItem(UserModel member, bool isCurrentUserAdmin, String? currentUserId) {
+  Widget _buildMemberItem(BuildContext context, UserModel member, bool isCurrentUserAdmin, String? currentUserId) {
     final isAdmin = GroupMembersController.isAdmin(widget.group, member.id);
     final isCurrentUser = currentUserId == member.id;
     final canRemove = isCurrentUserAdmin && !isCurrentUser;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.textSpacing),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.greyLight,
+        color: colorScheme.surfaceVariant.withOpacity(0.4),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isAdmin ? AppColors.primary : AppColors.greyLight,
+          color: isAdmin ? colorScheme.primary : Colors.transparent,
           width: isAdmin ? 1 : 0,
         ),
       ),
@@ -122,13 +125,13 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
           // Profil resmi veya avatar
           CircleAvatar(
             radius: 20,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
+            backgroundColor: colorScheme.primary.withOpacity(0.15),
             backgroundImage: member.photoUrl != null ? NetworkImage(member.photoUrl!) : null,
             child: member.photoUrl == null
                 ? Text(
                     member.displayName.isNotEmpty ? member.displayName[0].toUpperCase() : '?',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.primary,
+                      color: colorScheme.primary,
                       fontWeight: FontWeight.bold,
                     ),
                   )
@@ -147,6 +150,7 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                         member.displayName,
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -156,13 +160,13 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: colorScheme.primary.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           'Sen',
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.primary,
+                            color: colorScheme.primary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -174,22 +178,22 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                 Row(
                   children: [
                     if (isAdmin) ...[
-                      Icon(Icons.shield, size: 14, color: AppColors.primary),
+                      Icon(Icons.shield, size: 14, color: colorScheme.primary),
                       const SizedBox(width: 4),
                       Text(
                         'Admin',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.primary,
+                          color: colorScheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ] else ...[
-                      Icon(Icons.person, size: 14, color: AppColors.textSecondary),
+                      Icon(Icons.person, size: 14, color: colorScheme.onSurfaceVariant),
                       const SizedBox(width: 4),
                       Text(
                         'Üye',
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],

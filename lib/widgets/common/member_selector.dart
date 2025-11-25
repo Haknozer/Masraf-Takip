@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/user_model.dart';
@@ -50,6 +49,12 @@ class MemberSelector extends ConsumerWidget {
 
         final members = snapshot.data!;
 
+        final colorScheme = Theme.of(context).colorScheme;
+        final unselectedBg = colorScheme.surfaceVariant.withOpacity(0.4);
+        final unselectedBorder = colorScheme.outlineVariant.withOpacity(0.5);
+        final unselectedText = colorScheme.onSurfaceVariant;
+        final selectedColor = colorScheme.primary;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -74,25 +79,25 @@ class MemberSelector extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.greyLight,
+                        color: isSelected ? selectedColor.withOpacity(0.15) : unselectedBg,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected ? AppColors.primary : AppColors.greyLight,
+                          color: isSelected ? selectedColor : unselectedBorder,
                           width: isSelected ? 2 : 1,
                         ),
                       ),
                       child: Row(
                         children: [
                           if (isSelected)
-                            Icon(Icons.check_circle, color: AppColors.primary, size: 20)
+                            Icon(Icons.check_circle, color: selectedColor, size: 20)
                           else
-                            Icon(Icons.circle_outlined, color: AppColors.textSecondary, size: 20),
+                            Icon(Icons.circle_outlined, color: unselectedText, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               member.displayName,
                               style: AppTextStyles.bodyMedium.copyWith(
-                                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                                color: isSelected ? selectedColor : unselectedText,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),

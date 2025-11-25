@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'constants/app_colors.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/auth/login_page.dart';
 import 'widgets/navigation/main_navigation.dart';
 import 'services/deep_link_service.dart';
+import 'constants/app_colors.dart';
 
 class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
@@ -65,11 +66,17 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
+    final themeMode = ref.watch(themeNotifierProvider);
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
       title: 'Masraf Takip Uygulaması',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary), useMaterial3: true),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary, brightness: Brightness.dark),
+        useMaterial3: true,
+      ),
+      themeMode: themeMode,
       home: authState.when(
         data: (user) {
           if (user != null) {

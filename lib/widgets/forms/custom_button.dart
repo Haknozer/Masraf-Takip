@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 
 class CustomButton extends StatelessWidget {
@@ -26,58 +25,54 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final Color baseBackground =
+        backgroundColor ?? (isSecondary ? colorScheme.secondary : colorScheme.primary);
+    final Brightness brightness = ThemeData.estimateBrightnessForColor(baseBackground);
+    final Color baseForeground = brightness == Brightness.dark ? Colors.white : Colors.black;
+    final Color foregroundColor = backgroundColor == null
+        ? (isSecondary ? colorScheme.onSecondary : colorScheme.onPrimary)
+        : baseForeground;
+    final Color disabledBackground = colorScheme.onSurface.withOpacity(0.12);
+    final Color disabledForeground = colorScheme.onSurface.withOpacity(0.38);
+
     return SizedBox(
       width: width,
       height: height,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              backgroundColor ??
-              (isSecondary ? AppColors.secondary : AppColors.primary),
-          foregroundColor: backgroundColor == AppColors.white 
-              ? AppColors.primary 
-              : AppColors.white,
+          backgroundColor: baseBackground,
+          foregroundColor: foregroundColor,
           elevation: 2,
-          shadowColor: (backgroundColor ?? AppColors.primary).withOpacity(0.3),
+          shadowColor: baseBackground.withOpacity(0.25),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          disabledBackgroundColor: AppColors.greyLight,
-          disabledForegroundColor: AppColors.textHint,
+          disabledBackgroundColor: disabledBackground,
+          disabledForegroundColor: disabledForeground,
         ),
         child:
             isLoading
                 ? SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isSecondary ? AppColors.white : AppColors.white,
-                    ),
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(foregroundColor)),
                 )
                 : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[
                       Icon(
-                        icon, 
+                        icon,
                         size: 20,
-                        color: backgroundColor == AppColors.white 
-                            ? AppColors.primary 
-                            : AppColors.white,
+                        color: foregroundColor,
                       ),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       text,
-                      style: AppTextStyles.buttonLarge.copyWith(
-                        color: backgroundColor == AppColors.white 
-                            ? AppColors.primary 
-                            : AppColors.white,
-                      ),
+                      style: AppTextStyles.buttonLarge.copyWith(color: foregroundColor),
                     ),
                   ],
                 ),

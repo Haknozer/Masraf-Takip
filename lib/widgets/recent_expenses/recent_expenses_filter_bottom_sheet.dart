@@ -113,15 +113,17 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.95,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: Column(
             children: [
@@ -277,7 +279,7 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
                       decoration: InputDecoration(
                         hintText: 'Tümü',
                         filled: true,
-                        fillColor: AppColors.greyLight,
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -302,7 +304,7 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: colorScheme.surface,
                   boxShadow: [
                     BoxShadow(color: AppColors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
                   ],
