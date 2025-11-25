@@ -77,6 +77,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         useMaterial3: true,
       ),
       themeMode: themeMode,
+      debugShowCheckedModeBanner: false,
       home: authState.when(
         data: (user) {
           if (user != null) {
