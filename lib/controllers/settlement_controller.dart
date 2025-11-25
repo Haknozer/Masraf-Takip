@@ -114,17 +114,29 @@ class SettlementController {
         'updatedAt': DateTime.now().toIso8601String(),
       },
     );
+  }
 
-    // Eğer tüm üyeler işaretlediyse grubu kapat
-    if (updatedSettledUserIds.length == group.memberIds.length) {
-      await FirebaseService.updateDocument(
-        path: 'groups/$groupId',
-        data: {
-          'isActive': false,
-          'updatedAt': DateTime.now().toIso8601String(),
-        },
-      );
-    }
+  /// Grubu kapat
+  static Future<void> closeGroup(
+    WidgetRef ref,
+    String groupId,
+  ) async {
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) throw Exception('Kullanıcı oturumu bulunamadı');
+
+    // Grubu al
+    final groupState = ref.read(groupProvider(groupId));
+    final group = groupState.valueOrNull;
+    if (group == null) throw Exception('Grup bulunamadı');
+
+    // Grubu kapat
+    await FirebaseService.updateDocument(
+      path: 'groups/$groupId',
+      data: {
+        'isActive': false,
+        'updatedAt': DateTime.now().toIso8601String(),
+      },
+    );
   }
 
   /// "Kimseden alacağım yok" işaretini kaldır
