@@ -74,6 +74,12 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
   }
 
   Future<void> _createExpense() async {
+    // Grup kapalı kontrolü
+    if (!widget.group.isActive) {
+      ErrorSnackBar.showWarning(context, 'Grup kapalı. Yeni masraf eklenemez.');
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     // Validasyonlar

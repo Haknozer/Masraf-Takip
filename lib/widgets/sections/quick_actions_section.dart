@@ -47,27 +47,39 @@ class QuickActionsSection extends ConsumerWidget {
             Expanded(
               child: ActionCard(
                 icon: Icons.people_alt,
-                title: 'Üye Ekle',
-                onTap: () {
-                  final currentUser = ref.read(currentUserProvider);
-                  final isAdmin = group.isGroupAdmin(currentUser?.uid ?? '');
+                title: group.isActive ? 'Üye Ekle' : 'Grup Kapalı',
+                onTap: group.isActive
+                    ? () {
+                        final currentUser = ref.read(currentUserProvider);
+                        final isAdmin = group.isGroupAdmin(currentUser?.uid ?? '');
 
-                  // Sadece admin görebilir
-                  if (isAdmin) {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AddMemberDialog(group: group),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Sadece grup yöneticileri üye ekleyebilir',
-                        ),
-                      ),
-                    );
-                  }
-                },
+                        // Sadece admin görebilir
+                        if (isAdmin) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AddMemberDialog(group: group),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Sadece grup yöneticileri üye ekleyebilir',
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    : () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text(
+                              'Grup kapalı. Yeni üye eklenemez.',
+                            ),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      },
+                isDisabled: !group.isActive,
               ),
             ),
           ],

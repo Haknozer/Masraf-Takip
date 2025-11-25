@@ -5,6 +5,7 @@ import '../../screens/profile_page.dart';
 import '../../providers/group_provider.dart';
 import '../../widgets/dialogs/select_group_dialog.dart';
 import '../../widgets/dialogs/create_expense_dialog.dart';
+import '../../constants/app_colors.dart';
 import 'bottom_navigation_bar.dart';
 
 /// Ana navigasyon wrapper - Bottom navigation bar ile
@@ -48,25 +49,31 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
   void _showExpenseDialog(BuildContext context) async {
     // Kullanıcının gruplarını al
     final groupsState = ref.read(userGroupsProvider);
-    final groups = groupsState.valueOrNull ?? [];
+    final allGroups = groupsState.valueOrNull ?? [];
+    
+    // Sadece aktif grupları filtrele
+    final activeGroups = allGroups.where((group) => group.isActive).toList();
 
-    if (groups.isEmpty) {
+    if (activeGroups.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Önce bir grup oluşturmanız veya bir gruba katılmanız gerekiyor.',
+              allGroups.isEmpty
+                  ? 'Önce bir grup oluşturmanız veya bir gruba katılmanız gerekiyor.'
+                  : 'Aktif grup bulunamadı. Tüm gruplar kapalı.',
             ),
+            backgroundColor: AppColors.warning,
           ),
         );
       }
       return;
     }
 
-    // Grup seçim dialogu göster
+    // Grup seçim dialogu göster (sadece aktif gruplar)
     final selectedGroup = await showDialog(
       context: context,
-      builder: (context) => SelectGroupDialog(groups: groups),
+      builder: (context) => SelectGroupDialog(groups: activeGroups),
     );
 
     if (selectedGroup != null && mounted) {

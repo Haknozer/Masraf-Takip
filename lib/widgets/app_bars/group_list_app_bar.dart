@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 
 class GroupListAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? searchQuery;
@@ -7,6 +6,7 @@ class GroupListAppBar extends StatelessWidget implements PreferredSizeWidget {
   final ValueChanged<String>? onSearchChanged;
   final VoidCallback? onSearchPressed;
   final VoidCallback? onSearchCancel;
+  final PreferredSizeWidget? bottom;
 
   const GroupListAppBar({
     super.key,
@@ -15,6 +15,7 @@ class GroupListAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onSearchChanged,
     this.onSearchPressed,
     this.onSearchCancel,
+    this.bottom,
   });
 
   @override
@@ -46,6 +47,7 @@ class GroupListAppBar extends StatelessWidget implements PreferredSizeWidget {
             )
           : const Text('Gruplarım'),
       elevation: 0,
+      bottom: bottom,
       actions: [
         if (searchQuery == null || onSearchChanged == null)
           IconButton(
@@ -57,5 +59,8 @@ class GroupListAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize {
+    final bottomHeight = bottom?.preferredSize.height ?? 0;
+    return Size.fromHeight(kToolbarHeight + bottomHeight);
+  }
 }

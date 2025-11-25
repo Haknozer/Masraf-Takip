@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/common/copy_button.dart';
 import '../../widgets/common/copyable_text_field.dart';
 import '../../widgets/common/tab_button_widget.dart';
+import '../../widgets/forms/custom_button.dart';
 
 class AddMemberDialog extends ConsumerStatefulWidget {
   final GroupModel group;
@@ -29,6 +30,39 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
     // Sadece admin görebilir
     if (!isAdmin) {
       return const SizedBox.shrink();
+    }
+
+    // Grup kapalıysa uyarı göster
+    if (!widget.group.isActive) {
+      return Dialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sectionPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.lock_outline, color: AppColors.warning, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Grup Kapalı',
+                style: AppTextStyles.h3,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Grup kapalı olduğu için yeni üye eklenemez.',
+                style: AppTextStyles.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              CustomButton(
+                text: 'Tamam',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     return Dialog(

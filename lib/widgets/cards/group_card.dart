@@ -15,19 +15,21 @@ class GroupCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {
-          print('GroupCard tıklandı - GroupId: ${group.id}, isEmpty: ${group.id.isEmpty}');
-          if (group.id.isEmpty) {
-            print('UYARI: GroupCard\'dan boş groupId geçiriliyor!');
-          }
-          Navigator.push(context, MaterialPageRoute(builder: (context) => GroupDetailPage(groupId: group.id)));
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: () {
+              print('GroupCard tıklandı - GroupId: ${group.id}, isEmpty: ${group.id.isEmpty}');
+              if (group.id.isEmpty) {
+                print('UYARI: GroupCard\'dan boş groupId geçiriliyor!');
+              }
+              Navigator.push(context, MaterialPageRoute(builder: (context) => GroupDetailPage(groupId: group.id)));
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
               group.imageUrl != null
                   ? ClipRRect(
                     borderRadius: BorderRadius.circular(12),
@@ -87,10 +89,39 @@ class GroupCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ],
+                  Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ],
+              ),
+            ),
           ),
-        ),
+          // Kapalı grup badge'i
+          if (!group.isActive)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.warning,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_outline, size: 12, color: Colors.white),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Kapalı',
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

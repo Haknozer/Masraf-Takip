@@ -36,9 +36,12 @@ class GroupsListSection extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) {
+    // Sadece aktif grupları göster (ana sayfada)
+    final activeGroups = groups.where((group) => group.isActive).take(3).toList();
+    
     return Column(
       children: [
-        ...groups.take(3).map((group) => GroupCard(group: group)),
+        ...activeGroups.map((group) => GroupCard(group: group)),
       ],
     );
   }

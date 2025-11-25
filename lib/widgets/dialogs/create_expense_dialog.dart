@@ -26,6 +26,18 @@ class CreateExpenseDialog extends ConsumerStatefulWidget {
   const CreateExpenseDialog({super.key, required this.group});
 
   static Future<void> show(BuildContext context, GroupModel group) async {
+    // Grup kapalıysa dialog açma, uyarı göster
+    if (!group.isActive) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Grup kapalı. Yeni masraf eklenemez.'),
+          backgroundColor: AppColors.warning,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -68,6 +80,13 @@ class _CreateExpenseDialogState extends ConsumerState<CreateExpenseDialog> {
   }
 
   Future<void> _createExpense() async {
+    // Grup kapalı kontrolü
+    if (!widget.group.isActive) {
+      ErrorSnackBar.showWarning(context, 'Grup kapalı. Yeni masraf eklenemez.');
+      Navigator.pop(context);
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     // Validasyonlar
@@ -215,7 +234,45 @@ class _CreateExpenseDialogState extends ConsumerState<CreateExpenseDialog> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Tutar
+                            // Grup kapalı uyarısı
+                            if (!widget.group.isActive) ...[
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: AppColors.warning.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.warning),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.warning_amber_rounded, 
+                                      color: AppColors.warning, 
+                                      size: 24
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        'Grup kapalı. Yeni masraf eklenemez.',
+                                        style: AppTextStyles.bodyMedium.copyWith(
+                                          color: AppColors.warning,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.sectionMargin),
+                            ],
+                            // Form içeriği - grup kapalıysa devre dışı
+                            IgnorePointer(
+                              ignoring: !widget.group.isActive,
+                              child: Opacity(
+                                opacity: widget.group.isActive ? 1.0 : 0.5,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    // Tutar
                             CustomTextField(
                               controller: _amountController,
                               label: 'Tutar (₺)',
@@ -313,6 +370,10 @@ class _CreateExpenseDialogState extends ConsumerState<CreateExpenseDialog> {
                               ),
 
                             const SizedBox(height: AppSpacing.sectionMargin),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -332,7 +393,7 @@ class _CreateExpenseDialogState extends ConsumerState<CreateExpenseDialog> {
                       ),
                       child: CustomButton(
                         text: 'Masraf Ekle',
-                        onPressed: _isLoading ? null : _createExpense,
+                        onPressed: (_isLoading || !widget.group.isActive) ? null : _createExpense,
                         isLoading: _isLoading,
                       ),
                     ),
