@@ -216,7 +216,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Harcama Ekle',
+          'Masraf Ekle',
           style: TextStyle(
             fontSize: fontSize,
             color: AppColors.textSecondary,

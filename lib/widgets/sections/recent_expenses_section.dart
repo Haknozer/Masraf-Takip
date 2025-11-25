@@ -19,9 +19,7 @@ import '../../utils/date_utils.dart' as DateUtils;
 import '../../constants/app_colors.dart';
 import '../../constants/expense_categories.dart';
 import '../../services/firebase_service.dart';
-import '../recent_expenses/recent_expenses_search_bar.dart';
 import '../recent_expenses/recent_expenses_filter_bottom_sheet.dart';
-import '../recent_expenses/recent_expenses_filters_toolbar.dart';
 
 class RecentExpensesSection extends ConsumerStatefulWidget {
   final String groupId;
@@ -282,14 +280,98 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
       children: [
         Text('Son Masraflar', style: AppTextStyles.h3),
         const SizedBox(height: 12),
-        RecentExpensesSearchBar(controller: _searchController, onClear: _searchController.clear),
-        const SizedBox(height: 12),
-        RecentExpensesFiltersToolbar(
-          activeChips: activeFilters,
-          hasActiveFilter: _filter.isActive,
-          onShowFilters: _showFilterBottomSheet,
-          onClearFilters: _clearFilters,
+        // Arama ve Filtreleme yan yana
+        Row(
+          children: [
+            // Arama bar (küçültülmüş)
+            Expanded(
+              flex: 3,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _searchController,
+                    builder: (context, value, child) {
+                      return TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Masraf ara...',
+                          hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textHint),
+                          prefixIcon: Icon(Icons.search, size: 18, color: AppColors.textSecondary),
+                          suffixIcon: value.text.isNotEmpty
+                              ? IconButton(
+                                  icon: Icon(Icons.clear, size: 18, color: AppColors.textSecondary),
+                                  onPressed: _searchController.clear,
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: AppColors.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.greyLight, width: 1),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.greyLight, width: 1),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.primary, width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        ),
+                        style: AppTextStyles.bodySmall,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Filtreleme butonu
+            OutlinedButton.icon(
+              onPressed: _showFilterBottomSheet,
+              icon: Icon(
+                Icons.filter_list,
+                size: 18,
+                color: _filter.isActive ? AppColors.primary : AppColors.textSecondary,
+              ),
+              label: Text(
+                'Filtrele',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: _filter.isActive ? AppColors.primary : AppColors.textSecondary,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                side: BorderSide(
+                  color: _filter.isActive ? AppColors.primary : AppColors.grey,
+                  width: _filter.isActive ? 1.5 : 1,
+                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: _filter.isActive ? AppColors.primary.withOpacity(0.1) : null,
+              ),
+            ),
+            if (_filter.isActive)
+              IconButton(
+                icon: Icon(Icons.clear_all, size: 20, color: AppColors.error),
+                onPressed: _clearFilters,
+                tooltip: 'Tüm filtreleri temizle',
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(),
+              ),
+          ],
         ),
+        // Aktif filtreler (varsa, ayrı satırda)
+        if (activeFilters.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: activeFilters,
+            ),
+          ),
+        ],
         const SizedBox(height: 12),
         AsyncValueBuilder<List<ExpenseModel>>(
           value: expensesState,
