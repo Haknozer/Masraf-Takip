@@ -35,7 +35,9 @@ class CustomButton extends StatelessWidget {
           backgroundColor:
               backgroundColor ??
               (isSecondary ? AppColors.secondary : AppColors.primary),
-          foregroundColor: AppColors.white,
+          foregroundColor: backgroundColor == AppColors.white 
+              ? AppColors.primary 
+              : AppColors.white,
           elevation: 2,
           shadowColor: (backgroundColor ?? AppColors.primary).withOpacity(0.3),
           shape: RoundedRectangleBorder(
@@ -60,13 +62,21 @@ class CustomButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (icon != null) ...[
-                      Icon(icon, size: 20),
+                      Icon(
+                        icon, 
+                        size: 20,
+                        color: backgroundColor == AppColors.white 
+                            ? AppColors.primary 
+                            : AppColors.white,
+                      ),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       text,
                       style: AppTextStyles.buttonLarge.copyWith(
-                        color: AppColors.white,
+                        color: backgroundColor == AppColors.white 
+                            ? AppColors.primary 
+                            : AppColors.white,
                       ),
                     ),
                   ],
