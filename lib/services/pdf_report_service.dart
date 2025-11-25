@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -15,6 +16,10 @@ import '../widgets/common/error_snackbar.dart';
 
 /// Grup özeti PDF raporu oluşturan servis
 class PdfReportService {
+  static const _fontAssetPath = 'assets/fonts/Roboto.ttf';
+  static pw.Font? _regularFont;
+  static pw.Font? _boldFont;
+
   /// Grup detayı için PDF raporu üretir ve paylaşım ekranını açar
   static Future<void> generateGroupSummary({
     required BuildContext context,
@@ -54,6 +59,9 @@ class PdfReportService {
 
       final memberSummaries = _buildMemberSummaries(group: group, expenses: expenses, membersMap: membersMap);
 
+      final baseFont = await _getRegularFont();
+      final boldFont = await _getBoldFont();
+
       final pdf = await _buildDocument(
         group: group,
         totalExpense: totalExpense,
@@ -61,6 +69,8 @@ class PdfReportService {
         memberSummaries: memberSummaries,
         recentExpenses: recentExpenses,
         membersMap: membersMap,
+        baseFont: baseFont,
+        boldFont: boldFont,
       );
 
       if (loadingDialogVisible && navigator.canPop()) {
@@ -89,10 +99,10 @@ class PdfReportService {
     required List<_MemberFinancialSummary> memberSummaries,
     required List<ExpenseModel> recentExpenses,
     required Map<String, UserModel> membersMap,
+    required pw.Font baseFont,
+    required pw.Font boldFont,
   }) async {
     final pdf = pw.Document();
-    final baseFont = pw.Font.helvetica();
-    final boldFont = pw.Font.helveticaBold();
 
     final currencyFormatter = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2);
     final dateFormatter = DateFormat('dd.MM.yyyy');
@@ -325,6 +335,26 @@ class PdfReportService {
         shareTotal: shareTotal,
       );
     }).toList();
+  }
+
+  static Future<void> _ensureFontsLoaded() async {
+    if (_regularFont != null && _boldFont != null) {
+      return;
+    }
+
+    final fontData = await rootBundle.load(_fontAssetPath);
+    _regularFont ??= pw.Font.ttf(fontData.buffer.asByteData());
+    _boldFont ??= pw.Font.ttf(fontData.buffer.asByteData());
+  }
+
+  static Future<pw.Font> _getRegularFont() async {
+    await _ensureFontsLoaded();
+    return _regularFont!;
+  }
+
+  static Future<pw.Font> _getBoldFont() async {
+    await _ensureFontsLoaded();
+    return _boldFont!;
   }
 }
 
