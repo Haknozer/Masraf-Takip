@@ -24,6 +24,14 @@ final userModelProvider = FutureProvider<UserModel?>((ref) async {
     if (userDoc.exists) {
       return UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
     }
+
+    // Doküman bulunmadıysa küçük bir gecikme ile tekrar dene
+    await Future.delayed(const Duration(milliseconds: 300));
+    final retryDoc = await FirebaseService.getDocumentSnapshot('users/${user.uid}');
+    if (retryDoc.exists) {
+      return UserModel.fromJson(retryDoc.data() as Map<String, dynamic>);
+    }
+
     return null;
   } catch (e) {
     return null;

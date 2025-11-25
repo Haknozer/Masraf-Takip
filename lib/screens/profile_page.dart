@@ -51,26 +51,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       loading: () => BasePage(appBar: const ProfileAppBar(), body: const Center(child: CircularProgressIndicator())),
       error: (e, s) => BasePage(appBar: const ProfileAppBar(), body: Center(child: Text("Hata: $e"))),
       data: (user) {
-        final firebaseUser = ref.watch(currentUserProvider);
-        UserModel? effectiveUser = user;
-
-        if (effectiveUser == null && firebaseUser != null) {
-          effectiveUser = UserModel(
-            id: firebaseUser.uid,
-            email: firebaseUser.email ?? '',
-            displayName: firebaseUser.displayName ?? 'İsimsiz Kullanıcı',
-            photoUrl: firebaseUser.photoURL,
-            createdAt: firebaseUser.metadata.creationTime ?? DateTime.now(),
-            updatedAt: firebaseUser.metadata.lastSignInTime ?? DateTime.now(),
-            groups: [],
-          );
+        if (user == null) {
+          return BasePage(appBar: const ProfileAppBar(), body: const Center(child: CircularProgressIndicator()));
         }
 
-        if (effectiveUser == null) {
-          return BasePage(appBar: const ProfileAppBar(), body: const Center(child: Text('Kullanıcı bulunamadı')));
-        }
-
-        _initializeFields(effectiveUser.displayName);
+        _initializeFields(user.displayName);
 
         return BasePage(
           appBar: const ProfileAppBar(),
@@ -80,7 +65,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: AppSpacing.sectionMargin),
-                _buildProfileInfoCard(effectiveUser),
+                _buildProfileInfoCard(user),
                 const SizedBox(height: AppSpacing.sectionMargin),
                 _buildAccountSettingsCard(),
                 const SizedBox(height: AppSpacing.sectionMargin),
