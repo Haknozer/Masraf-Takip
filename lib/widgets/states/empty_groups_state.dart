@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
-import '../../screens/groups/create_group_page.dart';
 
 class EmptyGroupsState extends StatelessWidget {
   const EmptyGroupsState({super.key});
@@ -20,22 +19,9 @@ class EmptyGroupsState extends StatelessWidget {
             Text('Henüz grup yok', style: AppTextStyles.h2),
             const SizedBox(height: AppSpacing.textSpacing),
             Text(
-              'İlk grubunuzu oluşturun veya bir gruba katılın',
+              'Ana sayfadan yeni grup oluşturabilir veya bir gruba katılabilirsiniz',
               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateGroupPage()));
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Grup Oluştur'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
             ),
           ],
         ),
