@@ -79,3 +79,61 @@ class UserDebtSummary {
   });
 }
 
+/// Basit (defter) net bakiye kaydı
+class SimpleNetBalance {
+  final String userId;
+  final String userName;
+  final double netAmount;
+
+  const SimpleNetBalance({
+    required this.userId,
+    required this.userName,
+    required this.netAmount,
+  });
+}
+
+/// Net bakiyeye göre yapılması gereken ödeme önerisi
+class SimpleSettlementInstruction {
+  final String fromUserId; // Borçlu
+  final String fromUserName;
+  final String toUserId; // Alacaklı
+  final String toUserName;
+  final double amount;
+
+  const SimpleSettlementInstruction({
+    required this.fromUserId,
+    required this.fromUserName,
+    required this.toUserId,
+    required this.toUserName,
+    required this.amount,
+  });
+}
+
+/// Basit eşitleme özeti
+class SimpleSettlementSummary {
+  final double totalExpense;
+  final double averagePerPerson;
+  final List<SimpleNetBalance> netBalances;
+  final List<SimpleSettlementInstruction> settlementInstructions;
+
+  const SimpleSettlementSummary({
+    required this.totalExpense,
+    required this.averagePerPerson,
+    required this.netBalances,
+    required this.settlementInstructions,
+  });
+
+  factory SimpleSettlementSummary.empty() {
+    return const SimpleSettlementSummary(
+      totalExpense: 0.0,
+      averagePerPerson: 0.0,
+      netBalances: [],
+      settlementInstructions: [],
+    );
+  }
+
+  bool get hasData =>
+      netBalances.any((b) => b.netAmount.abs() > 0.01) ||
+      settlementInstructions.isNotEmpty;
+}
+

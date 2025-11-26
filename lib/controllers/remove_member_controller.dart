@@ -32,6 +32,9 @@ class RemoveMemberController {
     for (final expense in expenses) {
       allUserIds.add(expense.paidBy);
       allUserIds.addAll(expense.sharedBy);
+      if (expense.paidAmounts != null) {
+        allUserIds.addAll(expense.paidAmounts!.keys);
+      }
     }
 
     // Kullanıcı map'ini oluştur
@@ -80,10 +83,27 @@ class RemoveMemberController {
     // 1. Masrafları güncelle (o üyeyi sharedBy ve paidBy'dan çıkar)
     for (final expense in expenses) {
       final updatedSharedBy = expense.sharedBy.where((id) => id != memberId).toList();
-      final updatedPaidBy = expense.paidBy == memberId ? group.memberIds.firstWhere(
-        (id) => id != memberId,
-        orElse: () => group.createdBy,
-      ) : expense.paidBy;
+
+      String updatedPaidBy = expense.paidBy;
+      Map<String, double>? updatedPaidAmounts;
+      if (expense.paidAmounts != null && expense.paidAmounts!.isNotEmpty) {
+        updatedPaidAmounts = Map<String, double>.from(expense.paidAmounts!);
+        updatedPaidAmounts.remove(memberId);
+        if (updatedPaidAmounts.isEmpty) {
+          updatedPaidBy = group.memberIds.firstWhere(
+            (id) => id != memberId,
+            orElse: () => group.createdBy,
+          );
+          updatedPaidAmounts = null;
+        } else {
+          updatedPaidBy = updatedPaidAmounts.entries.first.key;
+        }
+      } else if (expense.paidBy == memberId) {
+        updatedPaidBy = group.memberIds.firstWhere(
+          (id) => id != memberId,
+          orElse: () => group.createdBy,
+        );
+      }
 
       // Manuel dağılım varsa, o üyenin tutarını kaldır
       Map<String, double>? updatedManualAmounts;
@@ -111,6 +131,8 @@ class RemoveMemberController {
         } else {
           updateData['manualAmounts'] = null;
         }
+
+        updateData['paidAmounts'] = updatedPaidAmounts;
 
         await FirebaseService.updateDocument(
           path: 'expenses/${expense.id}',

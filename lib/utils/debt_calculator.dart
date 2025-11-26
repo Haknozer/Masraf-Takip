@@ -23,140 +23,36 @@ class DebtCalculator {
     for (final expense in expenses) {
       if (expense.groupId != group.id) continue;
 
-      final paidByUser = usersMap[expense.paidBy];
-      final paidByName = paidByUser?.displayName ?? 'Bilinmeyen';
+      final transactions = _buildExpenseTransactions(
+        expense: expense,
+        usersMap: usersMap,
+      );
 
-      // Eğer kullanıcı bu masrafı ödediyse, diğerleri ona borçlu
-      if (expense.paidBy == userId) {
-        for (final sharedUserId in expense.sharedBy) {
-          if (sharedUserId == userId) continue; // Kendisine borçlu değil
+      for (final transaction in transactions) {
+        if (transaction.amount <= 0.01) continue;
 
-          final sharedUser = usersMap[sharedUserId];
-          final sharedUserName = sharedUser?.displayName ?? 'Bilinmeyen';
-          final userAmount = expense.getAmountForUser(sharedUserId);
-
-          // Mevcut borç var mı kontrol et
-          final existingDebtIndex = debts.indexWhere(
-            (d) => d.fromUserId == sharedUserId && d.toUserId == userId,
+        if (transaction.fromUserId == userId) {
+          totalOwed += transaction.amount;
+          _upsertDebt(
+            debts: debts,
+            fromUserId: transaction.fromUserId,
+            toUserId: transaction.toUserId,
+            amount: transaction.amount,
+            expense: expense,
+            group: group,
+            usersMap: usersMap,
           );
-
-          if (existingDebtIndex >= 0) {
-            // Mevcut borcu güncelle
-            final existingDebt = debts[existingDebtIndex];
-            final updatedDetails = List<DebtDetail>.from(existingDebt.details)
-              ..add(
-                DebtDetail(
-                  expenseId: expense.id,
-                  expenseDescription: expense.description,
-                  groupId: group.id,
-                  groupName: group.name,
-                  amount: userAmount,
-                  date: expense.date,
-                  category: expense.category,
-                ),
-              );
-
-            debts[existingDebtIndex] = DebtBetweenUsers(
-              fromUserId: sharedUserId,
-              fromUserName: sharedUserName,
-              toUserId: userId,
-              toUserName: usersMap[userId]?.displayName ?? 'Bilinmeyen',
-              amount: existingDebt.amount + userAmount,
-              groupId: group.id,
-              groupName: group.name,
-              details: updatedDetails,
-            );
-            totalOwing += userAmount;
-          } else {
-            // Yeni borç oluştur
-            debts.add(
-              DebtBetweenUsers(
-                fromUserId: sharedUserId,
-                fromUserName: sharedUserName,
-                toUserId: userId,
-                toUserName: usersMap[userId]?.displayName ?? 'Bilinmeyen',
-                amount: userAmount,
-                groupId: group.id,
-                groupName: group.name,
-                details: [
-                  DebtDetail(
-                    expenseId: expense.id,
-                    expenseDescription: expense.description,
-                    groupId: group.id,
-                    groupName: group.name,
-                    amount: userAmount,
-                    date: expense.date,
-                    category: expense.category,
-                  ),
-                ],
-              ),
-            );
-            totalOwing += userAmount;
-          }
-        }
-      } else {
-        // Eğer kullanıcı bu masrafı paylaşıyorsa, ödeyene borçlu
-        if (expense.sharedBy.contains(userId)) {
-          final userAmount = expense.getAmountForUser(userId);
-
-          // Mevcut borç var mı kontrol et
-          final existingDebtIndex = debts.indexWhere(
-            (d) => d.fromUserId == userId && d.toUserId == expense.paidBy,
+        } else if (transaction.toUserId == userId) {
+          totalOwing += transaction.amount;
+          _upsertDebt(
+            debts: debts,
+            fromUserId: transaction.fromUserId,
+            toUserId: transaction.toUserId,
+            amount: transaction.amount,
+            expense: expense,
+            group: group,
+            usersMap: usersMap,
           );
-
-          if (existingDebtIndex >= 0) {
-            // Mevcut borcu güncelle
-            final existingDebt = debts[existingDebtIndex];
-            final updatedDetails = List<DebtDetail>.from(existingDebt.details)
-              ..add(
-                DebtDetail(
-                  expenseId: expense.id,
-                  expenseDescription: expense.description,
-                  groupId: group.id,
-                  groupName: group.name,
-                  amount: userAmount,
-                  date: expense.date,
-                  category: expense.category,
-                ),
-              );
-
-            debts[existingDebtIndex] = DebtBetweenUsers(
-              fromUserId: userId,
-              fromUserName: usersMap[userId]?.displayName ?? 'Bilinmeyen',
-              toUserId: expense.paidBy,
-              toUserName: paidByName,
-              amount: existingDebt.amount + userAmount,
-              groupId: group.id,
-              groupName: group.name,
-              details: updatedDetails,
-            );
-            totalOwed += userAmount;
-          } else {
-            // Yeni borç oluştur
-            debts.add(
-              DebtBetweenUsers(
-                fromUserId: userId,
-                fromUserName: usersMap[userId]?.displayName ?? 'Bilinmeyen',
-                toUserId: expense.paidBy,
-                toUserName: paidByName,
-                amount: userAmount,
-                groupId: group.id,
-                groupName: group.name,
-                details: [
-                  DebtDetail(
-                    expenseId: expense.id,
-                    expenseDescription: expense.description,
-                    groupId: group.id,
-                    groupName: group.name,
-                    amount: userAmount,
-                    date: expense.date,
-                    category: expense.category,
-                  ),
-                ],
-              ),
-            );
-            totalOwed += userAmount;
-          }
         }
       }
     }
@@ -279,5 +175,226 @@ class DebtCalculator {
     // Bu fonksiyon Firebase'den kullanıcıları çekmek için kullanılabilir
     // Şimdilik boş map döndürüyoruz, gerçek implementasyonda doldurulacak
     return usersMap;
+  }
+
+  /// Klasik defter mantığıyla net bakiye (her harcama için eşit paylaşım veya manuel tutarlar)
+  /// Net = kullanıcının ödediği toplam - harcamalardan ona düşen pay
+  static Map<String, double> calculateNetBalances({
+    required List<ExpenseModel> expenses,
+    required List<String> userIds,
+  }) {
+    final netBalances = <String, double>{};
+    final paidTotals = <String, double>{};
+    final owedTotals = <String, double>{};
+
+    for (final expense in expenses) {
+      final payerMap = expense.payerAmounts;
+      payerMap.forEach((payerId, paidAmount) {
+        paidTotals[payerId] = (paidTotals[payerId] ?? 0.0) + paidAmount;
+      });
+
+      final participants =
+          expense.sharedBy.isEmpty ? [expense.paidBy] : expense.sharedBy;
+      for (final participant in participants) {
+        final share = expense.getAmountForUser(participant);
+        owedTotals[participant] = (owedTotals[participant] ?? 0.0) + share;
+      }
+    }
+
+    for (final userId in userIds) {
+      final paid = paidTotals[userId] ?? 0.0;
+      final owed = owedTotals[userId] ?? 0.0;
+      netBalances[userId] = paid - owed;
+    }
+
+    return netBalances;
+  }
+
+  /// Basit defter mantığında net bakiyeleri ve ödeme önerilerini döndür
+  static SimpleSettlementSummary calculateSimpleSettlementSummary({
+    required List<ExpenseModel> expenses,
+    required List<String> userIds,
+    required Map<String, UserModel> usersMap,
+  }) {
+    if (userIds.isEmpty) {
+      return SimpleSettlementSummary.empty();
+    }
+
+    final netBalances =
+        calculateNetBalances(expenses: expenses, userIds: userIds);
+    final totalExpense =
+        expenses.fold<double>(0.0, (sum, e) => sum + e.amount);
+    final participantIds = <String>{};
+    for (final expense in expenses) {
+      if (expense.sharedBy.isEmpty) {
+        participantIds.add(expense.paidBy);
+      } else {
+        participantIds.addAll(expense.sharedBy);
+      }
+    }
+    final average =
+        participantIds.isEmpty ? 0.0 : totalExpense / participantIds.length;
+
+    final balanceEntries = netBalances.entries
+        .map(
+          (entry) => SimpleNetBalance(
+            userId: entry.key,
+            userName: usersMap[entry.key]?.displayName ?? 'Bilinmeyen',
+            netAmount: entry.value,
+          ),
+        )
+        .where((b) => b.netAmount.abs() > 0.01)
+        .toList()
+      ..sort((a, b) => b.netAmount.compareTo(a.netAmount));
+
+    final settlementInstructions = settleDebtsFromNetBalances(
+      netBalances: netBalances,
+      usersMap: usersMap,
+    );
+
+    return SimpleSettlementSummary(
+      totalExpense: totalExpense,
+      averagePerPerson: average,
+      netBalances: balanceEntries,
+      settlementInstructions: settlementInstructions,
+    );
+  }
+
+  /// Net bakiyelerden sade borç kapatma algoritması
+  /// - Negatif bakiye: borçlu, pozitif: alacaklı
+  static List<SimpleSettlementInstruction> settleDebtsFromNetBalances({
+    required Map<String, double> netBalances,
+    required Map<String, UserModel> usersMap,
+  }) {
+    final borclular = <String, double>{}; // Negatif bakiyeliler
+    final alacaklilar = <String, double>{}; // Pozitif bakiyeliler
+    // Yuvarlama hassasiyetini koru
+    const epsilon = 0.01;
+    // Listeleri doldur
+    netBalances.forEach((userId, bakiye) {
+      if (bakiye.abs() < epsilon) return; // Nötr
+      if (bakiye < 0) {
+        borclular[userId] = -bakiye; // Pozitif değer olarak kaydediyoruz
+      } else {
+        alacaklilar[userId] = bakiye;
+      }
+    });
+    final result = <SimpleSettlementInstruction>[];
+    final borcMap = Map.of(borclular);
+    final alacakMap = Map.of(alacaklilar);
+    // Borç ve alacak kapatılana kadar devam
+    while (borcMap.isNotEmpty && alacakMap.isNotEmpty) {
+      final borcluId = borcMap.keys.first;
+      final borcTutar = borcMap[borcluId]!;
+      final alacakliId = alacakMap.keys.first;
+      final alacakTutar = alacakMap[alacakliId]!;
+      final odeme = borcTutar < alacakTutar ? borcTutar : alacakTutar;
+      result.add(
+        SimpleSettlementInstruction(
+          fromUserId: borcluId,
+          fromUserName: usersMap[borcluId]?.displayName ?? 'Bilinmeyen',
+          toUserId: alacakliId,
+          toUserName: usersMap[alacakliId]?.displayName ?? 'Bilinmeyen',
+          amount: odeme,
+        ),
+      );
+      // Bakiyeleri güncelle
+      if (borcTutar <= alacakTutar + epsilon) {
+        alacakMap[alacakliId] = alacakTutar - odeme;
+        borcMap.remove(borcluId);
+        if ((alacakMap[alacakliId] ?? 0.0) < epsilon) {
+          alacakMap.remove(alacakliId);
+        }
+      } else {
+        borcMap[borcluId] = borcTutar - odeme;
+        alacakMap.remove(alacakliId);
+        if ((borcMap[borcluId] ?? 0.0) < epsilon) {
+          borcMap.remove(borcluId);
+        }
+      }
+    }
+    return result;
+  }
+
+  static void _upsertDebt({
+    required List<DebtBetweenUsers> debts,
+    required String fromUserId,
+    required String toUserId,
+    required double amount,
+    required ExpenseModel expense,
+    required GroupModel group,
+    required Map<String, UserModel> usersMap,
+  }) {
+    if (amount <= 0.0) return;
+
+    final detail = DebtDetail(
+      expenseId: expense.id,
+      expenseDescription: expense.description,
+      groupId: group.id,
+      groupName: group.name,
+      amount: amount,
+      date: expense.date,
+      category: expense.category,
+    );
+
+    final existingIndex = debts.indexWhere(
+      (d) => d.fromUserId == fromUserId && d.toUserId == toUserId,
+    );
+
+    if (existingIndex >= 0) {
+      final existing = debts[existingIndex];
+      final updatedDetails = List<DebtDetail>.from(existing.details)..add(detail);
+      debts[existingIndex] = DebtBetweenUsers(
+        fromUserId: fromUserId,
+        fromUserName: usersMap[fromUserId]?.displayName ?? 'Bilinmeyen',
+        toUserId: toUserId,
+        toUserName: usersMap[toUserId]?.displayName ?? 'Bilinmeyen',
+        amount: existing.amount + amount,
+        groupId: group.id,
+        groupName: group.name,
+        details: updatedDetails,
+      );
+    } else {
+      debts.add(
+        DebtBetweenUsers(
+          fromUserId: fromUserId,
+          fromUserName: usersMap[fromUserId]?.displayName ?? 'Bilinmeyen',
+          toUserId: toUserId,
+          toUserName: usersMap[toUserId]?.displayName ?? 'Bilinmeyen',
+          amount: amount,
+          groupId: group.id,
+          groupName: group.name,
+          details: [detail],
+        ),
+      );
+    }
+  }
+
+  static List<SimpleSettlementInstruction> _buildExpenseTransactions({
+    required ExpenseModel expense,
+    required Map<String, UserModel> usersMap,
+  }) {
+    final participants =
+        expense.sharedBy.isNotEmpty ? expense.sharedBy : [expense.paidBy];
+    final payerMap = expense.payerAmounts;
+    final involved = <String>{...participants, ...payerMap.keys};
+
+    final netBalances = <String, double>{};
+    for (final userId in involved) {
+      final paid = payerMap[userId] ?? 0.0;
+      final owed =
+          participants.contains(userId) ? expense.getAmountForUser(userId) : 0.0;
+      final net = paid - owed;
+      if (net.abs() > 0.01) {
+        netBalances[userId] = net;
+      }
+    }
+
+    if (netBalances.isEmpty) return const [];
+
+    return settleDebtsFromNetBalances(
+      netBalances: netBalances,
+      usersMap: usersMap,
+    );
   }
 }

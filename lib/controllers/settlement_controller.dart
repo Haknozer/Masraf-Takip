@@ -35,6 +35,9 @@ class SettlementController {
     for (final expense in expenses) {
       allUserIds.add(expense.paidBy);
       allUserIds.addAll(expense.sharedBy);
+      if (expense.paidAmounts != null) {
+        allUserIds.addAll(expense.paidAmounts!.keys);
+      }
     }
 
     final usersMap = <String, UserModel>{};

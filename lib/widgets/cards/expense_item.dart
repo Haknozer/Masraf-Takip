@@ -45,13 +45,39 @@ class ExpenseItem extends StatelessWidget {
     return user.displayName;
   }
 
+  String _buildPayerInfo() {
+    final payerMap = expense.paidAmounts;
+    if (payerMap == null || payerMap.isEmpty) {
+      final name = _getUserName(expense.paidBy);
+      return '$name ödedi';
+    }
+    final sorted = payerMap.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final firstName = _getUserName(sorted.first.key);
+    if (sorted.length == 1) {
+      return '$firstName ${sorted.first.value.toStringAsFixed(2)} ₺ ödedi';
+    }
+    final others = sorted.length - 1;
+    return '$firstName +$others kişi ödedi';
+  }
+
+  bool _canCurrentUserDelete() {
+    if (currentUserId == null) return false;
+    if (expense.paidBy == currentUserId) return true;
+    if (expense.paidAmounts != null &&
+        expense.paidAmounts!.containsKey(currentUserId)) {
+      return true;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final category = ExpenseCategories.getById(expense.category);
     final icon = category?.icon ?? Icons.receipt;
     final color = category?.color ?? Theme.of(context).colorScheme.primary;
-    final paidByName = _getUserName(expense.paidBy);
     final participantCount = expense.sharedBy.length;
+    final payerInfo = _buildPayerInfo();
 
     return InkWell(
       onTap: onTap,
@@ -77,7 +103,7 @@ class ExpenseItem extends StatelessWidget {
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                        '$paidByName tarafından ödendi',
+                        payerInfo,
                         style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -114,7 +140,7 @@ class ExpenseItem extends StatelessWidget {
               const SizedBox(width: 8),
               Icon(Icons.edit, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ],
-            if (showDeleteIcon && onDelete != null && currentUserId != null && expense.paidBy == currentUserId) ...[
+            if (showDeleteIcon && onDelete != null && _canCurrentUserDelete()) ...[
               const SizedBox(width: 8),
               GestureDetector(onTap: onDelete, child: Icon(Icons.delete_outline, size: 18, color: AppColors.error)),
             ],

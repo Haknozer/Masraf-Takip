@@ -152,7 +152,8 @@ class ExpenseUtils {
 
       // Kişi filtresi (paidBy veya sharedBy içinde)
       if (filter.userId != null) {
-        final isPaidBy = expense.paidBy == filter.userId;
+        final isPaidBy = expense.paidBy == filter.userId ||
+            (expense.paidAmounts?.containsKey(filter.userId) ?? false);
         final isSharedBy = expense.sharedBy.contains(filter.userId);
         if (!isPaidBy && !isSharedBy) {
           return false;

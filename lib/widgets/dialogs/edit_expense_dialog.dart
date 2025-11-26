@@ -133,7 +133,9 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
     }
 
     // Sadece masrafı ekleyen kişi düzenleyebilir
-    if (expense.paidBy != currentUser.uid) {
+    final canEdit = expense.paidBy == currentUser.uid ||
+        (expense.paidAmounts?.containsKey(currentUser.uid) ?? false);
+    if (!canEdit) {
       ErrorSnackBar.show(context, 'Bu masrafı sadece masrafı ekleyen kişi düzenleyebilir');
       return;
     }
