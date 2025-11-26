@@ -5,17 +5,15 @@ import '../../providers/group_provider.dart';
 import '../../models/group_model.dart';
 import '../../widgets/app_bars/group_detail_app_bar.dart';
 import '../../widgets/app_bars/profile_app_bar.dart';
-import '../../widgets/cards/group_header_card.dart';
-import '../../widgets/sections/recent_expenses_section.dart';
-import '../../widgets/sections/group_members_section.dart';
-import '../../widgets/sections/settlement_section.dart';
 import '../../widgets/common/async_value_builder.dart';
 import '../../widgets/navigation/bottom_navigation_bar.dart';
 import '../../widgets/dialogs/create_expense_dialog.dart';
 import '../profile/profile_page.dart';
 import '../../widgets/common/segment_control.dart';
-import '../../widgets/dialogs/add_member_dialog.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/tabs/group_members_tab.dart';
+import '../../widgets/tabs/group_expenses_tab.dart';
+import '../../widgets/tabs/group_settlement_tab.dart';
 
 class GroupDetailPage extends ConsumerStatefulWidget {
   final String groupId;
@@ -144,75 +142,15 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
   Widget _buildTabContent(GroupModel group) {
     switch (_selectedTab) {
       case 0: // Üyeler
-        return _buildMembersTab(group);
+        final currentUser = ref.watch(currentUserProvider);
+        final isMember = currentUser != null && group.isGroupMember(currentUser.uid);
+        return GroupMembersTab(group: group, isMember: isMember);
       case 1: // Masraflar
-        return _buildExpensesTab(group);
+        return GroupExpensesTab(group: group);
       case 2: // Hesaplaşma
-        return _buildSettlementTab(group);
+        return GroupSettlementTab(group: group);
       default:
         return const SizedBox.shrink();
     }
-  }
-
-  Widget _buildMembersTab(GroupModel group) {
-    final currentUser = ref.watch(currentUserProvider);
-    final isMember = currentUser != null && group.isGroupMember(currentUser.uid);
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.sectionPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Group Header
-          GroupHeaderCard(group: group),
-          const SizedBox(height: AppSpacing.sectionMargin),
-          // Group Members
-          GroupMembersSection(group: group),
-          // Üye Ekle Butonu (Tüm üyeler)
-          if (isMember)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.sectionMargin),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  showDialog(context: context, builder: (context) => AddMemberDialog(group: group));
-                },
-                icon: const Icon(Icons.person_add),
-                label: const Text('Üye Ekle'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpensesTab(GroupModel group) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.sectionPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Recent Expenses
-          RecentExpensesSection(groupId: group.id),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettlementTab(GroupModel group) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.sectionPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Settlement Section
-          SettlementSection(group: group),
-        ],
-      ),
-    );
   }
 }
