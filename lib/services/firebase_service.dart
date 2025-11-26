@@ -26,15 +26,10 @@ class FirebaseService {
         androidProvider: AndroidProvider.debug, // Debug provider kullanılacak
         appleProvider: AppleProvider.debug, // iOS için debug provider
       );
-      if (kDebugMode) {
-        print('✅ Firebase App Check başarıyla başlatıldı (Debug provider)');
-      }
+      debugPrint('✅ Firebase App Check başarıyla başlatıldı (Debug provider)');
     } catch (e) {
       // App Check hatası uygulamanın çalışmasını engellemez
-      // Sadece debug modda log göster
-      if (kDebugMode) {
-        print('⚠️ Firebase App Check başlatılamadı (opsiyonel): $e');
-      }
+      debugPrint('⚠️ Firebase App Check başlatılamadı (opsiyonel): $e');
     }
   }
 

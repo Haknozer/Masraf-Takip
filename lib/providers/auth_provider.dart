@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/firebase_service.dart';
+import '../services/log_service.dart';
 
 // Firebase Auth State Provider
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -74,9 +74,13 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   Future<void> signIn(String email, String password) async {
     state = const AsyncValue.loading();
     try {
+      LogService.info('Giriş denemesi: $email');
       final credential = await FirebaseService.signInWithEmailAndPassword(email: email, password: password);
       state = AsyncValue.data(credential.user);
-    } catch (e) {
+      LogService.info('Giriş başarılı: ${credential.user?.uid}');
+      LogService.logUserAction('user_login', data: {'email': email});
+    } catch (e, stackTrace) {
+      LogService.error('Giriş hatası: $email', e, stackTrace);
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
@@ -85,6 +89,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   Future<void> signUp(String email, String password, String displayName) async {
     state = const AsyncValue.loading();
     try {
+      LogService.info('Yeni kayıt denemesi: $email');
       final credential = await FirebaseService.createUserWithEmailAndPassword(email: email, password: password);
 
       // Kullanıcı profilini güncelle
@@ -92,7 +97,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
         await credential.user?.updateDisplayName(displayName);
       } catch (e) {
         // Display name güncelleme hatası kritik değil, devam et
-        debugPrint('Display name güncelleme hatası: $e');
+        LogService.warning('Display name güncelleme hatası: $email', e);
       }
 
       // Firestore'da kullanıcı dokümanı oluştur
@@ -108,9 +113,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       // Firestore'a kullanıcı dokümanını ekle
       try {
         await FirebaseService.setDocument(path: 'users/${credential.user!.uid}', data: userModel.toJson());
-        debugPrint('Kullanıcı Firestore\'a eklendi: ${credential.user!.uid}');
-      } catch (e) {
-        debugPrint('Firestore ekleme hatası: $e');
+        LogService.debug('Kullanıcı Firestore\'a eklendi: ${credential.user!.uid}');
+      } catch (e, stackTrace) {
+        LogService.error('Firestore ekleme hatası: $email', e, stackTrace);
         // Firestore hatası olsa bile kullanıcı oluşturuldu, state'i güncelle
         state = AsyncValue.data(credential.user);
         // Hatayı tekrar fırlat ki kullanıcı görsün
@@ -118,8 +123,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       }
 
       state = AsyncValue.data(credential.user);
-    } catch (e) {
-      debugPrint('SignUp genel hatası: $e');
+      LogService.info('Kayıt başarılı: ${credential.user?.uid}');
+      LogService.logUserAction('user_signup', data: {'email': email, 'displayName': displayName});
+    } catch (e, stackTrace) {
+      LogService.error('SignUp genel hatası: $email', e, stackTrace);
       state = AsyncValue.error(e, StackTrace.current);
       rethrow; // Hatayı tekrar fırlat
     }
@@ -128,8 +135,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   // Çıkış yap
   Future<void> signOut() async {
     try {
+      final currentUser = FirebaseService.currentUser;
+      LogService.info('Çıkış yapılıyor: ${currentUser?.email}');
       await FirebaseService.signOut();
       state = const AsyncValue.data(null);
+      LogService.logUserAction('user_logout', data: {'email': currentUser?.email});
     } catch (e) {
       state = AsyncValue.error(e, StackTrace.current);
     }
@@ -138,8 +148,12 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   // Şifre sıfırlama
   Future<void> resetPassword(String email) async {
     try {
+      LogService.info('Şifre sıfırlama talebi: $email');
       await FirebaseService.sendPasswordResetEmail(email);
-    } catch (e) {
+      LogService.info('Şifre sıfırlama e-postası gönderildi: $email');
+      LogService.logUserAction('password_reset_requested', data: {'email': email});
+    } catch (e, stackTrace) {
+      LogService.error('Şifre sıfırlama hatası: $email', e, stackTrace);
       state = AsyncValue.error(e, StackTrace.current);
     }
   }
