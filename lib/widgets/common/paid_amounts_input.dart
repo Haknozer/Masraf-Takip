@@ -51,9 +51,7 @@ class _PaidAmountsInputState extends ConsumerState<PaidAmountsInput> {
       for (final id in widget.memberIds) {
         _controllers.putIfAbsent(
           id,
-          () => TextEditingController(
-            text: widget.paidAmounts[id]?.toStringAsFixed(2) ?? '0.00',
-          ),
+          () => TextEditingController(text: widget.paidAmounts[id]?.toStringAsFixed(2) ?? '0.00'),
         );
       }
       _membersFuture = _fetchMembers();
@@ -70,9 +68,7 @@ class _PaidAmountsInputState extends ConsumerState<PaidAmountsInput> {
 
   void _initControllers() {
     for (final id in widget.memberIds) {
-      _controllers[id] = TextEditingController(
-        text: widget.paidAmounts[id]?.toStringAsFixed(2) ?? '0.00',
-      );
+      _controllers[id] = TextEditingController(text: widget.paidAmounts[id]?.toStringAsFixed(2) ?? '0.00');
     }
   }
 
@@ -94,13 +90,11 @@ class _PaidAmountsInputState extends ConsumerState<PaidAmountsInput> {
   void _onAmountChanged(String userId, String value) {
     final sanitized = value.trim().isEmpty ? '0' : value;
     final amount = double.tryParse(sanitized.replaceAll(',', '.')) ?? 0.0;
-    final updated = Map<String, double>.from(widget.paidAmounts)
-      ..[userId] = amount;
+    final updated = Map<String, double>.from(widget.paidAmounts)..[userId] = amount;
     widget.onChanged(updated);
   }
 
-  double _sumPaid() =>
-      widget.paidAmounts.values.fold(0.0, (sum, value) => sum + value);
+  double _sumPaid() => widget.paidAmounts.values.fold(0.0, (sum, value) => sum + value);
 
   @override
   Widget build(BuildContext context) {
@@ -113,9 +107,7 @@ class _PaidAmountsInputState extends ConsumerState<PaidAmountsInput> {
             Text('Kim ne kadar ödedi?', style: AppTextStyles.label),
             Text(
               'Toplam ${widget.totalAmount.toStringAsFixed(2)} ₺',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -127,81 +119,60 @@ class _PaidAmountsInputState extends ConsumerState<PaidAmountsInput> {
               return const Center(child: CircularProgressIndicator());
             }
             if (!snapshot.hasData || snapshot.hasError) {
-              return Text(
-                'Üyeler yüklenemedi',
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
-              );
+              return Text('Üyeler yüklenemedi', style: AppTextStyles.bodySmall.copyWith(color: AppColors.error));
             }
 
             final members = snapshot.data!;
             return Column(
               children: [
-                ...members.map(
-                  (member) {
-                    final controller = _controllers[member.id]!;
-                    return Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: AppSpacing.textSpacing * 2,
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor:
-                                Theme.of(context).colorScheme.surfaceVariant,
-                            backgroundImage: member.photoUrl != null
-                                ? NetworkImage(member.photoUrl!)
-                                : null,
-                            child: member.photoUrl == null
-                                ? Text(
-                                    member.displayName.isNotEmpty
-                                        ? member.displayName[0].toUpperCase()
-                                        : '?',
-                                  )
-                                : null,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  member.displayName,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  member.email,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            width: 120,
-                            child: CustomTextField(
-                              controller: controller,
-                              label: 'Ödenen',
-                              hint: '0.00',
-                              prefixIcon: Icons.currency_lira,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                decimal: true,
+                ...members.map((member) {
+                  final controller = _controllers[member.id]!;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.textSpacing * 2),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          backgroundImage: member.photoUrl != null ? NetworkImage(member.photoUrl!) : null,
+                          child:
+                              member.photoUrl == null
+                                  ? Text(member.displayName.isNotEmpty ? member.displayName[0].toUpperCase() : '?')
+                                  : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                member.displayName,
+                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
                               ),
-                              onChanged: (value) =>
-                                  _onAmountChanged(member.id, value),
-                            ),
+                              Text(
+                                member.email,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                        ),
+                        SizedBox(
+                          width: 120,
+                          child: CustomTextField(
+                            controller: controller,
+                            label: 'Ödenen',
+                            hint: '0.00',
+                            prefixIcon: Icons.currency_lira,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            onChanged: (value) => _onAmountChanged(member.id, value),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
                 const SizedBox(height: 4),
                 _buildSummary(context),
               ],
@@ -222,9 +193,9 @@ class _PaidAmountsInputState extends ConsumerState<PaidAmountsInput> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,18 +203,10 @@ class _PaidAmountsInputState extends ConsumerState<PaidAmountsInput> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Ödenen Toplam',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text('Ödenen Toplam', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
               Text(
                 '${totalPaid.toStringAsFixed(2)} ₺',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: color),
               ),
             ],
           ),
@@ -262,4 +225,3 @@ class _PaidAmountsInputState extends ConsumerState<PaidAmountsInput> {
     );
   }
 }
-
