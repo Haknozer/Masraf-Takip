@@ -22,7 +22,13 @@ class ExpenseItemAvatar extends StatelessWidget {
           width: 48,
           height: 48,
           fit: BoxFit.cover,
+          cacheWidth: 96, // 2x for better quality on high-DPI screens
+          cacheHeight: 96,
           errorBuilder: (context, error, stackTrace) => _buildIconAvatar(icon, color),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return _buildIconAvatar(icon, color);
+          },
         ),
       );
     }

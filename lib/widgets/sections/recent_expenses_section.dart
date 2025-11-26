@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_text_styles.dart';
@@ -46,14 +47,23 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
   DateTime? _endDate;
   String? _selectedUserId;
   List<UserModel> _groupMembers = [];
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_updateFilter);
-    _minAmountController.addListener(_updateFilter);
-    _maxAmountController.addListener(_updateFilter);
+    _searchController.addListener(_onSearchChanged);
+    _minAmountController.addListener(_onSearchChanged);
+    _maxAmountController.addListener(_onSearchChanged);
     _loadGroupMembers();
+  }
+
+  // Debounced search - 300ms sonra çalışır
+  void _onSearchChanged() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _updateFilter();
+    });
   }
 
   Future<void> _loadGroupMembers() async {
@@ -198,6 +208,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _minAmountController.dispose();
     _maxAmountController.dispose();

@@ -32,21 +32,25 @@ class ExpensesList extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      children: [
-        for (int i = 0; i < expenses.length; i++) ...[
-          ExpenseItem(
-            expense: expenses[i],
-            onTap: onExpenseTap != null ? () => onExpenseTap!(expenses[i]) : null,
-            onDelete: onExpenseDelete != null ? () => onExpenseDelete!(expenses[i]) : null,
-            showEditIcon: showEditIcon,
-            showDeleteIcon: showDeleteIcon,
-            groupMembers: groupMembers,
-            currentUserId: currentUserId,
-          ),
-          if (showDividers && i < expenses.length - 1) const Divider(),
-        ],
-      ],
+    // ListView.builder ile performans optimizasyonu
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: expenses.length,
+      separatorBuilder: (context, index) => showDividers ? const Divider() : const SizedBox.shrink(),
+      itemBuilder: (context, index) {
+        final expense = expenses[index];
+        return ExpenseItem(
+          key: ValueKey(expense.id), // Efficient rebuilds için key
+          expense: expense,
+          onTap: onExpenseTap != null ? () => onExpenseTap!(expense) : null,
+          onDelete: onExpenseDelete != null ? () => onExpenseDelete!(expense) : null,
+          showEditIcon: showEditIcon,
+          showDeleteIcon: showDeleteIcon,
+          groupMembers: groupMembers,
+          currentUserId: currentUserId,
+        );
+      },
     );
   }
 }

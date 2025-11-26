@@ -76,7 +76,21 @@ class ExpenseReceiptSection extends StatelessWidget {
                 onTap: () => onShowPreview(Image.network(imageUrl!).image),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(imageUrl!, height: 180, width: double.infinity, fit: BoxFit.cover),
+                  child: Image.network(
+                    imageUrl!, 
+                    height: 180, 
+                    width: double.infinity, 
+                    fit: BoxFit.cover,
+                    cacheHeight: 360, // 2x for better quality
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 180,
+                        color: colorScheme.surfaceContainerHighest,
+                        child: const Center(child: CircularProgressIndicator()),
+                      );
+                    },
+                  ),
                 ),
               ),
               if (canEdit)

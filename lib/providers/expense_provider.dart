@@ -8,8 +8,8 @@ import '../exceptions/middleware_exceptions.dart';
 import '../utils/expense_utils.dart';
 import 'auth_provider.dart';
 
-// Group Expenses Provider
-final groupExpensesProvider = StreamProvider.family<List<ExpenseModel>, String>(
+// Group Expenses Provider - AutoDispose ile memory leak önleme
+final groupExpensesProvider = StreamProvider.autoDispose.family<List<ExpenseModel>, String>(
   (ref, groupId) {
     return FirebaseService.listenToCollection('expenses').map(
       (snapshot) =>
@@ -25,8 +25,8 @@ final groupExpensesProvider = StreamProvider.family<List<ExpenseModel>, String>(
   },
 );
 
-// Single Expense Provider
-final expenseProvider = StreamProvider.family<ExpenseModel?, String>((
+// Single Expense Provider - AutoDispose ile memory leak önleme
+final expenseProvider = StreamProvider.autoDispose.family<ExpenseModel?, String>((
   ref,
   expenseId,
 ) {

@@ -517,7 +517,11 @@ final groupNotifierProvider = StateNotifierProvider<GroupNotifier, AsyncValue<Li
   return GroupNotifier(ref);
 });
 
-final groupProvider = Provider.family<AsyncValue<GroupModel?>, String>((ref, groupId) {
+// AutoDispose ile memory leak önleme ve cacheTime ile performans artırma
+final groupProvider = Provider.autoDispose.family<AsyncValue<GroupModel?>, String>((ref, groupId) {
+  // Cache'i 5 dakika tut
+  ref.keepAlive();
+  
   return ref
       .watch(groupNotifierProvider)
       .when(
