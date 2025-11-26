@@ -4,7 +4,6 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/group_model.dart';
-import '../../providers/auth_provider.dart';
 import '../../widgets/common/tab_button_widget.dart';
 import '../../widgets/forms/custom_button.dart';
 import 'add_member/add_member_qr_tab.dart';
@@ -25,13 +24,6 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isAdmin = widget.group.isGroupAdmin(ref.read(currentUserProvider)?.uid ?? '');
-
-    // Sadece admin görebilir
-    if (!isAdmin) {
-      return const SizedBox.shrink();
-    }
-
     // Grup kapalıysa uyarı göster
     if (!widget.group.isActive) {
       return Dialog(

@@ -8,6 +8,7 @@ import '../../controllers/group_members_controller.dart';
 import '../../controllers/remove_member_controller.dart';
 import '../../widgets/dialogs/remove_member_dialog.dart';
 import '../../widgets/dialogs/transfer_admin_dialog.dart';
+import '../../widgets/dialogs/add_member_dialog.dart';
 import '../../widgets/common/error_snackbar.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/group_provider.dart';
@@ -56,6 +57,7 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
   Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
     final isCurrentUserAdmin = currentUser != null && GroupMembersController.isAdmin(widget.group, currentUser.uid);
+    final isMember = currentUser != null && widget.group.isGroupMember(currentUser.uid);
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -75,6 +77,14 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                     Text('Üyeler (${_members.length})', style: AppTextStyles.h3.copyWith(color: colorScheme.onSurface)),
                   ],
                 ),
+                if (isMember)
+                  IconButton(
+                    onPressed: () {
+                      showDialog(context: context, builder: (context) => AddMemberDialog(group: widget.group));
+                    },
+                    icon: Icon(Icons.person_add, color: colorScheme.primary),
+                    tooltip: 'Üye Ekle',
+                  ),
               ],
             ),
             const SizedBox(height: AppSpacing.sectionMargin),
