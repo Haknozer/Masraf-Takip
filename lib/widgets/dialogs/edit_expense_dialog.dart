@@ -33,11 +33,12 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
   Widget build(BuildContext context) {
     final expenseState = ref.watch(expenseProvider(widget.expenseId));
     final currentUser = ref.watch(currentUserProvider);
+    final theme = Theme.of(context);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: DraggableScrollableSheet(
         initialChildSize: 0.9,
@@ -68,7 +69,10 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                           margin: const EdgeInsets.only(top: 12),
                           width: 40,
                           height: 4,
-                          decoration: BoxDecoration(color: AppColors.grey, borderRadius: BorderRadius.circular(2)),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
                         // Header
                         Padding(
@@ -76,8 +80,11 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Masraf Düzenle', style: AppTextStyles.h3),
-                              IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                              Text('Masraf Düzenle', style: AppTextStyles.h3.copyWith(color: theme.colorScheme.onSurface)),
+                              IconButton(
+                                icon: Icon(Icons.close, color: theme.colorScheme.onSurfaceVariant),
+                                onPressed: () => Navigator.pop(context),
+                              ),
                             ],
                           ),
                         ),

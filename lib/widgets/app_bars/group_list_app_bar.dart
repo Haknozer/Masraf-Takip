@@ -21,9 +21,9 @@ class GroupListAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final foregroundColor = theme.appBarTheme.foregroundColor ?? theme.colorScheme.onSurface;
+    final foregroundColor = theme.colorScheme.onSurface;
     return AppBar(
-      backgroundColor: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+      backgroundColor: theme.colorScheme.surface,
       foregroundColor: foregroundColor,
       title:
           searchController != null && onSearchChanged != null

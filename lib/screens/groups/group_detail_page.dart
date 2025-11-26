@@ -88,6 +88,7 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
     }
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: currentAppBar,
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: CustomBottomNavigationBar(
