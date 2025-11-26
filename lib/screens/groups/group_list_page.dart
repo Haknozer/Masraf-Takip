@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/group_provider.dart';
 import '../../widgets/app_bars/group_list_app_bar.dart';
 import '../../widgets/states/error_state.dart';
-import '../../widgets/lists/groups_list.dart';
 import '../../widgets/common/base_page.dart';
 import '../../widgets/common/async_value_builder.dart';
 import '../../models/group_model.dart';
+import '../../widgets/views/groups_tab_view.dart';
 
 class GroupListPage extends ConsumerStatefulWidget {
   const GroupListPage({super.key});
@@ -61,13 +61,14 @@ class _GroupListPageState extends ConsumerState<GroupListPage> with SingleTicker
       appBar: GroupListAppBar(
         searchQuery: _isSearching ? _searchQuery : null,
         searchController: _isSearching ? _searchController : null,
-        onSearchChanged: _isSearching
-            ? (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              }
-            : null,
+        onSearchChanged:
+            _isSearching
+                ? (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                }
+                : null,
         onSearchPressed: () {
           setState(() {
             _isSearching = true;
@@ -82,10 +83,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> with SingleTicker
         },
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Aktif Gruplarım'),
-            Tab(text: 'Geçmiş Gruplarım'),
-          ],
+          tabs: const [Tab(text: 'Aktif Gruplarım'), Tab(text: 'Geçmiş Gruplarım')],
         ),
       ),
       useScrollView: false,
@@ -96,90 +94,36 @@ class _GroupListPageState extends ConsumerState<GroupListPage> with SingleTicker
             controller: _tabController,
             children: [
               // Aktif Gruplarım sekmesi
-              _buildGroupsTab(
-                context,
-                _filterGroups(_getActiveGroups(allGroups), _searchQuery),
-                _searchQuery,
-                'Aktif grup bulunamadı',
+              GroupsTabView(
+                groups: _filterGroups(_getActiveGroups(allGroups), _searchQuery),
+                searchQuery: _searchQuery,
+                emptyMessage: 'Aktif grup bulunamadı',
+                isHistoryTab: false,
+                onRefresh: () async {
+                  // Refresh groups logic
+                },
               ),
               // Geçmiş Gruplarım sekmesi
-              _buildGroupsTab(
-                context,
-                _filterGroups(_getClosedGroups(allGroups), _searchQuery),
-                _searchQuery,
-                'Geçmiş grup bulunamadı',
+              GroupsTabView(
+                groups: _filterGroups(_getClosedGroups(allGroups), _searchQuery),
+                searchQuery: _searchQuery,
+                emptyMessage: 'Geçmiş grup bulunamadı',
+                isHistoryTab: true,
+                onRefresh: () async {
+                  // Refresh groups logic
+                },
               ),
             ],
           );
         },
-        errorBuilder: (context, error, stack) => ErrorState(
-          error: error.toString(),
-          onRetry: () {
-            // Retry logic
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGroupsTab(
-    BuildContext context,
-    List<GroupModel> filteredGroups,
-    String searchQuery,
-    String emptyMessage,
-  ) {
-    if (filteredGroups.isEmpty) {
-      if (searchQuery.isNotEmpty) {
-        return Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.search_off, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
-                Text(
-                  'Arama sonucu bulunamadı',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '"$searchQuery" için sonuç bulunamadı',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey,
-                      ),
-                ),
-              ],
+        errorBuilder:
+            (context, error, stack) => ErrorState(
+              error: error.toString(),
+              onRetry: () {
+                // Retry logic
+              },
             ),
-          ),
-        );
-      }
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                _tabController.index == 0 ? Icons.group_outlined : Icons.history,
-                size: 64,
-                color: Colors.grey,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                emptyMessage,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return GroupsList(
-      groups: filteredGroups,
-      onRefresh: () async {
-        // Refresh groups logic
-      },
+      ),
     );
   }
 }
