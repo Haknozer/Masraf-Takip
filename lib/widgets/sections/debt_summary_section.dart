@@ -4,6 +4,7 @@ import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../models/debt_model.dart';
 import '../../providers/debt_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/common/async_value_builder.dart';
 import '../../screens/debts/debt_detail_page.dart';
 
@@ -13,12 +14,19 @@ class DebtSummarySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserProvider);
+    if (currentUser == null) {
+      return const SizedBox.shrink();
+    }
+
     final debtSummaryState = ref.watch(userDebtSummaryProvider);
 
     return AsyncValueBuilder<UserDebtSummary>(
       value: debtSummaryState,
       dataBuilder: (context, summary) {
         final hasDebts = summary.totalOwed > 0 || summary.totalOwing > 0;
+
+        final breakdown = _MemberBreakdownCalculator.build(summary, currentUser.uid);
 
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -181,6 +189,8 @@ class DebtSummarySection extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    if (breakdown.hasData) _MemberBreakdownSection(data: breakdown),
+                    if (breakdown.hasData) const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -316,5 +326,126 @@ class _DebtSummaryItem extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _MemberBreakdownSection extends StatelessWidget {
+  final MemberBreakdownData data;
+
+  const _MemberBreakdownSection({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (data.receivables.isNotEmpty) ...[
+          Text(
+            'Senden alacaklı olduğun kişiler',
+            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          ...data.receivables.map(
+            (item) => _MemberAmountTile(
+              name: item.name,
+              amount: item.amount,
+              color: AppColors.success,
+              icon: Icons.call_made,
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (data.payables.isNotEmpty) ...[
+          Text('Borçlu olduğun kişiler', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          ...data.payables.map(
+            (item) => _MemberAmountTile(
+              name: item.name,
+              amount: item.amount,
+              color: AppColors.error,
+              icon: Icons.call_received,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _MemberAmountTile extends StatelessWidget {
+  final String name;
+  final double amount;
+  final Color color;
+  final IconData icon;
+
+  const _MemberAmountTile({required this.name, required this.amount, required this.color, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(name, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600))),
+          Text(
+            '${amount.toStringAsFixed(2)} ₺',
+            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class MemberBreakdownData {
+  final List<MemberAmount> receivables;
+  final List<MemberAmount> payables;
+
+  const MemberBreakdownData({required this.receivables, required this.payables});
+
+  bool get hasData => receivables.isNotEmpty || payables.isNotEmpty;
+}
+
+class MemberAmount {
+  final String userId;
+  final String name;
+  final double amount;
+
+  const MemberAmount({required this.userId, required this.name, required this.amount});
+}
+
+class _MemberBreakdownCalculator {
+  static MemberBreakdownData build(UserDebtSummary summary, String currentUserId) {
+    final receivables = <String, MemberAmount>{};
+    final payables = <String, MemberAmount>{};
+
+    for (final groupSummary in summary.groupSummaries) {
+      for (final debt in groupSummary.debts) {
+        if (debt.toUserId == currentUserId) {
+          receivables.update(
+            debt.fromUserId,
+            (existing) =>
+                MemberAmount(userId: existing.userId, name: existing.name, amount: existing.amount + debt.amount),
+            ifAbsent: () => MemberAmount(userId: debt.fromUserId, name: debt.fromUserName, amount: debt.amount),
+          );
+        } else if (debt.fromUserId == currentUserId) {
+          payables.update(
+            debt.toUserId,
+            (existing) =>
+                MemberAmount(userId: existing.userId, name: existing.name, amount: existing.amount + debt.amount),
+            ifAbsent: () => MemberAmount(userId: debt.toUserId, name: debt.toUserName, amount: debt.amount),
+          );
+        }
+      }
+    }
+
+    final receivableList = receivables.values.toList()..sort((a, b) => b.amount.compareTo(a.amount));
+    final payableList = payables.values.toList()..sort((a, b) => b.amount.compareTo(a.amount));
+
+    return MemberBreakdownData(receivables: receivableList, payables: payableList);
   }
 }

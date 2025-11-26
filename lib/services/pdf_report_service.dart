@@ -297,7 +297,7 @@ class PdfReportService {
                         dateFormatter.format(expense.date),
                         ExpenseCategories.getById(expense.category)?.name ?? expense.category,
                         expense.description,
-                        membersMap[expense.paidBy]?.displayName ?? expense.paidBy,
+                        _formatPayersForPdf(expense, membersMap),
                         currencyFormatter.format(expense.amount),
                       ],
                     )
@@ -318,7 +318,9 @@ class PdfReportService {
       double shareTotal = 0;
 
       for (final expense in expenses) {
-        if (expense.paidBy == memberId) {
+        if (expense.paidAmounts != null && expense.paidAmounts!.isNotEmpty) {
+          paidTotal += expense.paidAmounts![memberId] ?? 0;
+        } else if (expense.paidBy == memberId) {
           paidTotal += expense.amount;
         }
         if (expense.sharedBy.contains(memberId)) {
@@ -355,6 +357,25 @@ class PdfReportService {
   static Future<pw.Font> _getBoldFont() async {
     await _ensureFontsLoaded();
     return _boldFont!;
+  }
+
+  static String _formatPayersForPdf(
+    ExpenseModel expense,
+    Map<String, UserModel> membersMap,
+  ) {
+    if (expense.paidAmounts == null || expense.paidAmounts!.isEmpty) {
+      return membersMap[expense.paidBy]?.displayName ?? expense.paidBy;
+    }
+
+    final entries = expense.paidAmounts!.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final firstName =
+        membersMap[entries.first.key]?.displayName ?? entries.first.key;
+    if (entries.length == 1) {
+      return '$firstName (${entries.first.value.toStringAsFixed(2)} ₺)';
+    }
+    final others = entries.length - 1;
+    return '$firstName +$others kişi';
   }
 }
 

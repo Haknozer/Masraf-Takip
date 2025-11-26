@@ -65,6 +65,9 @@ final userDebtSummaryProvider = FutureProvider<UserDebtSummary>((ref) async {
   for (final expense in allExpenses) {
     allUserIds.add(expense.paidBy);
     allUserIds.addAll(expense.sharedBy);
+    if (expense.paidAmounts != null) {
+      allUserIds.addAll(expense.paidAmounts!.keys);
+    }
   }
 
   // Kullanıcı map'ini oluştur
@@ -125,6 +128,9 @@ final groupDebtSummaryProvider =
       for (final expense in expenses) {
         allUserIds.add(expense.paidBy);
         allUserIds.addAll(expense.sharedBy);
+        if (expense.paidAmounts != null) {
+          allUserIds.addAll(expense.paidAmounts!.keys);
+        }
       }
 
       // Kullanıcı map'ini oluştur

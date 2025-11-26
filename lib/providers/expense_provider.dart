@@ -82,6 +82,7 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
     required DateTime date,
     required List<String> sharedBy,
     Map<String, double>? manualAmounts,
+    Map<String, double>? paidAmounts,
     String? imageUrl,
   }) async {
     final user = ref.read(currentUserProvider);
@@ -123,6 +124,7 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
         date: date,
         sharedBy: sharedBy,
         manualAmounts: manualAmounts,
+        paidAmounts: paidAmounts,
         imageUrl: imageUrl,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -147,6 +149,7 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
     required List<String> sharedBy,
     required String paidBy,
     Map<String, double>? manualAmounts,
+    Map<String, double>? paidAmounts,
     String? imageUrl,
     bool imageUpdated = false,
   }) async {
@@ -199,6 +202,12 @@ class ExpenseNotifier extends StateNotifier<AsyncValue<List<ExpenseModel>>> {
         updateData['manualAmounts'] = manualAmounts;
       } else {
         updateData['manualAmounts'] = null;
+      }
+
+      if (paidAmounts != null) {
+        updateData['paidAmounts'] = paidAmounts;
+      } else {
+        updateData['paidAmounts'] = null;
       }
 
       if (imageUpdated) {

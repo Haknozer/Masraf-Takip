@@ -18,6 +18,7 @@ import '../../widgets/common/error_snackbar.dart';
 import '../../widgets/common/manual_distribution_input.dart';
 import '../../widgets/common/member_selector.dart';
 import '../../widgets/common/payment_type_selector.dart';
+import '../../widgets/common/paid_amounts_input.dart';
 import '../../widgets/dialogs/delete_expense_dialog.dart';
 import '../../widgets/forms/custom_button.dart';
 import '../../widgets/forms/custom_text_field.dart';
@@ -48,6 +49,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
   List<String> _selectedMemberIds = [];
   String? _selectedPayerId;
   Map<String, double> _manualAmounts = {};
+  Map<String, double> _paidAmounts = {};
   bool _isLoading = false;
   bool _isInitialized = false;
   XFile? _receiptImage;
@@ -89,6 +91,12 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
           } else {
             _distributionType = DistributionType.equal;
           }
+        }
+
+        if (expense.paidAmounts != null && expense.paidAmounts!.isNotEmpty) {
+          _paidAmounts = Map.from(expense.paidAmounts!);
+        } else {
+          _paidAmounts = {expense.paidBy: expense.amount};
         }
 
         setState(() => _isInitialized = true);
@@ -177,6 +185,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
 
     // Paylaşım mantığına göre sharedBy listesini oluştur
     List<String> sharedBy = [];
+    Map<String, double>? paidAmounts;
 
     if (_paymentType == PaymentType.fullPayment) {
       if (_selectedPayerId == null) {
@@ -203,7 +212,21 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
         }
       }
 
+      final cleanedPaidAmounts = Map<String, double>.fromEntries(
+        _paidAmounts.entries.where((entry) => entry.value > 0),
+      );
+      if (cleanedPaidAmounts.isEmpty) {
+        ErrorSnackBar.showWarning(context, 'Lütfen ödemeleri girin');
+        return;
+      }
+      final paidTotal = cleanedPaidAmounts.values.fold(0.0, (sum, value) => sum + value);
+      if ((paidTotal - amount).abs() > 0.01) {
+        ErrorSnackBar.showWarning(context, 'Ödenen tutarların toplamı ${amount.toStringAsFixed(2)} TL olmalı');
+        return;
+      }
+
       sharedBy = List.from(_selectedMemberIds);
+      paidAmounts = cleanedPaidAmounts;
     }
 
     setState(() => _isLoading = true);
@@ -228,7 +251,8 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
       if (_paymentType == PaymentType.fullPayment) {
         paidBy = _selectedPayerId ?? currentUser.uid;
       } else {
-        paidBy = _selectedPayerId ?? currentUser.uid;
+        final entries = paidAmounts!.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+        paidBy = entries.first.key;
       }
 
       await ref
@@ -242,6 +266,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
             sharedBy: sharedBy,
             paidBy: paidBy,
             manualAmounts: manualAmounts,
+            paidAmounts: paidAmounts,
             imageUrl: imageUrl,
             imageUpdated: true,
           );
@@ -282,6 +307,8 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
             }
 
             _initializeForm(expense, group);
+
+            final totalAmount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
 
             return Form(
               key: _formKey,
@@ -359,8 +386,16 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                         if (type == PaymentType.fullPayment) {
                           _distributionType = null;
                           _manualAmounts.clear();
+                          _paidAmounts.clear();
                         } else {
                           _distributionType = DistributionType.equal;
+                          if (_paidAmounts.isEmpty) {
+                            final currentUser = ref.read(currentUserProvider);
+                            if (currentUser != null) {
+                              _paidAmounts[currentUser.uid] =
+                                  double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+                            }
+                          }
                         }
                       });
                     },
@@ -377,6 +412,14 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                       availableMemberIds: group.memberIds,
                     ),
                   ] else if (_paymentType == PaymentType.sharedPayment) ...[
+                    PaidAmountsInput(
+                      memberIds: group.memberIds,
+                      totalAmount: totalAmount,
+                      paidAmounts: _paidAmounts,
+                      onChanged: (amounts) => setState(() => _paidAmounts = amounts),
+                    ),
+                    const SizedBox(height: AppSpacing.sectionMargin),
+
                     MemberSelector(
                       selectedMemberIds: _selectedMemberIds,
                       onMembersChanged: (memberIds) {
@@ -416,7 +459,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                     if (_distributionType == DistributionType.manual && _selectedMemberIds.isNotEmpty)
                       ManualDistributionInput(
                         selectedMemberIds: _selectedMemberIds,
-                        totalAmount: double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
+                        totalAmount: totalAmount,
                         memberAmounts: _manualAmounts,
                         onAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
                       ),

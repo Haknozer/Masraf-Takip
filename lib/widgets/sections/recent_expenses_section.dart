@@ -435,8 +435,9 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
       return;
     }
 
-    // Sadece masrafı ekleyen kişi silebilir
-    if (expense.paidBy != currentUser.uid) {
+    final isPayer = expense.paidBy == currentUser.uid ||
+        (expense.paidAmounts?.containsKey(currentUser.uid) ?? false);
+    if (!isPayer) {
       ErrorSnackBar.show(context, 'Bu masrafı sadece masrafı ekleyen kişi silebilir');
       return;
     }

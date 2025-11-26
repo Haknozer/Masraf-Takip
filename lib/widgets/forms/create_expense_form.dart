@@ -10,6 +10,7 @@ import '../../widgets/common/category_selector.dart';
 import '../../widgets/common/payment_type_selector.dart';
 import '../../widgets/common/member_selector.dart';
 import '../../widgets/common/manual_distribution_input.dart';
+import '../../widgets/common/paid_amounts_input.dart';
 import '../../widgets/common/error_snackbar.dart';
 import '../../utils/date_utils.dart' as app_date_utils;
 
@@ -35,6 +36,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
   List<String> _selectedMemberIds = [];
   String? _selectedPayerId; // Tamamını ödeyen kişi
   Map<String, double> _manualAmounts = {}; // Manuel dağılım için
+  Map<String, double> _paidAmounts = {}; // Paylaşımlı ödemede kim ne kadar ödedi
 
   bool _isLoading = false;
 
@@ -47,6 +49,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
     final currentUser = ref.read(currentUserProvider);
     if (currentUser != null) {
       _selectedPayerId = currentUser.uid;
+      _paidAmounts[currentUser.uid] = 0.0;
     }
   }
 
@@ -103,6 +106,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
 
     // Paylaşım mantığına göre sharedBy listesini oluştur
     List<String> sharedBy = [];
+    Map<String, double>? paidByAmounts;
 
     if (_paymentType == PaymentType.fullPayment) {
       // Tamamını ödeyen: Sadece ödeyen kişi
@@ -133,6 +137,24 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
       }
 
       sharedBy = List.from(_selectedMemberIds);
+
+      final cleanedPaidAmounts = Map<String, double>.fromEntries(
+        _paidAmounts.entries.where((entry) => entry.value > 0),
+      );
+      if (cleanedPaidAmounts.isEmpty) {
+        ErrorSnackBar.showWarning(context, 'Lütfen ödeyen kişilerin tutarlarını girin');
+        return;
+      }
+      final paidTotal =
+          cleanedPaidAmounts.values.fold(0.0, (sum, value) => sum + value);
+      if ((paidTotal - amount).abs() > 0.01) {
+        ErrorSnackBar.showWarning(
+          context,
+          'Ödeme tutarlarının toplamı ${amount.toStringAsFixed(2)} TL olmalı',
+        );
+        return;
+      }
+      paidByAmounts = cleanedPaidAmounts;
     }
 
     setState(() => _isLoading = true);
@@ -150,13 +172,24 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
           .read(expenseNotifierProvider.notifier)
           .addExpense(
             groupId: widget.group.id,
-            paidBy: _selectedPayerId ?? currentUser.uid,
+            paidBy: (_paymentType == PaymentType.fullPayment
+                    ? _selectedPayerId ?? currentUser.uid
+                    : (paidByAmounts?.entries
+                            .reduce(
+                              (a, b) =>
+                                  a.value >= b.value
+                                      ? a
+                                      : b,
+                            )
+                            .key ??
+                        currentUser.uid)),
             description: _descriptionController.text.trim(),
             amount: amount,
             category: _selectedCategoryId!,
             date: _selectedDate,
             sharedBy: sharedBy,
             manualAmounts: manualAmounts,
+            paidAmounts: paidByAmounts,
           );
 
       if (mounted) {
@@ -176,6 +209,8 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
 
   @override
   Widget build(BuildContext context) {
+    final totalAmount =
+        double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
     return Form(
       key: _formKey,
       child: Column(
@@ -249,9 +284,17 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
                 if (type == PaymentType.fullPayment) {
                   _distributionType = null;
                   _manualAmounts.clear();
+                  _paidAmounts.clear();
                 } else {
                   // Paylaşımlı ödeme için varsayılan olarak eşit dağılım
                   _distributionType = DistributionType.equal;
+                  if (_paidAmounts.isEmpty) {
+                    final currentUser = ref.read(currentUserProvider);
+                    if (currentUser != null) {
+                      _paidAmounts[currentUser.uid] =
+                          double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+                    }
+                  }
                 }
               });
             },
@@ -269,6 +312,15 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
               availableMemberIds: widget.group.memberIds,
             ),
           ] else if (_paymentType == PaymentType.sharedPayment) ...[
+            // Ödeyenlerin girişi
+            PaidAmountsInput(
+              memberIds: widget.group.memberIds,
+              totalAmount: totalAmount,
+              paidAmounts: _paidAmounts,
+              onChanged: (amounts) => setState(() => _paidAmounts = amounts),
+            ),
+            const SizedBox(height: AppSpacing.sectionMargin),
+
             // Paylaşımlı ödeme: Üye seçimi
             MemberSelector(
               selectedMemberIds: _selectedMemberIds,
@@ -314,7 +366,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
             if (_distributionType == DistributionType.manual && _selectedMemberIds.isNotEmpty)
               ManualDistributionInput(
                 selectedMemberIds: _selectedMemberIds,
-                totalAmount: double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
+                totalAmount: totalAmount,
                 memberAmounts: _manualAmounts,
                 onAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
               ),

@@ -1,13 +1,14 @@
 class ExpenseModel {
   final String id;
   final String groupId;
-  final String paidBy; // Kullanıcı ID'si
+  final String paidBy; // Kullanıcı ID'si (geri uyumluluk için birincil ödeyen)
   final String description;
   final double amount;
   final String category;
   final DateTime date;
   final List<String> sharedBy; // Paylaşan kullanıcı ID'leri
   final Map<String, double>? manualAmounts; // Manuel dağılım için: userId -> amount
+  final Map<String, double>? paidAmounts; // Çoklu ödeme için: userId -> paid amount
   final String? imageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -22,6 +23,7 @@ class ExpenseModel {
     required this.date,
     required this.sharedBy,
     this.manualAmounts,
+    this.paidAmounts,
     this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
@@ -42,6 +44,10 @@ class ExpenseModel {
           ? Map<String, double>.from(
               (json['manualAmounts'] as Map).map((key, value) => MapEntry(key.toString(), (value as num).toDouble())))
           : null,
+      paidAmounts: json['paidAmounts'] != null
+          ? Map<String, double>.from(
+              (json['paidAmounts'] as Map).map((key, value) => MapEntry(key.toString(), (value as num).toDouble())))
+          : null,
       imageUrl: json['imageUrl'],
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
@@ -60,6 +66,7 @@ class ExpenseModel {
       'date': date.toIso8601String(),
       'sharedBy': sharedBy,
       if (manualAmounts != null) 'manualAmounts': manualAmounts,
+      if (paidAmounts != null) 'paidAmounts': paidAmounts,
       'imageUrl': imageUrl,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -77,6 +84,7 @@ class ExpenseModel {
     DateTime? date,
     List<String>? sharedBy,
     Map<String, double>? manualAmounts,
+    Map<String, double>? paidAmounts,
     String? imageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -91,6 +99,7 @@ class ExpenseModel {
       date: date ?? this.date,
       sharedBy: sharedBy ?? this.sharedBy,
       manualAmounts: manualAmounts ?? this.manualAmounts,
+      paidAmounts: paidAmounts ?? this.paidAmounts,
       imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -116,6 +125,14 @@ class ExpenseModel {
     // Eşit dağılım
     if (sharedBy.isEmpty) return amount;
     return amount / sharedBy.length;
+  }
+
+  /// Çoklu ödeyenler için ödenen tutarları döndür (yoksa tek ödeyen)
+  Map<String, double> get payerAmounts {
+    if (paidAmounts != null && paidAmounts!.isNotEmpty) {
+      return Map<String, double>.from(paidAmounts!);
+    }
+    return {paidBy: amount};
   }
 
   // Paylaşan kişi sayısı
