@@ -15,7 +15,7 @@ class DebtCalculator {
     List<SettlementPayment> settlements = const [],
   }) {
     // Kullanıcının bu gruptaki borçlarını hesapla
-    final debts = <DebtBetweenUsers>[];
+    var debts = <DebtBetweenUsers>[];
     double totalOwed = 0.0; // Kullanıcının borçlu olduğu toplam
     double totalOwing = 0.0; // Kullanıcının alacaklı olduğu toplam
 
@@ -54,6 +54,20 @@ class DebtCalculator {
             usersMap: usersMap,
           );
         }
+      }
+    }
+
+    // Karşılıklı borçları netleştir
+    debts = _netDebts(debts, userId, usersMap, group);
+    
+    // Totalleri yeniden hesapla (netleştirme sonrası)
+    totalOwed = 0.0;
+    totalOwing = 0.0;
+    for (final debt in debts) {
+      if (debt.fromUserId == userId) {
+        totalOwed += debt.amount;
+      } else if (debt.toUserId == userId) {
+        totalOwing += debt.amount;
       }
     }
 
@@ -124,6 +138,81 @@ class DebtCalculator {
       netAmount: netAmount,
       debts: debts,
     );
+  }
+
+  /// Karşılıklı borçları netleştir
+  /// Örnek: A -> B 600₺ ve B -> A 1400₺ ise, sadece B -> A 800₺ olarak göster
+  static List<DebtBetweenUsers> _netDebts(
+    List<DebtBetweenUsers> debts,
+    String currentUserId,
+    Map<String, UserModel> usersMap,
+    GroupModel group,
+  ) {
+    final nettedDebts = <DebtBetweenUsers>[];
+    final processed = <String>{};
+
+    for (final debt in debts) {
+      final key1 = '${debt.fromUserId}_${debt.toUserId}';
+      final key2 = '${debt.toUserId}_${debt.fromUserId}';
+
+      if (processed.contains(key1)) continue;
+
+      // Karşı yönde borç var mı kontrol et
+      final reverseDebt = debts.firstWhere(
+        (d) => d.fromUserId == debt.toUserId && d.toUserId == debt.fromUserId,
+        orElse: () => DebtBetweenUsers(
+          fromUserId: '',
+          fromUserName: '',
+          toUserId: '',
+          toUserName: '',
+          amount: 0.0,
+          groupId: group.id,
+          groupName: group.name,
+          details: [],
+        ),
+      );
+
+      processed.add(key1);
+      processed.add(key2);
+
+      if (reverseDebt.amount > 0.01) {
+        // Karşılıklı borç var, netleştir
+        final netAmount = debt.amount - reverseDebt.amount;
+        
+        if (netAmount.abs() > 0.01) {
+          if (netAmount > 0) {
+            // debt yönünde net borç var
+            nettedDebts.add(DebtBetweenUsers(
+              fromUserId: debt.fromUserId,
+              fromUserName: debt.fromUserName,
+              toUserId: debt.toUserId,
+              toUserName: debt.toUserName,
+              amount: netAmount,
+              groupId: debt.groupId,
+              groupName: debt.groupName,
+              details: [...debt.details, ...reverseDebt.details],
+            ));
+          } else {
+            // reverse debt yönünde net borç var
+            nettedDebts.add(DebtBetweenUsers(
+              fromUserId: reverseDebt.fromUserId,
+              fromUserName: reverseDebt.fromUserName,
+              toUserId: reverseDebt.toUserId,
+              toUserName: reverseDebt.toUserName,
+              amount: -netAmount,
+              groupId: reverseDebt.groupId,
+              groupName: reverseDebt.groupName,
+              details: [...debt.details, ...reverseDebt.details],
+            ));
+          }
+        }
+      } else {
+        // Tek yönlü borç, olduğu gibi ekle
+        nettedDebts.add(debt);
+      }
+    }
+
+    return nettedDebts;
   }
 
   /// Kullanıcının tüm gruplardaki borç özetini hesapla
