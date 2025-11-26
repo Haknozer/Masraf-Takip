@@ -22,10 +22,11 @@ class GroupDebtDetailPage extends ConsumerWidget {
     final groupDebtState = ref.watch(groupDebtSummaryProvider(groupId));
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('Grup Borç Detayları'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
       ),
       body: AsyncValueBuilder<GroupDebtSummary>(
         value: groupDebtState,
@@ -35,11 +36,17 @@ class GroupDebtDetailPage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.account_balance_wallet, size: 64, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.account_balance_wallet, 
+                    size: 64, 
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Bu grupta borç/alacak yok',
-                    style: AppTextStyles.h4.copyWith(color: AppColors.textSecondary),
+                    style: AppTextStyles.h4.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

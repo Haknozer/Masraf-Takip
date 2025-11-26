@@ -13,11 +13,17 @@ class DebtDetailItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final category = ExpenseCategories.getById(detail.category);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.greyLight, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: isDark 
+            ? Theme.of(context).colorScheme.surfaceContainerHighest 
+            : AppColors.greyLight,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         children: [
           Container(
@@ -33,11 +39,19 @@ class DebtDetailItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(detail.expenseDescription, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  detail.expenseDescription, 
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   date_utils_helper.AppDateUtils.formatDate(detail.date),
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),

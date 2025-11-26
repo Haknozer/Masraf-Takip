@@ -52,7 +52,10 @@ class DebtDetailCard extends StatelessWidget {
               children: [
                 Text(
                   'Masraf Detayları',
-                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600, 
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ...debt.details.map((detail) => DebtDetailItem(detail: detail)),
