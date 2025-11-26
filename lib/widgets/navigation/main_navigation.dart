@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../screens/home/home_page.dart';
-import '../../screens/profile_page.dart';
+import '../../screens/profile/profile_page.dart';
 import '../../providers/group_provider.dart';
 import '../../widgets/dialogs/select_group_dialog.dart';
 import '../../widgets/dialogs/create_expense_dialog.dart';
