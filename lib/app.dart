@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/auth/login_page.dart';
+import 'screens/splash/splash_screen.dart';
 import 'widgets/navigation/main_navigation.dart';
 import 'services/deep_link_service.dart';
 import 'constants/app_colors.dart';
@@ -75,16 +76,19 @@ class _MyAppState extends ConsumerState<MyApp> {
       darkTheme: _buildDarkTheme(),
       themeMode: themeMode,
       debugShowCheckedModeBanner: false,
-      home: authState.when(
-        data: (user) {
-          if (user != null) {
-            return const MainNavigation();
-          } else {
-            return const LoginPage();
-          }
-        },
-        loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-        error: (error, stack) => const LoginPage(),
+      home: SplashScreen(
+        duration: const Duration(seconds: 2),
+        child: authState.when(
+          data: (user) {
+            if (user != null) {
+              return const MainNavigation();
+            } else {
+              return const LoginPage();
+            }
+          },
+          loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+          error: (error, stack) => const LoginPage(),
+        ),
       ),
     );
   }
