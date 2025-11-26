@@ -39,6 +39,7 @@ class GroupMemberItem extends StatelessWidget {
         border: Border.all(color: isAdmin ? colorScheme.primary : Colors.transparent, width: isAdmin ? 1 : 0),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Profil resmi veya avatar
           CircleAvatar(
@@ -58,37 +59,13 @@ class GroupMemberItem extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        member.displayName,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (isCurrentUser) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'Sen',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  member.displayName,
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -113,6 +90,21 @@ class GroupMemberItem extends StatelessWidget {
               ],
             ),
           ),
+          // "Sen" badge'i sağda, butonlarla aynı hizada
+          if (isCurrentUser) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Sen',
+                style: AppTextStyles.bodySmall.copyWith(color: colorScheme.primary, fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(width: 4),
+          ],
           // Admin yetkisi devret butonu (sadece admin ve kendisi değilse)
           if (isCurrentUserAdmin && !isCurrentUser && !isAdmin)
             IconButton(
