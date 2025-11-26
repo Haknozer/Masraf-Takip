@@ -14,6 +14,9 @@ class AmountRangeFilterSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -28,7 +31,7 @@ class AmountRangeFilterSection extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Min',
                   filled: true,
-                  fillColor: AppColors.greyLight,
+                  fillColor: isDark ? colorScheme.surfaceContainerHighest : AppColors.greyLight,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -45,7 +48,7 @@ class AmountRangeFilterSection extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Max',
                   filled: true,
-                  fillColor: AppColors.greyLight,
+                  fillColor: isDark ? colorScheme.surfaceContainerHighest : AppColors.greyLight,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,

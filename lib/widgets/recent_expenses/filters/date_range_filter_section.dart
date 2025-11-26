@@ -19,6 +19,9 @@ class DateRangeFilterSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -32,17 +35,23 @@ class DateRangeFilterSection extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: AppColors.greyLight,
+                    color: isDark ? colorScheme.surfaceContainerHighest : AppColors.greyLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 18, color: AppColors.textSecondary),
+                      Icon(
+                        Icons.calendar_today, 
+                        size: 18, 
+                        color: isDark ? colorScheme.onSurfaceVariant : AppColors.textSecondary,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         startDate != null ? date_utils.AppDateUtils.formatDate(startDate!) : 'Başlangıç',
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: startDate != null ? AppColors.textPrimary : AppColors.textHint,
+                          color: startDate != null 
+                            ? (isDark ? colorScheme.onSurface : AppColors.textPrimary)
+                            : (isDark ? colorScheme.onSurfaceVariant : AppColors.textHint),
                         ),
                       ),
                     ],
@@ -57,17 +66,23 @@ class DateRangeFilterSection extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: AppColors.greyLight,
+                    color: isDark ? colorScheme.surfaceContainerHighest : AppColors.greyLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 18, color: AppColors.textSecondary),
+                      Icon(
+                        Icons.calendar_today, 
+                        size: 18, 
+                        color: isDark ? colorScheme.onSurfaceVariant : AppColors.textSecondary,
+                      ),
                       const SizedBox(width: 12),
                       Text(
                         endDate != null ? date_utils.AppDateUtils.formatDate(endDate!) : 'Bitiş',
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: endDate != null ? AppColors.textPrimary : AppColors.textHint,
+                          color: endDate != null 
+                            ? (isDark ? colorScheme.onSurface : AppColors.textPrimary)
+                            : (isDark ? colorScheme.onSurfaceVariant : AppColors.textHint),
                         ),
                       ),
                     ],

@@ -24,14 +24,12 @@ class ExpenseUtils {
 
   /// QueryDocumentSnapshot listesinden ExpenseModel listesi oluştur
   static List<ExpenseModel> fromQuerySnapshot(QuerySnapshot snapshot) {
-    return snapshot.docs
-        .map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          // Firebase document ID'sini kullan, data içindeki id'yi override et
-          data['id'] = doc.id;
-          return ExpenseModel.fromJson(data);
-        })
-        .toList();
+    return snapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      // Firebase document ID'sini kullan, data içindeki id'yi override et
+      data['id'] = doc.id;
+      return ExpenseModel.fromJson(data);
+    }).toList();
   }
 
   /// ExpenseId validasyonu
@@ -118,9 +116,11 @@ class ExpenseUtils {
         }
       }
 
-      // Kategori filtresi
-      if (filter.categoryId != null && expense.category != filter.categoryId) {
-        return false;
+      // Kategori filtresi (çoklu seçim)
+      if (filter.categoryIds != null && filter.categoryIds!.isNotEmpty) {
+        if (!filter.categoryIds!.contains(expense.category)) {
+          return false;
+        }
       }
 
       // Minimum tutar filtresi
@@ -152,8 +152,7 @@ class ExpenseUtils {
 
       // Kişi filtresi (paidBy veya sharedBy içinde)
       if (filter.userId != null) {
-        final isPaidBy = expense.paidBy == filter.userId ||
-            (expense.paidAmounts?.containsKey(filter.userId) ?? false);
+        final isPaidBy = expense.paidBy == filter.userId || (expense.paidAmounts?.containsKey(filter.userId) ?? false);
         final isSharedBy = expense.sharedBy.contains(filter.userId);
         if (!isPaidBy && !isSharedBy) {
           return false;
@@ -164,4 +163,3 @@ class ExpenseUtils {
     }).toList();
   }
 }
-

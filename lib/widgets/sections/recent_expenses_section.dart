@@ -41,7 +41,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
   final TextEditingController _maxAmountController = TextEditingController();
 
   ExpenseFilter _filter = const ExpenseFilter();
-  String? _selectedCategoryId;
+  List<String> _selectedCategoryIds = [];
   DateTime? _startDate;
   DateTime? _endDate;
   String? _selectedUserId;
@@ -94,7 +94,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
 
       _filter = ExpenseFilter(
         searchQuery: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
-        categoryId: _selectedCategoryId,
+        categoryIds: _selectedCategoryIds.isEmpty ? null : _selectedCategoryIds,
         minAmount: minAmount,
         maxAmount: maxAmount,
         startDate: _startDate,
@@ -109,7 +109,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
       _searchController.clear();
       _minAmountController.clear();
       _maxAmountController.clear();
-      _selectedCategoryId = null;
+      _selectedCategoryIds = [];
       _startDate = null;
       _endDate = null;
       _selectedUserId = null;
@@ -117,9 +117,9 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
     });
   }
 
-  void _removeCategoryFilter() {
+  void _removeCategoryFilter(String categoryId) {
     setState(() {
-      _selectedCategoryId = null;
+      _selectedCategoryIds.remove(categoryId);
       _updateFilter();
     });
   }
@@ -154,16 +154,16 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder:
           (context) => RecentExpensesFilterBottomSheet(
-            selectedCategoryId: _selectedCategoryId,
+            selectedCategoryIds: _selectedCategoryIds,
             minAmount: _minAmountController.text,
             maxAmount: _maxAmountController.text,
             startDate: _startDate,
             endDate: _endDate,
             selectedUserId: _selectedUserId,
             groupMembers: _groupMembers,
-            onCategorySelected: (categoryId) {
+            onCategoriesSelected: (categoryIds) {
               setState(() {
-                _selectedCategoryId = categoryId;
+                _selectedCategoryIds = categoryIds;
                 _updateFilter();
               });
             },
@@ -207,15 +207,16 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
   List<Widget> _buildActiveFilterChips() {
     final chips = <Widget>[];
 
-    if (_selectedCategoryId != null) {
-      final category = ExpenseCategories.getById(_selectedCategoryId!);
+    // Çoklu kategori chip'leri
+    for (final categoryId in _selectedCategoryIds) {
+      final category = ExpenseCategories.getById(categoryId);
       if (category != null) {
         chips.add(
           RecentFilterChip(
             label: category.name,
             icon: category.icon,
             color: category.color,
-            onRemove: _removeCategoryFilter,
+            onRemove: () => _removeCategoryFilter(categoryId),
           ),
         );
       }

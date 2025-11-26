@@ -27,14 +27,15 @@ class CategoryFilterChip extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? chipColor.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? chipColor : Theme.of(context).colorScheme.surfaceContainerHighest,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? chipColor : Theme.of(context).colorScheme.outlineVariant,
+            width: 1.5, // Sabit border genişliği
           ),
         ),
         child: Row(
@@ -48,7 +49,7 @@ class CategoryFilterChip extends StatelessWidget {
               label,
               style: AppTextStyles.bodySmall.copyWith(
                 color: isSelected ? chipColor : Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],

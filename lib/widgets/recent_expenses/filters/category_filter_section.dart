@@ -4,10 +4,26 @@ import '../../../constants/expense_categories.dart';
 import '../category_filter_chip.dart';
 
 class CategoryFilterSection extends StatelessWidget {
-  final String? selectedCategoryId;
-  final ValueChanged<String?> onCategorySelected;
+  final List<String> selectedCategoryIds;
+  final ValueChanged<List<String>> onCategoriesSelected;
 
-  const CategoryFilterSection({super.key, required this.selectedCategoryId, required this.onCategorySelected});
+  const CategoryFilterSection({super.key, required this.selectedCategoryIds, required this.onCategoriesSelected});
+
+  void _toggleCategory(String? categoryId) {
+    if (categoryId == null) {
+      // "Tümü" seçildi - tüm seçimleri temizle
+      onCategoriesSelected([]);
+    } else {
+      // Kategori seçimi toggle
+      final newSelection = List<String>.from(selectedCategoryIds);
+      if (newSelection.contains(categoryId)) {
+        newSelection.remove(categoryId);
+      } else {
+        newSelection.add(categoryId);
+      }
+      onCategoriesSelected(newSelection);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,16 +38,16 @@ class CategoryFilterSection extends StatelessWidget {
           children: [
             CategoryFilterChip(
               label: 'Tümü',
-              isSelected: selectedCategoryId == null,
-              onTap: () => onCategorySelected(null),
+              isSelected: selectedCategoryIds.isEmpty,
+              onTap: () => _toggleCategory(null),
             ),
             ...ExpenseCategories.all.map(
               (category) => CategoryFilterChip(
                 label: category.name,
                 icon: category.icon,
                 color: category.color,
-                isSelected: selectedCategoryId == category.id,
-                onTap: () => onCategorySelected(category.id),
+                isSelected: selectedCategoryIds.contains(category.id),
+                onTap: () => _toggleCategory(category.id),
               ),
             ),
           ],

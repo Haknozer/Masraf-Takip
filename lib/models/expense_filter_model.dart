@@ -1,7 +1,7 @@
 /// Masraf filtreleme modeli
 class ExpenseFilter {
   final String? searchQuery; // Metin araması
-  final String? categoryId; // Kategori filtresi
+  final List<String>? categoryIds; // Kategori filtreleri (çoklu seçim)
   final double? minAmount; // Minimum tutar
   final double? maxAmount; // Maksimum tutar
   final DateTime? startDate; // Başlangıç tarihi
@@ -10,7 +10,7 @@ class ExpenseFilter {
 
   const ExpenseFilter({
     this.searchQuery,
-    this.categoryId,
+    this.categoryIds,
     this.minAmount,
     this.maxAmount,
     this.startDate,
@@ -21,7 +21,7 @@ class ExpenseFilter {
   /// Filtre aktif mi?
   bool get isActive {
     return searchQuery != null && searchQuery!.trim().isNotEmpty ||
-        categoryId != null ||
+        categoryIds != null && categoryIds!.isNotEmpty ||
         minAmount != null ||
         maxAmount != null ||
         startDate != null ||
@@ -37,7 +37,7 @@ class ExpenseFilter {
   /// Kopya oluştur
   ExpenseFilter copyWith({
     String? searchQuery,
-    String? categoryId,
+    List<String>? categoryIds,
     double? minAmount,
     double? maxAmount,
     DateTime? startDate,
@@ -46,7 +46,7 @@ class ExpenseFilter {
   }) {
     return ExpenseFilter(
       searchQuery: searchQuery ?? this.searchQuery,
-      categoryId: categoryId ?? this.categoryId,
+      categoryIds: categoryIds ?? this.categoryIds,
       minAmount: minAmount ?? this.minAmount,
       maxAmount: maxAmount ?? this.maxAmount,
       startDate: startDate ?? this.startDate,
@@ -55,4 +55,3 @@ class ExpenseFilter {
     );
   }
 }
-

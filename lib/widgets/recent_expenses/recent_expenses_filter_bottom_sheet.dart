@@ -9,14 +9,14 @@ import 'filters/date_range_filter_section.dart';
 import 'filters/user_filter_section.dart';
 
 class RecentExpensesFilterBottomSheet extends StatefulWidget {
-  final String? selectedCategoryId;
+  final List<String> selectedCategoryIds;
   final String minAmount;
   final String maxAmount;
   final DateTime? startDate;
   final DateTime? endDate;
   final String? selectedUserId;
   final List<UserModel> groupMembers;
-  final ValueChanged<String?> onCategorySelected;
+  final ValueChanged<List<String>> onCategoriesSelected;
   final void Function(String, String) onAmountChanged;
   final ValueChanged<DateTime?> onStartDateSelected;
   final ValueChanged<DateTime?> onEndDateSelected;
@@ -24,14 +24,14 @@ class RecentExpensesFilterBottomSheet extends StatefulWidget {
 
   const RecentExpensesFilterBottomSheet({
     super.key,
-    required this.selectedCategoryId,
+    required this.selectedCategoryIds,
     required this.minAmount,
     required this.maxAmount,
     required this.startDate,
     required this.endDate,
     required this.selectedUserId,
     required this.groupMembers,
-    required this.onCategorySelected,
+    required this.onCategoriesSelected,
     required this.onAmountChanged,
     required this.onStartDateSelected,
     required this.onEndDateSelected,
@@ -45,7 +45,7 @@ class RecentExpensesFilterBottomSheet extends StatefulWidget {
 class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBottomSheet> {
   late TextEditingController _minAmountController;
   late TextEditingController _maxAmountController;
-  String? _tempCategoryId;
+  List<String> _tempCategoryIds = [];
   DateTime? _tempStartDate;
   DateTime? _tempEndDate;
   String? _tempUserId;
@@ -55,7 +55,7 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
     super.initState();
     _minAmountController = TextEditingController(text: widget.minAmount);
     _maxAmountController = TextEditingController(text: widget.maxAmount);
-    _tempCategoryId = widget.selectedCategoryId;
+    _tempCategoryIds = List.from(widget.selectedCategoryIds);
     _tempStartDate = widget.startDate;
     _tempEndDate = widget.endDate;
     _tempUserId = widget.selectedUserId;
@@ -93,7 +93,7 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
   }
 
   void _applyFilters() {
-    widget.onCategorySelected(_tempCategoryId);
+    widget.onCategoriesSelected(_tempCategoryIds);
     widget.onAmountChanged(_minAmountController.text, _maxAmountController.text);
     widget.onStartDateSelected(_tempStartDate);
     widget.onEndDateSelected(_tempEndDate);
@@ -103,7 +103,7 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
 
   void _resetTempFilters() {
     setState(() {
-      _tempCategoryId = null;
+      _tempCategoryIds = [];
       _tempStartDate = null;
       _tempEndDate = null;
       _tempUserId = null;
@@ -153,8 +153,8 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
                     CategoryFilterSection(
-                      selectedCategoryId: _tempCategoryId,
-                      onCategorySelected: (categoryId) => setState(() => _tempCategoryId = categoryId),
+                      selectedCategoryIds: _tempCategoryIds,
+                      onCategoriesSelected: (categoryIds) => setState(() => _tempCategoryIds = categoryIds),
                     ),
                     const SizedBox(height: 24),
                     AmountRangeFilterSection(minController: _minAmountController, maxController: _maxAmountController),
