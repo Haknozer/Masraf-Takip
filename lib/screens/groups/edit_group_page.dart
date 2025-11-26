@@ -11,9 +11,9 @@ class EditGroupPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print('EditGroupPage build - GroupId: $groupId');
+    debugPrint('EditGroupPage build - GroupId: $groupId');
     if (groupId.isEmpty) {
-      print('UYARI: EditGroupPage\'e boş groupId geçirildi!');
+      debugPrint('UYARI: EditGroupPage\'e boş groupId geçirildi!');
     }
 
     return BasePage(

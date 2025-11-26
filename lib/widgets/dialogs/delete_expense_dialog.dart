@@ -8,23 +8,12 @@ class DeleteExpenseDialog extends StatelessWidget {
   final String expenseDescription;
   final double expenseAmount;
 
-  const DeleteExpenseDialog({
-    super.key,
-    required this.expenseDescription,
-    required this.expenseAmount,
-  });
+  const DeleteExpenseDialog({super.key, required this.expenseDescription, required this.expenseAmount});
 
-  static Future<bool?> show(
-    BuildContext context, {
-    required String expenseDescription,
-    required double expenseAmount,
-  }) {
+  static Future<bool?> show(BuildContext context, {required String expenseDescription, required double expenseAmount}) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => DeleteExpenseDialog(
-        expenseDescription: expenseDescription,
-        expenseAmount: expenseAmount,
-      ),
+      builder: (context) => DeleteExpenseDialog(expenseDescription: expenseDescription, expenseAmount: expenseAmount),
     );
   }
 
@@ -36,45 +25,29 @@ class DeleteExpenseDialog extends StatelessWidget {
         children: [
           Icon(Icons.warning, color: AppColors.error, size: 28),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Masrafı Sil',
-              style: AppTextStyles.h3.copyWith(color: AppColors.error),
-            ),
-          ),
+          Expanded(child: Text('Masrafı Sil', style: AppTextStyles.h3.copyWith(color: AppColors.error))),
         ],
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Bu masrafı silmek istediğinizden emin misiniz?',
-            style: AppTextStyles.bodyMedium,
-          ),
+          Text('Bu masrafı silmek istediğinizden emin misiniz?', style: AppTextStyles.bodyMedium),
           const SizedBox(height: AppSpacing.sectionMargin),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceVariant,
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  expenseDescription,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(expenseDescription, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Text(
                   '${expenseAmount.toStringAsFixed(2)} ₺',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -82,9 +55,7 @@ class DeleteExpenseDialog extends StatelessWidget {
           const SizedBox(height: AppSpacing.sectionMargin),
           Text(
             'Bu işlem geri alınamaz.',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+            style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -93,9 +64,7 @@ class DeleteExpenseDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context, false),
           child: Text(
             'İptal',
-            style: AppTextStyles.buttonMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant
-            ),
+            style: AppTextStyles.buttonMedium.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ),
         ElevatedButton(
@@ -111,4 +80,3 @@ class DeleteExpenseDialog extends StatelessWidget {
     );
   }
 }
-

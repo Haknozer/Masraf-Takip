@@ -101,10 +101,10 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
     } else {
       amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
     }
-    
+
     final newAmounts = Map<String, double>.from(widget.memberAmounts);
     newAmounts[memberId] = amount;
-    
+
     // Focus kaybını önlemek için callback'i bir sonraki frame'de çağır
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -165,22 +165,14 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isValid ? AppColors.success.withOpacity(0.1) : AppColors.error.withOpacity(0.1),
+                color: isValid ? AppColors.success.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isValid ? AppColors.success : AppColors.error,
-                  width: 1,
-                ),
+                border: Border.all(color: isValid ? AppColors.success : AppColors.error, width: 1),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Toplam:',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text('Toplam:', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                   Text(
                     '${total.toStringAsFixed(2)} TL / ${widget.totalAmount.toStringAsFixed(2)} TL',
                     style: AppTextStyles.bodyMedium.copyWith(
@@ -207,4 +199,3 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
     );
   }
 }
-

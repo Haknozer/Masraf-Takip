@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 
 class RegisterAppBar extends StatelessWidget implements PreferredSizeWidget {
   const RegisterAppBar({super.key});

@@ -90,10 +90,7 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 
   ThemeData _buildLightTheme() {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.light,
-    );
+    final colorScheme = ColorScheme.fromSeed(seedColor: AppColors.primary, brightness: Brightness.light);
 
     return ThemeData(
       useMaterial3: true,
@@ -101,14 +98,12 @@ class _MyAppState extends ConsumerState<MyApp> {
         primary: AppColors.primary,
         secondary: AppColors.secondary,
         surface: AppColors.surface,
-        background: AppColors.background,
         error: AppColors.error,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: AppColors.textPrimary,
-        onBackground: AppColors.textPrimary,
         onError: Colors.white,
-        surfaceVariant: AppColors.greyLight,
+        surfaceContainerHighest: AppColors.greyLight,
         onSurfaceVariant: AppColors.textSecondary,
       ),
       scaffoldBackgroundColor: AppColors.background,
@@ -158,18 +153,12 @@ class _MyAppState extends ConsumerState<MyApp> {
         ),
       ),
       dividerColor: AppColors.greyLight,
-      dividerTheme: DividerThemeData(
-        color: AppColors.greyLight,
-        thickness: 1,
-      ),
+      dividerTheme: DividerThemeData(color: AppColors.greyLight, thickness: 1),
     );
   }
 
   ThemeData _buildDarkTheme() {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.dark,
-    );
+    final colorScheme = ColorScheme.fromSeed(seedColor: AppColors.primary, brightness: Brightness.dark);
 
     return ThemeData(
       useMaterial3: true,
@@ -177,14 +166,12 @@ class _MyAppState extends ConsumerState<MyApp> {
         primary: AppColors.primaryLight,
         secondary: AppColors.secondaryLight,
         surface: const Color(0xFF1E1E1E),
-        background: const Color(0xFF121212),
         error: AppColors.error,
         onPrimary: Colors.white,
         onSecondary: Colors.black,
         onSurface: const Color(0xFFE0E0E0),
-        onBackground: const Color(0xFFE0E0E0),
         onError: Colors.white,
-        surfaceVariant: const Color(0xFF2C2C2C),
+        surfaceContainerHighest: const Color(0xFF2C2C2C),
         onSurfaceVariant: const Color(0xFFB0B0B0),
       ),
       scaffoldBackgroundColor: const Color(0xFF121212),
@@ -234,10 +221,7 @@ class _MyAppState extends ConsumerState<MyApp> {
         ),
       ),
       dividerColor: const Color(0xFF2C2C2C),
-      dividerTheme: DividerThemeData(
-        color: const Color(0xFF2C2C2C),
-        thickness: 1,
-      ),
+      dividerTheme: DividerThemeData(color: const Color(0xFF2C2C2C), thickness: 1),
     );
   }
 }

@@ -13,7 +13,7 @@ class RecentExpensesSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderColor = colorScheme.outlineVariant.withOpacity(0.5);
+    final borderColor = colorScheme.outlineVariant.withValues(alpha: 0.5);
 
     return Card(
       child: Padding(
@@ -22,7 +22,7 @@ class RecentExpensesSearchBar extends StatelessWidget {
           controller: controller,
           decoration: InputDecoration(
             hintText: 'Masraf ara...',
-            hintStyle: AppTextStyles.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant.withOpacity(0.7)),
+            hintStyle: AppTextStyles.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
             prefixIcon: Icon(Icons.search, color: colorScheme.onSurfaceVariant),
             suffixIcon:
                 controller.text.isNotEmpty

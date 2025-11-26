@@ -36,7 +36,7 @@ class GroupHeaderCard extends StatelessWidget {
                             height: 64,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(Icons.group, color: AppColors.primary, size: 32),
@@ -47,7 +47,7 @@ class GroupHeaderCard extends StatelessWidget {
                     : Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(0.1),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.group, color: colorScheme.primary, size: 32),

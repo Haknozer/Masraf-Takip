@@ -32,11 +32,9 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-      'GroupDetailPage build - GroupId: ${widget.groupId}, isEmpty: ${widget.groupId.isEmpty}',
-    );
+    debugPrint('GroupDetailPage build - GroupId: ${widget.groupId}, isEmpty: ${widget.groupId.isEmpty}');
     if (widget.groupId.isEmpty) {
-      print('UYARI: GroupDetailPage\'e boş groupId geçirildi!');
+      debugPrint('UYARI: GroupDetailPage\'e boş groupId geçirildi!');
     }
 
     final groupState = ref.watch(groupProvider(widget.groupId));
@@ -70,18 +68,10 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
     );
   }
 
-  Widget _buildScaffold({
-    required PreferredSizeWidget appBar,
-    required Widget body,
-    GroupModel? group,
-  }) {
+  Widget _buildScaffold({required PreferredSizeWidget appBar, required Widget body, GroupModel? group}) {
     final navItems = [
       const BottomNavItem(icon: Icons.home, label: 'Gruplar', index: 0),
-      const BottomNavItem(
-        icon: Icons.person_outline,
-        label: 'Profil',
-        index: 1,
-      ),
+      const BottomNavItem(icon: Icons.person_outline, label: 'Profil', index: 1),
     ];
 
     final pages = [
@@ -101,10 +91,7 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
 
     return Scaffold(
       appBar: currentAppBar,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -118,11 +105,12 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
           }
         },
         items: navItems,
-        onFabTap: group != null && group.isActive
-            ? () {
-                CreateExpenseDialog.show(context, group);
-              }
-            : null,
+        onFabTap:
+            group != null && group.isActive
+                ? () {
+                  CreateExpenseDialog.show(context, group);
+                }
+                : null,
       ),
     );
   }
@@ -148,9 +136,7 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
           ),
         ),
         // Tab Content
-        Expanded(
-          child: _buildTabContent(group),
-        ),
+        Expanded(child: _buildTabContent(group)),
       ],
     );
   }
@@ -188,20 +174,14 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
               padding: const EdgeInsets.only(top: AppSpacing.sectionMargin),
               child: ElevatedButton.icon(
                 onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AddMemberDialog(group: group),
-                  );
+                  showDialog(context: context, builder: (context) => AddMemberDialog(group: group));
                 },
                 icon: const Icon(Icons.person_add),
                 label: const Text('Üye Ekle'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
               ),
             ),

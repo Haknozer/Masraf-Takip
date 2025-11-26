@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
@@ -19,7 +18,7 @@ import '../../widgets/common/loading_card.dart';
 import '../../widgets/cards/error_card.dart';
 import '../../widgets/dialogs/edit_expense_dialog.dart';
 import '../../utils/expense_utils.dart';
-import '../../utils/date_utils.dart' as DateUtils;
+import '../../utils/date_utils.dart' as app_date_utils;
 import '../../constants/app_colors.dart';
 import '../../constants/expense_categories.dart';
 import '../../services/firebase_service.dart';
@@ -237,11 +236,12 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
     if (_startDate != null || _endDate != null) {
       String label = '';
       if (_startDate != null && _endDate != null) {
-        label = '${DateUtils.AppDateUtils.formatDate(_startDate!)} - ${DateUtils.AppDateUtils.formatDate(_endDate!)}';
+        label =
+            '${app_date_utils.AppDateUtils.formatDate(_startDate!)} - ${app_date_utils.AppDateUtils.formatDate(_endDate!)}';
       } else if (_startDate != null) {
-        label = 'Başlangıç: ${DateUtils.AppDateUtils.formatDate(_startDate!)}';
+        label = 'Başlangıç: ${app_date_utils.AppDateUtils.formatDate(_startDate!)}';
       } else {
-        label = 'Bitiş: ${DateUtils.AppDateUtils.formatDate(_endDate!)}';
+        label = 'Bitiş: ${app_date_utils.AppDateUtils.formatDate(_endDate!)}';
       }
       chips.add(
         _FilterChip(label: label, icon: Icons.calendar_today, color: AppColors.info, onRemove: _removeDateFilter),
@@ -280,7 +280,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
     final activeFilters = _buildActiveFilterChips();
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderColor = colorScheme.outlineVariant.withOpacity(0.5);
+    final borderColor = colorScheme.outlineVariant.withValues(alpha: 0.5);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,7 +304,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
                         decoration: InputDecoration(
                           hintText: 'Masraf ara...',
                           hintStyle: AppTextStyles.bodySmall.copyWith(
-                            color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                           ),
                           prefixIcon: Icon(Icons.search, size: 18, color: colorScheme.onSurfaceVariant),
                           suffixIcon:
@@ -344,16 +344,12 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
               icon: Icon(
                 Icons.filter_list,
                 size: 18,
-                color: _filter.isActive 
-                    ? AppColors.primary 
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                color: _filter.isActive ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               label: Text(
                 'Filtrele',
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: _filter.isActive 
-                      ? AppColors.primary 
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: _filter.isActive ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               style: OutlinedButton.styleFrom(
@@ -363,7 +359,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
                   width: _filter.isActive ? 1.5 : 1,
                 ),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                backgroundColor: _filter.isActive ? AppColors.primary.withOpacity(0.1) : null,
+                backgroundColor: _filter.isActive ? AppColors.primary.withValues(alpha: 0.1) : null,
               ),
             ),
             if (_filter.isActive)
@@ -481,7 +477,7 @@ class _FilterChip extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color, width: 1.5),
       ),
@@ -686,7 +682,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               decoration: InputDecoration(
                                 hintText: 'Min',
                                 filled: true,
-                                fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide.none,
@@ -703,7 +699,7 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               decoration: InputDecoration(
                                 hintText: 'Max',
                                 filled: true,
-                                fillColor: Theme.of(context).colorScheme.surfaceVariant,
+                                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide.none,
@@ -726,25 +722,26 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surfaceVariant,
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
-                                      Icons.calendar_today, 
-                                      size: 18, 
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant
+                                      Icons.calendar_today,
+                                      size: 18,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
                                       _tempStartDate != null
-                                          ? DateUtils.AppDateUtils.formatDate(_tempStartDate!)
+                                          ? app_date_utils.AppDateUtils.formatDate(_tempStartDate!)
                                           : 'Başlangıç',
                                       style: AppTextStyles.bodyMedium.copyWith(
-                                        color: _tempStartDate != null 
-                                            ? Theme.of(context).colorScheme.onSurface 
-                                            : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                                        color:
+                                            _tempStartDate != null
+                                                ? Theme.of(context).colorScheme.onSurface
+                                                : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ],
@@ -759,23 +756,26 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surfaceVariant,
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(
-                                      Icons.calendar_today, 
-                                      size: 18, 
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant
+                                      Icons.calendar_today,
+                                      size: 18,
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
-                                      _tempEndDate != null ? DateUtils.AppDateUtils.formatDate(_tempEndDate!) : 'Bitiş',
+                                      _tempEndDate != null
+                                          ? app_date_utils.AppDateUtils.formatDate(_tempEndDate!)
+                                          : 'Bitiş',
                                       style: AppTextStyles.bodyMedium.copyWith(
-                                        color: _tempEndDate != null 
-                                            ? Theme.of(context).colorScheme.onSurface 
-                                            : Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
+                                        color:
+                                            _tempEndDate != null
+                                                ? Theme.of(context).colorScheme.onSurface
+                                                : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                                       ),
                                     ),
                                   ],
@@ -826,7 +826,11 @@ class _FilterBottomSheetState extends State<_FilterBottomSheet> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
                     boxShadow: [
-                      BoxShadow(color: AppColors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+                      BoxShadow(
+                        color: AppColors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
+                      ),
                     ],
                   ),
                   child: SizedBox(
@@ -867,36 +871,24 @@ class _CategoryChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? chipColor.withOpacity(0.15) 
-              : Theme.of(context).colorScheme.surfaceVariant,
+          color: isSelected ? chipColor.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected 
-                ? chipColor 
-                : Theme.of(context).colorScheme.surfaceVariant, 
-            width: isSelected ? 2 : 1
+            color: isSelected ? chipColor : Theme.of(context).colorScheme.surfaceContainerHighest,
+            width: isSelected ? 2 : 1,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(
-                icon, 
-                size: 18, 
-                color: isSelected 
-                    ? chipColor 
-                    : Theme.of(context).colorScheme.onSurfaceVariant
-              ),
+              Icon(icon, size: 18, color: isSelected ? chipColor : Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(width: 8),
             ],
             Text(
               label,
               style: AppTextStyles.bodySmall.copyWith(
-                color: isSelected 
-                    ? chipColor 
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                color: isSelected ? chipColor : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

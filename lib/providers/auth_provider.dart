@@ -1,5 +1,6 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user_model.dart';
 import '../services/firebase_service.dart';
 
@@ -91,7 +92,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
         await credential.user?.updateDisplayName(displayName);
       } catch (e) {
         // Display name güncelleme hatası kritik değil, devam et
-        print('Display name güncelleme hatası: $e');
+        debugPrint('Display name güncelleme hatası: $e');
       }
 
       // Firestore'da kullanıcı dokümanı oluştur
@@ -107,9 +108,9 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       // Firestore'a kullanıcı dokümanını ekle
       try {
         await FirebaseService.setDocument(path: 'users/${credential.user!.uid}', data: userModel.toJson());
-        print('Kullanıcı Firestore\'a eklendi: ${credential.user!.uid}');
+        debugPrint('Kullanıcı Firestore\'a eklendi: ${credential.user!.uid}');
       } catch (e) {
-        print('Firestore ekleme hatası: $e');
+        debugPrint('Firestore ekleme hatası: $e');
         // Firestore hatası olsa bile kullanıcı oluşturuldu, state'i güncelle
         state = AsyncValue.data(credential.user);
         // Hatayı tekrar fırlat ki kullanıcı görsün
@@ -118,7 +119,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
 
       state = AsyncValue.data(credential.user);
     } catch (e) {
-      print('SignUp genel hatası: $e');
+      debugPrint('SignUp genel hatası: $e');
       state = AsyncValue.error(e, StackTrace.current);
       rethrow; // Hatayı tekrar fırlat
     }

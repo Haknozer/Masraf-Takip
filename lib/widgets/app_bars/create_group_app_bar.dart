@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 
 class CreateGroupAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CreateGroupAppBar({super.key});

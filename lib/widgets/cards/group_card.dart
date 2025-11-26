@@ -19,9 +19,9 @@ class GroupCard extends StatelessWidget {
         children: [
           InkWell(
             onTap: () {
-              print('GroupCard tıklandı - GroupId: ${group.id}, isEmpty: ${group.id.isEmpty}');
+              debugPrint('GroupCard tıklandı - GroupId: ${group.id}, isEmpty: ${group.id.isEmpty}');
               if (group.id.isEmpty) {
-                print('UYARI: GroupCard\'dan boş groupId geçiriliyor!');
+                debugPrint('UYARI: GroupCard\'dan boş groupId geçiriliyor!');
               }
               Navigator.push(context, MaterialPageRoute(builder: (context) => GroupDetailPage(groupId: group.id)));
             },
@@ -30,65 +30,69 @@ class GroupCard extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-              group.imageUrl != null
-                  ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      group.imageUrl!,
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
+                  group.imageUrl != null
+                      ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          group.imageUrl!,
                           width: 48,
                           height: 48,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(Icons.group, color: AppColors.primary, size: 24),
-                        );
-                      },
-                    ),
-                  )
-                  : Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(Icons.group, color: AppColors.primary, size: 24),
-                  ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(group.name, style: AppTextStyles.h4, maxLines: 1, overflow: TextOverflow.ellipsis),
-                    if (group.description.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        group.description,
-                        style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 48,
+                              height: 48,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(Icons.group, color: AppColors.primary, size: 24),
+                            );
+                          },
+                        ),
+                      )
+                      : Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(Icons.group, color: AppColors.primary, size: 24),
                       ),
-                    ],
-                    const SizedBox(height: 8),
-                    Row(
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.people, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${group.memberIds.length} üye',
-                          style: AppTextStyles.caption.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        Text(group.name, style: AppTextStyles.h4, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        if (group.description.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            group.description,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.people, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${group.memberIds.length} üye',
+                              style: AppTextStyles.caption.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
                   Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ],
               ),
@@ -101,10 +105,7 @@ class GroupCard extends StatelessWidget {
               right: 8,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.warning,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                decoration: BoxDecoration(color: AppColors.warning, borderRadius: BorderRadius.circular(8)),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -112,10 +113,7 @@ class GroupCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       'Kapalı',
-                      style: AppTextStyles.caption.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: AppTextStyles.caption.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),

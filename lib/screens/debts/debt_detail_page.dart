@@ -9,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../widgets/common/async_value_builder.dart';
 import '../../widgets/common/loading_card.dart';
 import '../../widgets/cards/error_card.dart';
-import '../../utils/date_utils.dart' as DateUtils;
+import '../../utils/date_utils.dart' as date_utils_helper;
 
 class DebtDetailPage extends ConsumerWidget {
   const DebtDetailPage({super.key});
@@ -34,10 +34,7 @@ class DebtDetailPage extends ConsumerWidget {
                 children: [
                   Icon(Icons.account_balance_wallet, size: 64, color: AppColors.textSecondary),
                   const SizedBox(height: 16),
-                  Text(
-                    'Henüz borç/alacak yok',
-                    style: AppTextStyles.h4.copyWith(color: AppColors.textSecondary),
-                  ),
+                  Text('Henüz borç/alacak yok', style: AppTextStyles.h4.copyWith(color: AppColors.textSecondary)),
                 ],
               ),
             );
@@ -60,9 +57,7 @@ class DebtDetailPage extends ConsumerWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => GroupDebtDetailPage(groupId: groupSummary.groupId),
-                        ),
+                        MaterialPageRoute(builder: (context) => GroupDebtDetailPage(groupId: groupSummary.groupId)),
                       );
                     },
                   );
@@ -118,12 +113,9 @@ class _GeneralSummaryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: (summary.netAmount > 0 ? AppColors.success : AppColors.error).withOpacity(0.1),
+                color: (summary.netAmount > 0 ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: summary.netAmount > 0 ? AppColors.success : AppColors.error,
-                  width: 2,
-                ),
+                border: Border.all(color: summary.netAmount > 0 ? AppColors.success : AppColors.error, width: 2),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -131,18 +123,11 @@ class _GeneralSummaryCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Net Durum',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                      Text('Net Durum', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
                       const SizedBox(height: 4),
                       Text(
                         summary.netAmount > 0 ? 'Alacaklısınız' : 'Borçlusunuz',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                       ),
                     ],
                   ),
@@ -169,21 +154,13 @@ class _SummaryItem extends StatelessWidget {
   final Color color;
   final IconData icon;
 
-  const _SummaryItem({
-    required this.label,
-    required this.amount,
-    required this.color,
-    required this.icon,
-  });
+  const _SummaryItem({required this.label, required this.amount, required this.color, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           Icon(icon, color: color, size: 24),
@@ -196,10 +173,7 @@ class _SummaryItem extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '${amount.toStringAsFixed(2)} ₺',
-            style: AppTextStyles.h4.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.h4.copyWith(color: color, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -211,10 +185,7 @@ class _GroupDebtCard extends StatelessWidget {
   final GroupDebtSummary groupSummary;
   final VoidCallback onTap;
 
-  const _GroupDebtCard({
-    required this.groupSummary,
-    required this.onTap,
-  });
+  const _GroupDebtCard({required this.groupSummary, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -231,12 +202,7 @@ class _GroupDebtCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Text(
-                      groupSummary.groupName,
-                      style: AppTextStyles.h4,
-                    ),
-                  ),
+                  Expanded(child: Text(groupSummary.groupName, style: AppTextStyles.h4)),
                   Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textSecondary),
                 ],
               ),
@@ -244,11 +210,7 @@ class _GroupDebtCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _GroupSummaryItem(
-                      label: 'Borç',
-                      amount: groupSummary.totalOwed,
-                      color: AppColors.error,
-                    ),
+                    child: _GroupSummaryItem(label: 'Borç', amount: groupSummary.totalOwed, color: AppColors.error),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -265,18 +227,13 @@ class _GroupDebtCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: (groupSummary.netAmount > 0 ? AppColors.success : AppColors.error).withOpacity(0.1),
+                    color: (groupSummary.netAmount > 0 ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Net',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text('Net', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                       Text(
                         '${groupSummary.netAmount > 0 ? '+' : ''}${groupSummary.netAmount.toStringAsFixed(2)} ₺',
                         style: AppTextStyles.bodyMedium.copyWith(
@@ -301,28 +258,18 @@ class _GroupSummaryItem extends StatelessWidget {
   final double amount;
   final Color color;
 
-  const _GroupSummaryItem({
-    required this.label,
-    required this.amount,
-    required this.color,
-  });
+  const _GroupSummaryItem({required this.label, required this.amount, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-        ),
+        Text(label, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
         const SizedBox(height: 4),
         Text(
           '${amount.toStringAsFixed(2)} ₺',
-          style: AppTextStyles.bodyLarge.copyWith(
-            color: color,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTextStyles.bodyLarge.copyWith(color: color, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -355,10 +302,7 @@ class GroupDebtDetailPage extends ConsumerWidget {
                 children: [
                   Icon(Icons.account_balance_wallet, size: 64, color: AppColors.textSecondary),
                   const SizedBox(height: 16),
-                  Text(
-                    'Bu grupta borç/alacak yok',
-                    style: AppTextStyles.h4.copyWith(color: AppColors.textSecondary),
-                  ),
+                  Text('Bu grupta borç/alacak yok', style: AppTextStyles.h4.copyWith(color: AppColors.textSecondary)),
                 ],
               ),
             );
@@ -409,10 +353,7 @@ class GroupDebtDetailPage extends ConsumerWidget {
                 const SizedBox(height: 12),
                 ...summary.debts.map((debt) {
                   final currentUser = ref.read(currentUserProvider);
-                  return _DebtDetailCard(
-                    debt: debt,
-                    currentUserId: currentUser?.uid ?? '',
-                  );
+                  return _DebtDetailCard(debt: debt, currentUserId: currentUser?.uid ?? '');
                 }),
               ],
             ),
@@ -429,10 +370,7 @@ class _DebtDetailCard extends StatelessWidget {
   final DebtBetweenUsers debt;
   final String currentUserId;
 
-  const _DebtDetailCard({
-    required this.debt,
-    required this.currentUserId,
-  });
+  const _DebtDetailCard({required this.debt, required this.currentUserId});
 
   @override
   Widget build(BuildContext context) {
@@ -452,12 +390,8 @@ class _DebtDetailCard extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                isOwed
-                    ? '${debt.toUserName}\'a borçlusunuz'
-                    : '${debt.fromUserName} size borçlu',
-                style: AppTextStyles.bodyLarge.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                isOwed ? '${debt.toUserName}\'a borçlusunuz' : '${debt.fromUserName} size borçlu',
+                style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -480,10 +414,7 @@ class _DebtDetailCard extends StatelessWidget {
               children: [
                 Text(
                   'Masraf Detayları',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 12),
                 ...debt.details.map((detail) => _DebtDetailItem(detail: detail)),
@@ -508,55 +439,37 @@ class _DebtDetailItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.greyLight,
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(color: AppColors.greyLight, borderRadius: BorderRadius.circular(8)),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: (category?.color ?? AppColors.primary).withOpacity(0.1),
+              color: (category?.color ?? AppColors.primary).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              category?.icon ?? Icons.receipt,
-              color: category?.color ?? AppColors.primary,
-              size: 20,
-            ),
+            child: Icon(category?.icon ?? Icons.receipt, color: category?.color ?? AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  detail.expenseDescription,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(detail.expenseDescription, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Text(
-                  DateUtils.AppDateUtils.formatDate(detail.date),
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  date_utils_helper.AppDateUtils.formatDate(detail.date),
+                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                 ),
               ],
             ),
           ),
           Text(
             '${detail.amount.toStringAsFixed(2)} ₺',
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary,
-            ),
+            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primary),
           ),
         ],
       ),
     );
   }
 }
-

@@ -18,7 +18,7 @@ import '../providers/theme_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   final bool showAppBar;
-  
+
   const ProfilePage({super.key, this.showAppBar = true});
 
   @override
@@ -50,19 +50,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final userAsync = ref.watch(userModelProvider);
 
     return userAsync.when(
-      loading: () => BasePage(
-        appBar: widget.showAppBar ? const ProfileAppBar() : null, 
-        body: const Center(child: CircularProgressIndicator())
-      ),
-      error: (e, s) => BasePage(
-        appBar: widget.showAppBar ? const ProfileAppBar() : null, 
-        body: Center(child: Text("Hata: $e"))
-      ),
+      loading:
+          () => BasePage(
+            appBar: widget.showAppBar ? const ProfileAppBar() : null,
+            body: const Center(child: CircularProgressIndicator()),
+          ),
+      error:
+          (e, s) =>
+              BasePage(appBar: widget.showAppBar ? const ProfileAppBar() : null, body: Center(child: Text("Hata: $e"))),
       data: (user) {
         if (user == null) {
           return BasePage(
-            appBar: widget.showAppBar ? const ProfileAppBar() : null, 
-            body: const Center(child: CircularProgressIndicator())
+            appBar: widget.showAppBar ? const ProfileAppBar() : null,
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -149,7 +149,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5), width: 1),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
@@ -210,7 +213,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       barrierDismissible: false,
       builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (sbContext, setState) {
             return AlertDialog(
               title: const Text('Şifre Değiştir'),
               content: ConstrainedBox(
@@ -296,7 +299,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               );
 
                               // Dialog'u güvenli şekilde kapat
-                              if (Navigator.canPop(dialogContext)) {
+                              if (dialogContext.mounted && Navigator.canPop(dialogContext)) {
                                 Navigator.pop(dialogContext);
                               }
 

@@ -26,54 +26,51 @@ class SelectGroupDialog extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Grup Seç', style: AppTextStyles.h3),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
               ],
             ),
             const SizedBox(height: AppSpacing.sectionMargin),
             Flexible(
-              child: groups.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Grup bulunamadı',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+              child:
+                  groups.isEmpty
+                      ? Center(
+                        child: Text(
+                          'Grup bulunamadı',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                    )
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: groups.length,
-                      itemBuilder: (context, index) {
-                        final group = groups[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.primary.withOpacity(0.1),
-                            child: Icon(Icons.group, color: AppColors.primary),
-                          ),
-                          title: Text(
-                            group.name,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
+                      )
+                      : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: groups.length,
+                        itemBuilder: (context, index) {
+                          final group = groups[index];
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                              child: Icon(Icons.group, color: AppColors.primary),
                             ),
-                          ),
-                          subtitle: group.description.isNotEmpty
-                              ? Text(
-                                  group.description,
-                                  style: AppTextStyles.bodySmall,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                )
-                              : null,
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            Navigator.pop(context, group);
-                          },
-                        );
-                      },
-                    ),
+                            title: Text(
+                              group.name,
+                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle:
+                                group.description.isNotEmpty
+                                    ? Text(
+                                      group.description,
+                                      style: AppTextStyles.bodySmall,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    )
+                                    : null,
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () {
+                              Navigator.pop(context, group);
+                            },
+                          );
+                        },
+                      ),
             ),
           ],
         ),
@@ -81,4 +78,3 @@ class SelectGroupDialog extends StatelessWidget {
     );
   }
 }
-

@@ -44,10 +44,7 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
             children: [
               Icon(Icons.lock_outline, color: AppColors.warning, size: 48),
               const SizedBox(height: 16),
-              Text(
-                'Grup Kapalı',
-                style: AppTextStyles.h3,
-              ),
+              Text('Grup Kapalı', style: AppTextStyles.h3),
               const SizedBox(height: 8),
               Text(
                 'Grup kapalı olduğu için yeni üye eklenemez.',
@@ -55,10 +52,7 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              CustomButton(
-                text: 'Tamam',
-                onPressed: () => Navigator.pop(context),
-              ),
+              CustomButton(text: 'Tamam', onPressed: () => Navigator.pop(context)),
             ],
           ),
         ),
@@ -223,7 +217,7 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
         Container(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.primary, width: 2),
           ),

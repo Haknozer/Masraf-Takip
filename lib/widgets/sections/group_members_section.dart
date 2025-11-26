@@ -72,10 +72,7 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                   children: [
                     Icon(Icons.people, color: colorScheme.primary, size: 24),
                     const SizedBox(width: 8),
-                    Text(
-                      'Üyeler (${_members.length})',
-                      style: AppTextStyles.h3.copyWith(color: colorScheme.onSurface),
-                    ),
+                    Text('Üyeler (${_members.length})', style: AppTextStyles.h3.copyWith(color: colorScheme.onSurface)),
                   ],
                 ),
               ],
@@ -83,10 +80,7 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
             const SizedBox(height: AppSpacing.sectionMargin),
             if (_isLoading)
               const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.sectionMargin),
-                  child: CircularProgressIndicator(),
-                ),
+                child: Padding(padding: EdgeInsets.all(AppSpacing.sectionMargin), child: CircularProgressIndicator()),
               )
             else if (_members.isEmpty)
               Center(
@@ -117,29 +111,24 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
       margin: const EdgeInsets.only(bottom: AppSpacing.textSpacing),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.4),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isAdmin ? colorScheme.primary : Colors.transparent,
-          width: isAdmin ? 1 : 0,
-        ),
+        border: Border.all(color: isAdmin ? colorScheme.primary : Colors.transparent, width: isAdmin ? 1 : 0),
       ),
       child: Row(
         children: [
           // Profil resmi veya avatar
           CircleAvatar(
             radius: 20,
-            backgroundColor: colorScheme.primary.withOpacity(0.15),
+            backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
             backgroundImage: member.photoUrl != null ? NetworkImage(member.photoUrl!) : null,
-            child: member.photoUrl == null
-                ? Text(
-                    member.displayName.isNotEmpty ? member.displayName[0].toUpperCase() : '?',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                : null,
+            child:
+                member.photoUrl == null
+                    ? Text(
+                      member.displayName.isNotEmpty ? member.displayName[0].toUpperCase() : '?',
+                      style: AppTextStyles.bodyMedium.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
+                    )
+                    : null,
           ),
           const SizedBox(width: 12),
           // Kullanıcı bilgileri
@@ -164,7 +153,7 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.15),
+                          color: colorScheme.primary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -194,12 +183,7 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                     ] else ...[
                       Icon(Icons.person, size: 14, color: colorScheme.onSurfaceVariant),
                       const SizedBox(width: 4),
-                      Text(
-                        'Üye',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                      Text('Üye', style: AppTextStyles.bodySmall.copyWith(color: colorScheme.onSurfaceVariant)),
                     ],
                   ],
                 ),
@@ -209,21 +193,14 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
           // Admin yetkisi devret butonu (sadece admin ve kendisi değilse)
           if (isCurrentUserAdmin && !isCurrentUser && !isAdmin)
             IconButton(
-              icon: Icon(
-                Icons.more_vert,
-                color: colorScheme.primary,
-                size: 20,
-              ),
+              icon: Icon(Icons.more_vert, color: colorScheme.primary, size: 20),
               onPressed: _isRemoving ? null : () => _giveAdminRole(member),
               tooltip: 'Admin Yetkisi Ver',
             ),
           // Çıkarma butonu
           if (canRemove)
             IconButton(
-              icon: Icon(
-                isCurrentUser ? Icons.exit_to_app : Icons.remove_circle_outline,
-                color: AppColors.error,
-              ),
+              icon: Icon(isCurrentUser ? Icons.exit_to_app : Icons.remove_circle_outline, color: AppColors.error),
               onPressed: _isRemoving ? null : () => _removeMember(member),
               tooltip: isCurrentUser ? 'Gruptan Ayrıl' : 'Üyeyi Çıkar',
             ),
@@ -238,30 +215,20 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
 
     // Borçları kontrol et
     try {
-      final debts = await RemoveMemberController.checkMemberDebts(
-        ref,
-        widget.group.id,
-        member.id,
-      );
+      final debts = await RemoveMemberController.checkMemberDebts(ref, widget.group.id, member.id);
 
       // Eğer kullanıcı kendini çıkarıyorsa ve borcu varsa engelle
       if (isCurrentUser && debts.isNotEmpty) {
         if (mounted) {
-          ErrorSnackBar.show(
-            context,
-            'Gruptan ayrılamazsınız. Önce ${debts.length} borcunuzu ödemeniz gerekiyor.',
-          );
+          ErrorSnackBar.show(context, 'Gruptan ayrılamazsınız. Önce ${debts.length} borcunuzu ödemeniz gerekiyor.');
         }
         return;
       }
 
       // Eğer başkasını çıkarıyorsa ve borç varsa onay dialogu göster
       if (!isCurrentUser && debts.isNotEmpty) {
-        final confirmed = await RemoveMemberDialog.show(
-          context,
-          member: member,
-          debts: debts,
-        );
+        if (!mounted) return;
+        final confirmed = await RemoveMemberDialog.show(context, member: member, debts: debts);
 
         if (confirmed != true) return;
       }
@@ -289,11 +256,7 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
       }
 
       // Üyeyi çıkar
-      await RemoveMemberController.removeMemberFromGroup(
-        ref,
-        widget.group.id,
-        member.id,
-      );
+      await RemoveMemberController.removeMemberFromGroup(ref, widget.group.id, member.id);
 
       if (mounted) {
         if (isCurrentUser) {
@@ -315,10 +278,7 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
       }
     } catch (e) {
       if (mounted) {
-        ErrorSnackBar.show(
-          context,
-          isCurrentUser ? 'Gruptan ayrılamadınız: $e' : 'Üye çıkarılamadı: $e',
-        );
+        ErrorSnackBar.show(context, isCurrentUser ? 'Gruptan ayrılamadınız: $e' : 'Üye çıkarılamadı: $e');
       }
     } finally {
       if (mounted) {
@@ -332,10 +292,8 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
     if (currentUser == null) return;
 
     // Onay dialogu göster
-    final confirmed = await TransferAdminDialog.show(
-      context,
-      member: member,
-    );
+    if (!mounted) return;
+    final confirmed = await TransferAdminDialog.show(context, member: member);
 
     if (confirmed != true) return;
 
@@ -343,17 +301,10 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
 
     try {
       // Üyeye admin yetkisi ver (kendi adminliğimiz korunur)
-      await ref.read(groupNotifierProvider.notifier).updateUserRole(
-            widget.group.id,
-            member.id,
-            'admin',
-          );
+      await ref.read(groupNotifierProvider.notifier).updateUserRole(widget.group.id, member.id, 'admin');
 
       if (mounted) {
-        ErrorSnackBar.showSuccess(
-          context,
-          '${member.displayName}\'e admin yetkisi verildi',
-        );
+        ErrorSnackBar.showSuccess(context, '${member.displayName}\'e admin yetkisi verildi');
         // Üye listesini yenile
         _loadMembers();
       }
@@ -368,4 +319,3 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
     }
   }
 }
-

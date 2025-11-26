@@ -11,17 +11,13 @@ import '../../widgets/common/payment_type_selector.dart';
 import '../../widgets/common/member_selector.dart';
 import '../../widgets/common/manual_distribution_input.dart';
 import '../../widgets/common/error_snackbar.dart';
-import '../../utils/date_utils.dart' as DateUtils;
+import '../../utils/date_utils.dart' as app_date_utils;
 
 class CreateExpenseForm extends ConsumerStatefulWidget {
   final GroupModel group;
   final VoidCallback onSuccess;
 
-  const CreateExpenseForm({
-    super.key,
-    required this.group,
-    required this.onSuccess,
-  });
+  const CreateExpenseForm({super.key, required this.group, required this.onSuccess});
 
   @override
   ConsumerState<CreateExpenseForm> createState() => _CreateExpenseFormState();
@@ -150,7 +146,9 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
         manualAmounts = Map.from(_manualAmounts);
       }
 
-      await ref.read(expenseNotifierProvider.notifier).addExpense(
+      await ref
+          .read(expenseNotifierProvider.notifier)
+          .addExpense(
             groupId: widget.group.id,
             paidBy: _selectedPayerId ?? currentUser.uid,
             description: _descriptionController.text.trim(),
@@ -232,9 +230,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
           GestureDetector(
             onTap: _selectDate,
             child: CustomTextField(
-              controller: TextEditingController(
-                text: DateUtils.AppDateUtils.formatDate(_selectedDate),
-              ),
+              controller: TextEditingController(text: app_date_utils.AppDateUtils.formatDate(_selectedDate)),
               label: 'Tarih',
               hint: 'Tarih seçin',
               prefixIcon: Icons.calendar_today,
@@ -307,9 +303,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
                     // Manuel dağılım için başlangıç değerleri
                     final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
                     final perPerson = _selectedMemberIds.isNotEmpty ? amount / _selectedMemberIds.length : 0.0;
-                    _manualAmounts = {
-                      for (final memberId in _selectedMemberIds) memberId: perPerson
-                    };
+                    _manualAmounts = {for (final memberId in _selectedMemberIds) memberId: perPerson};
                   }
                 });
               },
@@ -329,14 +323,9 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
           const SizedBox(height: AppSpacing.sectionMargin),
 
           // Masraf Ekle Butonu
-          CustomButton(
-            text: 'Masraf Ekle',
-            onPressed: _isLoading ? null : _createExpense,
-            isLoading: _isLoading,
-          ),
+          CustomButton(text: 'Masraf Ekle', onPressed: _isLoading ? null : _createExpense, isLoading: _isLoading),
         ],
       ),
     );
   }
 }
-

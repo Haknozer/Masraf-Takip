@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
@@ -10,11 +11,7 @@ import '../providers/expense_provider.dart';
 /// Remove Member Controller - MVC prensiplerine uygun üye çıkarma işlemleri controller'ı
 class RemoveMemberController {
   /// Üyenin gruptaki borçlarını kontrol et
-  static Future<List<DebtBetweenUsers>> checkMemberDebts(
-    WidgetRef ref,
-    String groupId,
-    String memberId,
-  ) async {
+  static Future<List<DebtBetweenUsers>> checkMemberDebts(WidgetRef ref, String groupId, String memberId) async {
     // Grubu al
     final groupState = ref.read(groupProvider(groupId));
     final group = groupState.valueOrNull;
@@ -61,11 +58,7 @@ class RemoveMemberController {
   }
 
   /// Üyeyi gruptan çıkar ve masrafları güncelle
-  static Future<void> removeMemberFromGroup(
-    WidgetRef ref,
-    String groupId,
-    String memberId,
-  ) async {
+  static Future<void> removeMemberFromGroup(WidgetRef ref, String groupId, String memberId) async {
     // Grubu al
     final groupState = ref.read(groupProvider(groupId));
     final group = groupState.valueOrNull;
@@ -80,10 +73,10 @@ class RemoveMemberController {
     // 1. Masrafları güncelle (o üyeyi sharedBy ve paidBy'dan çıkar)
     for (final expense in expenses) {
       final updatedSharedBy = expense.sharedBy.where((id) => id != memberId).toList();
-      final updatedPaidBy = expense.paidBy == memberId ? group.memberIds.firstWhere(
-        (id) => id != memberId,
-        orElse: () => group.createdBy,
-      ) : expense.paidBy;
+      final updatedPaidBy =
+          expense.paidBy == memberId
+              ? group.memberIds.firstWhere((id) => id != memberId, orElse: () => group.createdBy)
+              : expense.paidBy;
 
       // Manuel dağılım varsa, o üyenin tutarını kaldır
       Map<String, double>? updatedManualAmounts;
@@ -112,10 +105,7 @@ class RemoveMemberController {
           updateData['manualAmounts'] = null;
         }
 
-        await FirebaseService.updateDocument(
-          path: 'expenses/${expense.id}',
-          data: updateData,
-        );
+        await FirebaseService.updateDocument(path: 'expenses/${expense.id}', data: updateData);
       }
     }
 
@@ -124,10 +114,10 @@ class RemoveMemberController {
     if (isLeavingAdmin) {
       // Kalan üyeleri al (ayrılan kişi hariç)
       final remainingMembers = group.memberIds.where((id) => id != memberId).toList();
-      
+
       // Başka admin var mı kontrol et
       final hasOtherAdmin = remainingMembers.any((id) => group.isGroupAdmin(id));
-      
+
       // Eğer başka admin yoksa, ilk üyeye admin yetkisi ver
       if (!hasOtherAdmin && remainingMembers.isNotEmpty) {
         final newAdminId = remainingMembers.first;
@@ -140,11 +130,8 @@ class RemoveMemberController {
 
     // 4. Kullanıcının users dokümanından grubu kaldır
     try {
-      final userDocSnapshot = await FirebaseService.firestore
-          .collection('users')
-          .where('id', isEqualTo: memberId)
-          .limit(1)
-          .get();
+      final userDocSnapshot =
+          await FirebaseService.firestore.collection('users').where('id', isEqualTo: memberId).limit(1).get();
 
       if (userDocSnapshot.docs.isNotEmpty) {
         final userDocId = userDocSnapshot.docs.first.id;
@@ -158,8 +145,7 @@ class RemoveMemberController {
       }
     } catch (e) {
       // Kullanıcı dokümanı güncellenemezse devam et
-      print('Kullanıcı dokümanı güncellenemedi: $memberId - $e');
+      debugPrint('Kullanıcı dokümanı güncellenemedi: $memberId - $e');
     }
   }
 }
-

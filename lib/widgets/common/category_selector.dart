@@ -8,17 +8,13 @@ class CategorySelector extends StatelessWidget {
   final String? selectedCategoryId;
   final Function(String categoryId) onCategorySelected;
 
-  const CategorySelector({
-    super.key,
-    this.selectedCategoryId,
-    required this.onCategorySelected,
-  });
+  const CategorySelector({super.key, this.selectedCategoryId, required this.onCategorySelected});
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final unselectedBackground = colorScheme.surfaceVariant.withOpacity(0.4);
-    final unselectedBorder = colorScheme.outlineVariant.withOpacity(0.5);
+    final unselectedBackground = colorScheme.surfaceContainerHighest.withValues(alpha: 0.4);
+    final unselectedBorder = colorScheme.outlineVariant.withValues(alpha: 0.5);
     final unselectedText = colorScheme.onSurfaceVariant;
 
     return Column(
@@ -29,44 +25,40 @@ class CategorySelector extends StatelessWidget {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: ExpenseCategories.all.map((category) {
-            final isSelected = selectedCategoryId == category.id;
-            return GestureDetector(
-              onTap: () => onCategorySelected(category.id),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isSelected ? category.color.withOpacity(0.15) : unselectedBackground,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? category.color : unselectedBorder,
-                    width: isSelected ? 2 : 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      category.icon,
-                      color: isSelected ? category.color : unselectedText,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      category.name,
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: isSelected ? category.color : unselectedText,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          children:
+              ExpenseCategories.all.map((category) {
+                final isSelected = selectedCategoryId == category.id;
+                return GestureDetector(
+                  onTap: () => onCategorySelected(category.id),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? category.color.withValues(alpha: 0.15) : unselectedBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? category.color : unselectedBorder,
+                        width: isSelected ? 2 : 1,
                       ),
                     ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(category.icon, color: isSelected ? category.color : unselectedText, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          category.name,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: isSelected ? category.color : unselectedText,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
         ),
       ],
     );
   }
 }
-

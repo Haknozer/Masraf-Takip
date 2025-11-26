@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Bu satırı ekleyin
 import '../models/group_model.dart';
@@ -240,8 +241,8 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       }
 
       final path = 'groups/$groupId';
-      print('Grup güncelleme - Path: $path, GroupId: $groupId');
-      print('Grup güncelleme - UpdateData: $updateData');
+      debugPrint('Grup güncelleme - Path: $path, GroupId: $groupId');
+      debugPrint('Grup güncelleme - UpdateData: $updateData');
 
       // Dokümanın var olduğunu tekrar kontrol et
       final docCheck = await FirebaseService.getDocumentSnapshot(path);
@@ -297,7 +298,7 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
           }
         } catch (e) {
           // Kullanıcı dokümanı bulunamazsa devam et
-          print('Kullanıcı dokümanı güncellenemedi: $memberId - $e');
+          debugPrint('Kullanıcı dokümanı güncellenemedi: $memberId - $e');
         }
       }
     } catch (e) {

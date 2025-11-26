@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 
 class EditExpenseAppBar extends StatelessWidget implements PreferredSizeWidget {
   const EditExpenseAppBar({super.key});

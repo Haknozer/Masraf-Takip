@@ -20,11 +20,7 @@ class PaymentTypeSelector extends StatelessWidget {
   final PaymentType? selectedType;
   final Function(PaymentType type) onTypeSelected;
 
-  const PaymentTypeSelector({
-    super.key,
-    this.selectedType,
-    required this.onTypeSelected,
-  });
+  const PaymentTypeSelector({super.key, this.selectedType, required this.onTypeSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -73,33 +69,21 @@ class PaymentTypeSelector extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.primary.withOpacity(0.1) 
-              : colorScheme.surfaceVariant,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected 
-                ? AppColors.primary 
-                : colorScheme.surfaceVariant,
+            color: isSelected ? AppColors.primary : colorScheme.surfaceContainerHighest,
             width: isSelected ? 2 : 1,
           ),
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              color: isSelected 
-                  ? AppColors.primary 
-                  : colorScheme.onSurfaceVariant,
-              size: 32,
-            ),
+            Icon(icon, color: isSelected ? AppColors.primary : colorScheme.onSurfaceVariant, size: 32),
             const SizedBox(height: 8),
             Text(
               title,
               style: AppTextStyles.bodySmall.copyWith(
-                color: isSelected 
-                    ? AppColors.primary 
-                    : colorScheme.onSurfaceVariant,
+                color: isSelected ? AppColors.primary : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
               textAlign: TextAlign.center,
@@ -116,11 +100,7 @@ class DistributionTypeSelector extends StatelessWidget {
   final DistributionType? selectedType;
   final Function(DistributionType type) onTypeSelected;
 
-  const DistributionTypeSelector({
-    super.key,
-    this.selectedType,
-    required this.onTypeSelected,
-  });
+  const DistributionTypeSelector({super.key, this.selectedType, required this.onTypeSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -169,34 +149,22 @@ class DistributionTypeSelector extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.primary.withOpacity(0.1) 
-              : colorScheme.surfaceVariant,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected 
-                ? AppColors.primary 
-                : colorScheme.surfaceVariant,
+            color: isSelected ? AppColors.primary : colorScheme.surfaceContainerHighest,
             width: isSelected ? 2 : 1,
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected 
-                  ? AppColors.primary 
-                  : colorScheme.onSurfaceVariant,
-              size: 20,
-            ),
+            Icon(icon, color: isSelected ? AppColors.primary : colorScheme.onSurfaceVariant, size: 20),
             const SizedBox(width: 8),
             Text(
               title,
               style: AppTextStyles.bodySmall.copyWith(
-                color: isSelected 
-                    ? AppColors.primary 
-                    : colorScheme.onSurfaceVariant,
+                color: isSelected ? AppColors.primary : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -206,4 +174,3 @@ class DistributionTypeSelector extends StatelessWidget {
     );
   }
 }
-

@@ -42,7 +42,7 @@ class CustomTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final borderColor = colorScheme.outlineVariant.withOpacity(0.5);
+    final borderColor = colorScheme.outlineVariant.withValues(alpha: 0.5);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,7 +64,7 @@ class CustomTextField extends StatelessWidget {
           style: AppTextStyles.bodyMedium.copyWith(color: colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant.withOpacity(0.7)),
+            hintStyle: AppTextStyles.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
             prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: colorScheme.onSurfaceVariant) : null,
             suffixIcon: suffixIcon,
             filled: true,

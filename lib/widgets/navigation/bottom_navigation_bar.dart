@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 
 /// Bottom Navigation Bar Item Model
@@ -8,11 +7,7 @@ class BottomNavItem {
   final String label;
   final int index;
 
-  const BottomNavItem({
-    required this.icon,
-    required this.label,
-    required this.index,
-  });
+  const BottomNavItem({required this.icon, required this.label, required this.index});
 }
 
 /// Responsive Bottom Navigation Bar Widget
@@ -43,22 +38,12 @@ class CustomBottomNavigationBar extends StatelessWidget {
 
     final colorScheme = Theme.of(context).colorScheme;
     final backgroundColor = colorScheme.surface;
-    final unselectedColor = colorScheme.onSurfaceVariant;
 
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, -2))],
       ),
       child: SafeArea(
         child: Stack(
@@ -67,10 +52,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
           children: [
             Container(
               constraints: BoxConstraints(minHeight: isSmallScreen ? 65 : 70),
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: 6,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 6),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -109,11 +91,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
               ),
             ),
             // FAB - Navigation bar'ın üstünde, ortada
-            if (onFabTap != null)
-              Positioned(
-                top: -30,
-                child: _buildFloatingActionButton(context, isSmallScreen),
-              ),
+            if (onFabTap != null) Positioned(top: -30, child: _buildFloatingActionButton(context, isSmallScreen)),
           ],
         ),
       ),
@@ -137,29 +115,21 @@ class CustomBottomNavigationBar extends StatelessWidget {
     return GestureDetector(
       onTap: () => onTap(item.index),
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: horizontalPadding,
-          vertical: 4,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 4),
         margin: EdgeInsets.symmetric(
           // FAB alanına yakınsa border'ı içeride tut
           horizontal: isSelected ? 4 : 0,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+          color: isSelected ? colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border:
-              shouldShowBorder ? Border.all(color: colorScheme.primary, width: 1.5) : null,
+          border: shouldShowBorder ? Border.all(color: colorScheme.primary, width: 1.5) : null,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              item.icon,
-              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-              size: iconSize,
-            ),
+            Icon(item.icon, color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant, size: iconSize),
             const SizedBox(height: 3),
             Text(
               item.label,
@@ -195,11 +165,11 @@ class CustomBottomNavigationBar extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.85)],
+              colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.85)],
             ),
             boxShadow: [
               BoxShadow(
-                color: colorScheme.primary.withOpacity(0.4),
+                color: colorScheme.primary.withValues(alpha: 0.4),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
                 spreadRadius: 0,
@@ -218,11 +188,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           'Masraf Ekle',
-          style: TextStyle(
-            fontSize: fontSize,
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: fontSize, color: colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
         ),
       ],
     );

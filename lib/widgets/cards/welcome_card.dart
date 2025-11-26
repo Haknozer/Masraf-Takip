@@ -16,12 +16,14 @@ class WelcomeCard extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+          colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
         children: [
@@ -34,13 +36,13 @@ class WelcomeCard extends StatelessWidget {
               if (user != null) {
                 return Text(
                   user.displayName ?? user.email, // İsim varsa ismi, yoksa email'i göster
-                  style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white.withOpacity(0.9)),
+                  style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white.withValues(alpha: 0.9)),
                   textAlign: TextAlign.center,
                 );
               }
               return Text(
                 'Kullanıcı bulunamadı',
-                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white.withOpacity(0.9)),
+                style: AppTextStyles.bodyLarge.copyWith(color: AppColors.white.withValues(alpha: 0.9)),
                 textAlign: TextAlign.center,
               );
             },
@@ -48,7 +50,7 @@ class WelcomeCard extends StatelessWidget {
             error:
                 (error, stack) => Text(
                   'Hata: $error',
-                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white.withOpacity(0.9)),
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white.withValues(alpha: 0.9)),
                   textAlign: TextAlign.center,
                 ),
           ),

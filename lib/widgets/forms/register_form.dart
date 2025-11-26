@@ -55,7 +55,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
       if (mounted) {
         // Hata mesajını daha detaylı göster
         String errorMessage = ErrorUtils.processError(e);
-        print('Kayıt hatası: $e');
+        debugPrint('Kayıt hatası: $e');
 
         // Firestore permission hatası kontrolü
         if (e.toString().contains('permission-denied') || e.toString().contains('PERMISSION_DENIED')) {

@@ -22,19 +22,14 @@ import '../../widgets/dialogs/delete_expense_dialog.dart';
 import '../../widgets/forms/custom_button.dart';
 import '../../widgets/forms/custom_text_field.dart';
 import '../../controllers/expense_controller.dart';
-import '../../utils/date_utils.dart' as DateUtils;
+import '../../utils/date_utils.dart' as app_date_utils;
 
 class EditExpenseForm extends ConsumerStatefulWidget {
   final String expenseId;
   final VoidCallback onSuccess;
   final VoidCallback? onDelete;
 
-  const EditExpenseForm({
-    super.key,
-    required this.expenseId,
-    required this.onSuccess,
-    this.onDelete,
-  });
+  const EditExpenseForm({super.key, required this.expenseId, required this.onSuccess, this.onDelete});
 
   @override
   ConsumerState<EditExpenseForm> createState() => _EditExpenseFormState();
@@ -75,7 +70,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
         _descriptionController.text = expense.description;
         _selectedCategoryId = expense.category;
         _selectedDate = expense.date;
-        _dateController.text = DateUtils.AppDateUtils.formatDate(expense.date);
+        _dateController.text = app_date_utils.AppDateUtils.formatDate(expense.date);
         _selectedMemberIds = List.from(expense.sharedBy);
         _existingImageUrl = expense.imageUrl;
 
@@ -88,8 +83,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
           _selectedPayerId = expense.paidBy;
 
           // Manuel dağılım kontrolü
-          if (expense.manualAmounts != null &&
-              expense.manualAmounts!.isNotEmpty) {
+          if (expense.manualAmounts != null && expense.manualAmounts!.isNotEmpty) {
             _distributionType = DistributionType.manual;
             _manualAmounts = Map.from(expense.manualAmounts!);
           } else {
@@ -112,7 +106,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
-        _dateController.text = DateUtils.AppDateUtils.formatDate(picked);
+        _dateController.text = app_date_utils.AppDateUtils.formatDate(picked);
       });
     }
   }
@@ -138,16 +132,15 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
   void _showImagePreview(ImageProvider provider) {
     showDialog(
       context: context,
-      builder: (context) => GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Container(
-          color: Colors.black.withOpacity(0.8),
-          alignment: Alignment.center,
-          child: InteractiveViewer(
-            child: Image(image: provider),
+      builder:
+          (context) => GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.8),
+              alignment: Alignment.center,
+              child: InteractiveViewer(child: Image(image: provider)),
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -170,8 +163,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
       return;
     }
 
-    final amount =
-        double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
     if (amount <= 0) {
       ErrorSnackBar.showWarning(context, 'Tutar 0\'dan büyük olmalıdır');
       return;
@@ -206,10 +198,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
       if (_distributionType == DistributionType.manual) {
         final total = _manualAmounts.values.fold(0.0, (sum, amt) => sum + amt);
         if ((total - amount).abs() > 0.01) {
-          ErrorSnackBar.showWarning(
-            context,
-            'Manuel dağılım toplamı tutara eşit olmalıdır',
-          );
+          ErrorSnackBar.showWarning(context, 'Manuel dağılım toplamı tutara eşit olmalıdır');
           return;
         }
       }
@@ -223,10 +212,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
       String? imageUrl = _existingImageUrl;
       if (_receiptImage != null) {
         final fileName = '${expense.groupId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        imageUrl = await FirebaseService.uploadFile(
-          path: 'expense_receipts/$fileName',
-          file: _receiptImage!,
-        );
+        imageUrl = await FirebaseService.uploadFile(path: 'expense_receipts/$fileName', file: _receiptImage!);
       }
 
       // Manuel dağılım varsa manualAmounts'ı gönder
@@ -308,15 +294,12 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                     label: 'Tutar (TL)',
                     hint: '0.00',
                     prefixIcon: Icons.currency_lira,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Tutar gereklidir';
                       }
-                      final amount =
-                          double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
+                      final amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
                       if (amount <= 0) {
                         return 'Tutar 0\'dan büyük olmalıdır';
                       }
@@ -349,9 +332,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                   // Kategori
                   CategorySelector(
                     selectedCategoryId: _selectedCategoryId,
-                    onCategorySelected:
-                        (categoryId) =>
-                            setState(() => _selectedCategoryId = categoryId),
+                    onCategorySelected: (categoryId) => setState(() => _selectedCategoryId = categoryId),
                   ),
                   const SizedBox(height: AppSpacing.sectionMargin),
 
@@ -389,14 +370,9 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                   // Ödeme tipine göre içerik
                   if (_paymentType == PaymentType.fullPayment) ...[
                     MemberSelector(
-                      selectedMemberIds:
-                          _selectedPayerId != null ? [_selectedPayerId!] : [],
+                      selectedMemberIds: _selectedPayerId != null ? [_selectedPayerId!] : [],
                       onMembersChanged: (memberIds) {
-                        setState(
-                          () =>
-                              _selectedPayerId =
-                                  memberIds.isNotEmpty ? memberIds.first : null,
-                        );
+                        setState(() => _selectedPayerId = memberIds.isNotEmpty ? memberIds.first : null);
                       },
                       availableMemberIds: group.memberIds,
                     ),
@@ -412,9 +388,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                                 _manualAmounts[memberId] = 0.0;
                               }
                             }
-                            _manualAmounts.removeWhere(
-                              (key, value) => !memberIds.contains(key),
-                            );
+                            _manualAmounts.removeWhere((key, value) => !memberIds.contains(key));
                           }
                         });
                       },
@@ -430,38 +404,21 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                           if (type == DistributionType.equal) {
                             _manualAmounts.clear();
                           } else {
-                            final amount =
-                                double.tryParse(
-                                  _amountController.text.replaceAll(',', '.'),
-                                ) ??
-                                0.0;
-                            final perPerson =
-                                _selectedMemberIds.isNotEmpty
-                                    ? amount / _selectedMemberIds.length
-                                    : 0.0;
-                            _manualAmounts = {
-                              for (final memberId in _selectedMemberIds)
-                                memberId: perPerson,
-                            };
+                            final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+                            final perPerson = _selectedMemberIds.isNotEmpty ? amount / _selectedMemberIds.length : 0.0;
+                            _manualAmounts = {for (final memberId in _selectedMemberIds) memberId: perPerson};
                           }
                         });
                       },
                     ),
                     const SizedBox(height: AppSpacing.sectionMargin),
 
-                    if (_distributionType == DistributionType.manual &&
-                        _selectedMemberIds.isNotEmpty)
+                    if (_distributionType == DistributionType.manual && _selectedMemberIds.isNotEmpty)
                       ManualDistributionInput(
                         selectedMemberIds: _selectedMemberIds,
-                        totalAmount:
-                            double.tryParse(
-                              _amountController.text.replaceAll(',', '.'),
-                            ) ??
-                            0.0,
+                        totalAmount: double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
                         memberAmounts: _manualAmounts,
-                        onAmountsChanged:
-                            (amounts) =>
-                                setState(() => _manualAmounts = amounts),
+                        onAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
                       ),
                   ],
 
@@ -470,10 +427,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                   // Güncelle Butonu
                   CustomButton(
                     text: 'Masrafı Güncelle',
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : () => _updateExpense(expense, group),
+                    onPressed: _isLoading ? null : () => _updateExpense(expense, group),
                     isLoading: _isLoading,
                   ),
                   const SizedBox(height: AppSpacing.textSpacing),
@@ -481,8 +435,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
                   // Sil Butonu
                   CustomButton(
                     text: 'Masrafı Sil',
-                    onPressed:
-                        _isLoading ? null : () => _deleteExpense(expense),
+                    onPressed: _isLoading ? null : () => _deleteExpense(expense),
                     isLoading: false,
                     isSecondary: true,
                     icon: Icons.delete,
@@ -553,10 +506,7 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
     Widget buildPreview(Widget child) {
       return Stack(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: child,
-          ),
+          ClipRRect(borderRadius: BorderRadius.circular(12), child: child),
           Positioned(
             top: 8,
             right: 8,
@@ -582,24 +532,14 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
           buildPreview(
             GestureDetector(
               onTap: () => _showImagePreview(Image.file(File(_receiptImage!.path)).image),
-              child: Image.file(
-                File(_receiptImage!.path),
-                height: 180,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+              child: Image.file(File(_receiptImage!.path), height: 180, width: double.infinity, fit: BoxFit.cover),
             ),
           )
         else if (hasRemote)
           buildPreview(
             GestureDetector(
               onTap: () => _showImagePreview(NetworkImage(_existingImageUrl!)),
-              child: Image.network(
-                _existingImageUrl!,
-                height: 180,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+              child: Image.network(_existingImageUrl!, height: 180, width: double.infinity, fit: BoxFit.cover),
             ),
           ),
         const SizedBox(height: 12),

@@ -77,9 +77,9 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
             final timestamp = DateTime.now().millisecondsSinceEpoch;
             final imagePath = 'groups/${user.uid}/group_$timestamp.jpg';
             imageUrl = await FirebaseService.uploadFile(path: imagePath, file: _selectedImage!);
-            print('Resim başarıyla yüklendi: $imageUrl');
+            debugPrint('Resim başarıyla yüklendi: $imageUrl');
           } catch (uploadError) {
-            print('Resim yükleme hatası (grup yine de oluşturulacak): $uploadError');
+            debugPrint('Resim yükleme hatası (grup yine de oluşturulacak): $uploadError');
             // Resim yükleme hatası olsa bile grup oluşturulacak (resim olmadan)
             if (mounted) {
               ErrorSnackBar.showWarning(context, 'Resim yüklenemedi, grup resim olmadan oluşturuluyor.');
@@ -98,7 +98,7 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
       }
     } catch (e) {
       if (mounted) {
-        print('Grup oluşturma hatası detayı: $e');
+        debugPrint('Grup oluşturma hatası detayı: $e');
         ErrorSnackBar.show(context, e);
       }
     } finally {

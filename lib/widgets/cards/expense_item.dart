@@ -5,7 +5,7 @@ import '../../constants/app_text_styles.dart';
 import '../../constants/expense_categories.dart';
 import '../../models/expense_model.dart';
 import '../../models/user_model.dart';
-import '../../utils/date_utils.dart' as DateUtils;
+import '../../utils/date_utils.dart' as app_date_utils;
 
 /// Masraf item widget'ı
 class ExpenseItem extends StatelessWidget {
@@ -62,7 +62,7 @@ class ExpenseItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              DateUtils.AppDateUtils.formatDate(expense.date),
+              app_date_utils.AppDateUtils.formatDate(expense.date),
               style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 4),
@@ -144,7 +144,7 @@ class ExpenseItem extends StatelessWidget {
     return Container(
       width: 48,
       height: 48,
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
       child: Icon(icon, color: color),
     );
   }

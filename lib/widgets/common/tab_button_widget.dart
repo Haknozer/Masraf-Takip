@@ -25,20 +25,13 @@ class TabButtonWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-            width: 2,
-          ),
+          border: Border.all(color: isSelected ? AppColors.primary : Colors.transparent, width: 2),
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: 24,
-            ),
+            Icon(icon, color: isSelected ? AppColors.primary : AppColors.textSecondary, size: 24),
             const SizedBox(height: 4),
             Text(
               label,
@@ -53,4 +46,3 @@ class TabButtonWidget extends StatelessWidget {
     );
   }
 }
-

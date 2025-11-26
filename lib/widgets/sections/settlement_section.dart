@@ -103,9 +103,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
           return Center(
             child: Text(
               'Bana borcu olan kimse yok',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant
-              ),
+              style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           );
         }
@@ -131,9 +129,9 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
       margin: const EdgeInsets.only(bottom: AppSpacing.textSpacing),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,9 +225,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
               const SizedBox(height: AppSpacing.textSpacing),
               Text(
                 'Her üye sadece kendi ismini işaretleyebilir',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant
-                ),
+                style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: AppSpacing.sectionMargin),
               ...members.map((member) => _buildMemberSettlementCard(member, currentUserId)),
@@ -238,7 +234,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.warning.withOpacity(0.1),
+                    color: AppColors.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.warning),
                   ),
@@ -271,15 +267,14 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isSettled 
-            ? AppColors.success.withOpacity(0.1) 
-            : Theme.of(context).colorScheme.surfaceVariant,
+        color:
+            isSettled
+                ? AppColors.success.withValues(alpha: 0.1)
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isSettled 
-              ? AppColors.success 
-              : Theme.of(context).colorScheme.surfaceVariant, 
-          width: 1
+          color: isSettled ? AppColors.success : Theme.of(context).colorScheme.surfaceContainerHighest,
+          width: 1,
         ),
       ),
       child: Row(
@@ -321,12 +316,8 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
               ],
             ),
           ),
-          if (!isCurrentUser && !isSettled) 
-            Icon(
-              Icons.lock_outline, 
-              size: 18, 
-              color: Theme.of(context).colorScheme.onSurfaceVariant
-            ),
+          if (!isCurrentUser && !isSettled)
+            Icon(Icons.lock_outline, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
         ],
       ),
     );
@@ -384,7 +375,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
   Future<void> _markAsSettled() async {
     // İşaretleme sonrası tüm üyeler işaretlenmiş olacak mı kontrol et
     final willBeAllSettled = widget.group.settledUserIds.length + 1 == widget.group.memberIds.length;
-    
+
     setState(() => _isProcessing = true);
 
     try {
@@ -394,7 +385,7 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
         ErrorSnackBar.showSuccess(context, 'İşaretlendi');
         // Grubu yenile
         ref.invalidate(groupProvider(widget.group.id));
-        
+
         // Eğer bu işaretleme ile tüm üyeler işaretlenmiş olduysa ve grup aktifse, kapatma dialog'u göster
         if (willBeAllSettled && widget.group.isActive) {
           // Kısa bir gecikme ile dialog göster (grup güncellemesinin tamamlanması için)
@@ -418,87 +409,69 @@ class _SettlementSectionState extends ConsumerState<SettlementSection> {
   Future<void> _showCloseGroupDialog() async {
     final shouldClose = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Icon(Icons.info_outline, color: AppColors.warning, size: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Grup Kapatma',
-                style: AppTextStyles.h3,
-              ),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                Icon(Icons.info_outline, color: AppColors.warning, size: 28),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Grup Kapatma', style: AppTextStyles.h3)),
+              ],
             ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Tüm üyeler hesaplaşmayı tamamladı.',
-              style: AppTextStyles.bodyMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Bu grup kapanıyor, emin misiniz?',
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.warning.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded, 
-                    color: AppColors.warning, 
-                    size: 20
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Tüm üyeler hesaplaşmayı tamamladı.', style: AppTextStyles.bodyMedium),
+                const SizedBox(height: 8),
+                Text(
+                  'Bu grup kapanıyor, emin misiniz?',
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Grup kapandıktan sonra yeni masraf eklenemez.',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.warning,
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Grup kapandıktan sonra yeni masraf eklenemez.',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.warning),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Hayır',
-              style: AppTextStyles.buttonMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Hayır',
+                  style: AppTextStyles.buttonMedium.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
               ),
-            ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.warning,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Evet'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.warning,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Evet'),
-          ),
-        ],
-      ),
     );
 
     if (shouldClose == true && mounted) {

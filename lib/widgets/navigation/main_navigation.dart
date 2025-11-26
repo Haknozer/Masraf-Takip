@@ -28,11 +28,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
   Widget build(BuildContext context) {
     final navItems = [
       const BottomNavItem(icon: Icons.home, label: 'Gruplar', index: 0),
-      const BottomNavItem(
-        icon: Icons.person_outline,
-        label: 'Profil',
-        index: 1,
-      ),
+      const BottomNavItem(icon: Icons.person_outline, label: 'Profil', index: 1),
     ];
 
     return Scaffold(
@@ -50,7 +46,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
     // Kullanıcının gruplarını al
     final groupsState = ref.read(userGroupsProvider);
     final allGroups = groupsState.valueOrNull ?? [];
-    
+
     // Sadece aktif grupları filtrele
     final activeGroups = allGroups.where((group) => group.isActive).toList();
 
@@ -76,7 +72,8 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
       builder: (context) => SelectGroupDialog(groups: activeGroups),
     );
 
-    if (selectedGroup != null && mounted) {
+    if (selectedGroup != null) {
+      if (!context.mounted) return;
       // Masraf ekleme dialog'unu göster
       await CreateExpenseDialog.show(context, selectedGroup);
     }

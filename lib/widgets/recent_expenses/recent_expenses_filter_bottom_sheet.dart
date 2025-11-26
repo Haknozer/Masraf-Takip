@@ -279,7 +279,7 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
                       decoration: InputDecoration(
                         hintText: 'Tümü',
                         filled: true,
-                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -306,7 +306,11 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
                 decoration: BoxDecoration(
                   color: colorScheme.surface,
                   boxShadow: [
-                    BoxShadow(color: AppColors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+                    BoxShadow(
+                      color: AppColors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -5),
+                    ),
                   ],
                 ),
                 child: SizedBox(

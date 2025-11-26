@@ -40,7 +40,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     try {
       final code = _codeController.text.trim().toUpperCase();
-      
+
       // Girilen kodu URL formatına çevir ve deep link servisiyle işle
       final joinUrl = Uri.parse('https://masraftakipuygulamasi.web.app/join?code=$code');
       await DeepLinkService.handleDeepLink(joinUrl, context, ref);
@@ -78,173 +78,149 @@ class _HomePageState extends ConsumerState<HomePage> {
     _codeController.clear();
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.all(AppSpacing.sectionPadding),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 400),
+              padding: const EdgeInsets.all(AppSpacing.sectionPadding),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text('Kod ile Katıl', style: AppTextStyles.h3),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Kod ile Katıl', style: AppTextStyles.h3),
+                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                      ],
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Davet kodunu girin',
+                      style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: AppSpacing.sectionMargin),
+                    // Kod girişi
+                    CustomTextField(
+                      controller: _codeController,
+                      label: 'Davet Kodu',
+                      hint: 'ABC12',
+                      prefixIcon: Icons.code,
+                      textCapitalization: TextCapitalization.characters,
+                      maxLength: 5,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Lütfen davet kodunu girin';
+                        }
+                        final trimmedValue = value.trim();
+                        if (trimmedValue.length < 4 || trimmedValue.length > 5) {
+                          return 'Davet kodu 4-5 karakter olmalıdır';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.sectionMargin),
+                    // Katıl butonu
+                    CustomButton(text: 'Gruba Katıl', onPressed: _isLoading ? null : _joinGroup, isLoading: _isLoading),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Davet kodunu girin',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sectionMargin),
-                // Kod girişi
-                CustomTextField(
-                  controller: _codeController,
-                  label: 'Davet Kodu',
-                  hint: 'ABC12',
-                  prefixIcon: Icons.code,
-                  textCapitalization: TextCapitalization.characters,
-                  maxLength: 5,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Lütfen davet kodunu girin';
-                    }
-                    final trimmedValue = value.trim();
-                    if (trimmedValue.length < 4 || trimmedValue.length > 5) {
-                      return 'Davet kodu 4-5 karakter olmalıdır';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSpacing.sectionMargin),
-                // Katıl butonu
-                CustomButton(
-                  text: 'Gruba Katıl',
-                  onPressed: _isLoading ? null : _joinGroup,
-                  isLoading: _isLoading,
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
     );
   }
 
   void _showGroupOptionsDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Grup İşlemleri',
-                style: AppTextStyles.h2,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Grup İşlemleri', style: AppTextStyles.h2),
+                  const SizedBox(height: 24),
+                  // Yeni Grup Oluştur
+                  ListTile(
+                    leading: const Icon(Icons.create, color: AppColors.primary),
+                    title: const Text('Yeni Grup Oluştur'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showCreateGroupDialog(context, ref);
+                    },
+                  ),
+                  // QR Kod ile Katıl
+                  ListTile(
+                    leading: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
+                    title: const Text('QR Kod ile Katıl'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const QRScannerPage()));
+                    },
+                  ),
+                  // Kod ile Katıl
+                  ListTile(
+                    leading: const Icon(Icons.group_add, color: AppColors.primary),
+                    title: const Text('Kod ile Katıl'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showJoinGroupDialog(context);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+                ],
               ),
-              const SizedBox(height: 24),
-              // Yeni Grup Oluştur
-              ListTile(
-                leading: const Icon(Icons.create, color: AppColors.primary),
-                title: const Text('Yeni Grup Oluştur'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showCreateGroupDialog(context, ref);
-                },
-              ),
-              // QR Kod ile Katıl
-              ListTile(
-                leading: const Icon(Icons.qr_code_scanner, color: AppColors.primary),
-                title: const Text('QR Kod ile Katıl'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const QRScannerPage()),
-                  );
-                },
-              ),
-              // Kod ile Katıl
-              ListTile(
-                leading: const Icon(Icons.group_add, color: AppColors.primary),
-                title: const Text('Kod ile Katıl'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showJoinGroupDialog(context);
-                },
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('İptal'),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
   void _showCreateGroupDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
-          padding: const EdgeInsets.all(AppSpacing.sectionPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder:
+          (context) => Dialog(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
+              padding: const EdgeInsets.all(AppSpacing.sectionPadding),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Yeni Grup Oluştur', style: AppTextStyles.h3),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Yeni Grup Oluştur', style: AppTextStyles.h3),
+                      IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sectionMargin),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: CreateGroupForm(
+                        onSuccess: () {
+                          Navigator.pop(context);
+                          // Grupları yenile
+                          ref.invalidate(userGroupsProvider);
+                        },
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sectionMargin),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: CreateGroupForm(
-                    onSuccess: () {
-                      Navigator.pop(context);
-                      // Grupları yenile
-                      ref.invalidate(userGroupsProvider);
-                    },
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -265,19 +241,12 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  AppColors.primary,
-                  AppColors.primaryLight,
-                ],
+                colors: [AppColors.primary, AppColors.primaryLight],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
+                BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 2)),
               ],
             ),
             child: SafeArea(
@@ -287,10 +256,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 children: [
                   Text(
                     'Masraf Takip',
-                    style: AppTextStyles.h3.copyWith(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTextStyles.h3.copyWith(color: AppColors.white, fontWeight: FontWeight.bold),
                   ),
                   CustomButton(
                     text: 'Yeni Grup',

@@ -50,8 +50,8 @@ class MemberSelector extends ConsumerWidget {
         final members = snapshot.data!;
 
         final colorScheme = Theme.of(context).colorScheme;
-        final unselectedBg = colorScheme.surfaceVariant.withOpacity(0.4);
-        final unselectedBorder = colorScheme.outlineVariant.withOpacity(0.5);
+        final unselectedBg = colorScheme.surfaceContainerHighest.withValues(alpha: 0.4);
+        final unselectedBorder = colorScheme.outlineVariant.withValues(alpha: 0.5);
         final unselectedText = colorScheme.onSurfaceVariant;
         final selectedColor = colorScheme.primary;
 
@@ -61,53 +61,54 @@ class MemberSelector extends ConsumerWidget {
             Text('Paylaşan Kişiler', style: AppTextStyles.label),
             const SizedBox(height: AppSpacing.textSpacing),
             Column(
-              children: members.map((member) {
-                final isSelected = selectedMemberIds.contains(member.id);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: GestureDetector(
-                    onTap: () {
-                      final newSelection = List<String>.from(selectedMemberIds);
-                      if (isSelected) {
-                        newSelection.remove(member.id);
-                      } else {
-                        newSelection.add(member.id);
-                      }
-                      onMembersChanged(newSelection);
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isSelected ? selectedColor.withOpacity(0.15) : unselectedBg,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isSelected ? selectedColor : unselectedBorder,
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          if (isSelected)
-                            Icon(Icons.check_circle, color: selectedColor, size: 20)
-                          else
-                            Icon(Icons.circle_outlined, color: unselectedText, size: 20),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              member.displayName,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: isSelected ? selectedColor : unselectedText,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              ),
+              children:
+                  members.map((member) {
+                    final isSelected = selectedMemberIds.contains(member.id);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: GestureDetector(
+                        onTap: () {
+                          final newSelection = List<String>.from(selectedMemberIds);
+                          if (isSelected) {
+                            newSelection.remove(member.id);
+                          } else {
+                            newSelection.add(member.id);
+                          }
+                          onMembersChanged(newSelection);
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isSelected ? selectedColor.withValues(alpha: 0.15) : unselectedBg,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? selectedColor : unselectedBorder,
+                              width: isSelected ? 2 : 1,
                             ),
                           ),
-                        ],
+                          child: Row(
+                            children: [
+                              if (isSelected)
+                                Icon(Icons.check_circle, color: selectedColor, size: 20)
+                              else
+                                Icon(Icons.circle_outlined, color: unselectedText, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  member.displayName,
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: isSelected ? selectedColor : unselectedText,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
           ],
         );
@@ -115,4 +116,3 @@ class MemberSelector extends ConsumerWidget {
     );
   }
 }
-

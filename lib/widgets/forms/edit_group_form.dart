@@ -41,9 +41,9 @@ class _EditGroupFormState extends ConsumerState<EditGroupForm> {
   @override
   void initState() {
     super.initState();
-    print('EditGroupForm initState - GroupId: ${widget.groupId}');
+    debugPrint('EditGroupForm initState - GroupId: ${widget.groupId}');
     if (widget.groupId.isEmpty) {
-      print('UYARI: EditGroupForm\'a boş groupId geçirildi!');
+      debugPrint('UYARI: EditGroupForm\'a boş groupId geçirildi!');
     }
   }
 
@@ -89,7 +89,7 @@ class _EditGroupFormState extends ConsumerState<EditGroupForm> {
 
     // GroupId'yi başta kontrol et ve sakla
     final currentGroupId = widget.groupId;
-    print('_updateGroup başladı - GroupId: $currentGroupId, isEmpty: ${currentGroupId.isEmpty}');
+    debugPrint('_updateGroup başladı - GroupId: $currentGroupId, isEmpty: ${currentGroupId.isEmpty}');
 
     if (currentGroupId.isEmpty) {
       if (mounted) {
@@ -111,9 +111,9 @@ class _EditGroupFormState extends ConsumerState<EditGroupForm> {
             final timestamp = DateTime.now().millisecondsSinceEpoch;
             final imagePath = 'groups/${user.uid}/group_$timestamp.jpg';
             imageUrl = await FirebaseService.uploadFile(path: imagePath, file: _selectedImage!);
-            print('Resim başarıyla yüklendi: $imageUrl');
+            debugPrint('Resim başarıyla yüklendi: $imageUrl');
           } catch (uploadError) {
-            print('Resim yükleme hatası (grup yine de güncellenecek): $uploadError');
+            debugPrint('Resim yükleme hatası (grup yine de güncellenecek): $uploadError');
             if (mounted) {
               ErrorSnackBar.showWarning(context, 'Resim yüklenemedi, grup resim olmadan güncelleniyor.');
             }
@@ -126,7 +126,7 @@ class _EditGroupFormState extends ConsumerState<EditGroupForm> {
         imageUrl = null;
       }
 
-      print('Grup güncelleme çağrılıyor - GroupId: $currentGroupId');
+      debugPrint('Grup güncelleme çağrılıyor - GroupId: $currentGroupId');
 
       await ref
           .read(groupNotifierProvider.notifier)
@@ -143,7 +143,7 @@ class _EditGroupFormState extends ConsumerState<EditGroupForm> {
       }
     } catch (e) {
       if (mounted) {
-        print('Grup güncelleme hatası detayı: $e');
+        debugPrint('Grup güncelleme hatası detayı: $e');
         ErrorSnackBar.show(context, e);
       }
     } finally {

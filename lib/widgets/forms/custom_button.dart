@@ -26,15 +26,13 @@ class CustomButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final Color baseBackground =
-        backgroundColor ?? (isSecondary ? colorScheme.secondary : colorScheme.primary);
+    final Color baseBackground = backgroundColor ?? (isSecondary ? colorScheme.secondary : colorScheme.primary);
     final Brightness brightness = ThemeData.estimateBrightnessForColor(baseBackground);
     final Color baseForeground = brightness == Brightness.dark ? Colors.white : Colors.black;
-    final Color foregroundColor = backgroundColor == null
-        ? (isSecondary ? colorScheme.onSecondary : colorScheme.onPrimary)
-        : baseForeground;
-    final Color disabledBackground = colorScheme.onSurface.withOpacity(0.12);
-    final Color disabledForeground = colorScheme.onSurface.withOpacity(0.38);
+    final Color foregroundColor =
+        backgroundColor == null ? (isSecondary ? colorScheme.onSecondary : colorScheme.onPrimary) : baseForeground;
+    final Color disabledBackground = colorScheme.onSurface.withValues(alpha: 0.12);
+    final Color disabledForeground = colorScheme.onSurface.withValues(alpha: 0.38);
 
     return SizedBox(
       width: width,
@@ -45,10 +43,8 @@ class CustomButton extends StatelessWidget {
           backgroundColor: baseBackground,
           foregroundColor: foregroundColor,
           elevation: 2,
-          shadowColor: baseBackground.withOpacity(0.25),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shadowColor: baseBackground.withValues(alpha: 0.25),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           disabledBackgroundColor: disabledBackground,
           disabledForegroundColor: disabledForeground,
         ),
@@ -57,23 +53,16 @@ class CustomButton extends StatelessWidget {
                 ? SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(foregroundColor)),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
+                  ),
                 )
                 : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (icon != null) ...[
-                      Icon(
-                        icon,
-                        size: 20,
-                        color: foregroundColor,
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      text,
-                      style: AppTextStyles.buttonLarge.copyWith(color: foregroundColor),
-                    ),
+                    if (icon != null) ...[Icon(icon, size: 20, color: foregroundColor), const SizedBox(width: 8)],
+                    Text(text, style: AppTextStyles.buttonLarge.copyWith(color: foregroundColor)),
                   ],
                 ),
       ),
