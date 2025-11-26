@@ -1,11 +1,14 @@
 class UserModel {
   final String id;
   final String email;
-  final String displayName;
+  final String displayName; // Bu alan artık unique username olarak da kullanılacak
   final String? photoUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
   List<String> groups; // Grup ID'leri
+  List<String> friends; // Arkadaş ID'leri (kabul edilmiş)
+  List<String> friendRequests; // Gelen arkadaşlık istekleri
+  List<String> sentRequests; // Gönderilen arkadaşlık istekleri
 
   UserModel({
     required this.id,
@@ -15,7 +18,12 @@ class UserModel {
     required this.createdAt,
     required this.updatedAt,
     required this.groups,
-  });
+    List<String>? friends,
+    List<String>? friendRequests,
+    List<String>? sentRequests,
+  })  : friends = friends ?? [],
+        friendRequests = friendRequests ?? [],
+        sentRequests = sentRequests ?? [];
 
   // JSON'dan UserModel oluştur
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -27,6 +35,9 @@ class UserModel {
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       groups: List<String>.from(json['groups'] ?? []),
+      friends: List<String>.from(json['friends'] ?? []),
+      friendRequests: List<String>.from(json['friendRequests'] ?? []),
+      sentRequests: List<String>.from(json['sentRequests'] ?? []),
     );
   }
 
@@ -40,6 +51,9 @@ class UserModel {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'groups': groups,
+      'friends': friends,
+      'friendRequests': friendRequests,
+      'sentRequests': sentRequests,
     };
   }
 
@@ -52,6 +66,9 @@ class UserModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     List<String>? groups,
+    List<String>? friends,
+    List<String>? friendRequests,
+    List<String>? sentRequests,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -61,6 +78,9 @@ class UserModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       groups: groups ?? this.groups,
+      friends: friends ?? this.friends,
+      friendRequests: friendRequests ?? this.friendRequests,
+      sentRequests: sentRequests ?? this.sentRequests,
     );
   }
 }

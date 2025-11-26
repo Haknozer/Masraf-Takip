@@ -78,13 +78,13 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // İsim Alanı
+          // Kullanıcı Adı Alanı (displayName olarak kullanılacak)
           CustomTextField(
             controller: _nameController,
-            label: 'Ad Soyad',
-            hint: 'Adınızı ve soyadınızı girin',
+            label: 'Kullanıcı Adı',
+            hint: 'Benzersiz kullanıcı adınız',
             prefixIcon: Icons.person,
-            validator: Validators.validateName,
+            validator: Validators.validateUsername,
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.textSpacing * 2),

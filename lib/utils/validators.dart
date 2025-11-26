@@ -52,6 +52,34 @@ class Validators {
     return null;
   }
 
+  // Kullanıcı adı doğrulama
+  static String? validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Kullanıcı adı gerekli';
+    }
+
+    if (value.length < 3) {
+      return 'Kullanıcı adı en az 3 karakter olmalı';
+    }
+
+    if (value.length > 20) {
+      return 'Kullanıcı adı en fazla 20 karakter olabilir';
+    }
+
+    // Sadece harf, rakam, alt çizgi ve nokta içerebilir
+    final usernameRegex = RegExp(r'^[a-zA-Z0-9._]+$');
+    if (!usernameRegex.hasMatch(value)) {
+      return 'Sadece harf, rakam, nokta ve alt çizgi kullanabilirsiniz';
+    }
+
+    // İlk karakter harf olmalı
+    if (!RegExp(r'^[a-zA-Z]').hasMatch(value)) {
+      return 'Kullanıcı adı harf ile başlamalı';
+    }
+
+    return null;
+  }
+
   // Grup adı doğrulama
   static String? validateGroupName(String? value) {
     if (value == null || value.isEmpty) {

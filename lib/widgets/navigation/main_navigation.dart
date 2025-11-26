@@ -20,7 +20,7 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    const HomePage(), // Ana Sayfa/Gruplar (index 0) - Görselde "Gruplar" butonu Ana Sayfa'yı gösteriyor
+    const HomePage(), // Ana Sayfa/Gruplar (index 0)
     const ProfilePage(), // Profil (index 1)
   ];
 

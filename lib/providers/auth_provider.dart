@@ -21,16 +21,17 @@ final userModelProvider = FutureProvider<UserModel?>((ref) async {
   if (user == null) return null;
 
   try {
-    final userDoc = await FirebaseService.getDocumentSnapshot('users/${user.uid}');
-    if (userDoc.exists) {
-      return UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
-    }
-
-    // Doküman bulunmadıysa küçük bir gecikme ile tekrar dene
-    await Future.delayed(const Duration(milliseconds: 300));
-    final retryDoc = await FirebaseService.getDocumentSnapshot('users/${user.uid}');
-    if (retryDoc.exists) {
-      return UserModel.fromJson(retryDoc.data() as Map<String, dynamic>);
+    // Retry mekanizması: 5 kere dene, her seferinde 500ms bekle
+    for (int i = 0; i < 5; i++) {
+      final userDoc = await FirebaseService.getDocumentSnapshot('users/${user.uid}');
+      if (userDoc.exists) {
+        return UserModel.fromJson(userDoc.data() as Map<String, dynamic>);
+      }
+      
+      // Son denemede bekleme yapma
+      if (i < 4) {
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
     }
 
     return null;
@@ -90,11 +91,26 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     state = const AsyncValue.loading();
     try {
       LogService.info('Yeni kayıt denemesi: $email');
+
+      // DisplayName'i küçük harfe çevir ve trim et
+      final normalizedDisplayName = displayName.trim().toLowerCase();
+
+      // DisplayName'in unique olup olmadığını kontrol et (küçük harfle)
+      final displayNameCheck = await FirebaseService.firestore
+          .collection('users')
+          .where('displayName', isEqualTo: normalizedDisplayName)
+          .limit(1)
+          .get();
+
+      if (displayNameCheck.docs.isNotEmpty) {
+        throw Exception('Bu kullanıcı adı zaten kullanılıyor');
+      }
+
       final credential = await FirebaseService.createUserWithEmailAndPassword(email: email, password: password);
 
-      // Kullanıcı profilini güncelle
+      // Kullanıcı profilini güncelle (orijinal displayName ile - UI'da gösterilecek)
       try {
-        await credential.user?.updateDisplayName(displayName);
+        await credential.user?.updateDisplayName(displayName.trim());
       } catch (e) {
         // Display name güncelleme hatası kritik değil, devam et
         LogService.warning('Display name güncelleme hatası: $email', e);
@@ -104,16 +120,22 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
       final userModel = UserModel(
         id: credential.user!.uid,
         email: email,
-        displayName: displayName,
+        displayName: normalizedDisplayName, // Küçük harfle kaydet
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         groups: [], // Boş groups array'i ekle
+        friends: [], // Boş friends array'i ekle
+        friendRequests: [], // Boş friend requests array'i ekle
+        sentRequests: [], // Boş sent requests array'i ekle
       );
 
       // Firestore'a kullanıcı dokümanını ekle
       try {
         await FirebaseService.setDocument(path: 'users/${credential.user!.uid}', data: userModel.toJson());
         LogService.debug('Kullanıcı Firestore\'a eklendi: ${credential.user!.uid}');
+        
+        // Firestore'a yazma işleminin tamamlandığından emin olmak için kısa bir bekleme
+        await Future.delayed(const Duration(milliseconds: 500));
       } catch (e, stackTrace) {
         LogService.error('Firestore ekleme hatası: $email', e, stackTrace);
         // Firestore hatası olsa bile kullanıcı oluşturuldu, state'i güncelle

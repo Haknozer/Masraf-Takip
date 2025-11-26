@@ -4,6 +4,7 @@ import '../../constants/app_spacing.dart';
 import '../../widgets/sections/groups_section_header.dart';
 import '../../widgets/sections/groups_list_section.dart';
 import '../../widgets/sections/debt_summary_section.dart';
+import '../../widgets/sections/friends_section.dart';
 import '../../widgets/common/base_page.dart';
 import '../../widgets/headers/home_header.dart';
 import '../../widgets/dialogs/home/group_options_dialog.dart';
@@ -51,6 +52,11 @@ class _HomePageState extends ConsumerState<HomePage> {
 
                   // Grup Listesi
                   const GroupsListSection(),
+
+                  const SizedBox(height: AppSpacing.sectionMargin),
+
+                  // Arkadaşlarım Bölümü
+                  const FriendsSection(),
                 ],
               ),
             ),
