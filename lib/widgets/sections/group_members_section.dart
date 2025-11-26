@@ -11,6 +11,7 @@ import '../../widgets/dialogs/transfer_admin_dialog.dart';
 import '../../widgets/dialogs/add_member_dialog.dart';
 import '../../widgets/common/error_snackbar.dart';
 import '../../providers/auth_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/group_provider.dart';
 import '../../services/firebase_service.dart';
 import 'group_members/group_member_item.dart';
@@ -27,6 +28,7 @@ class GroupMembersSection extends ConsumerStatefulWidget {
 
 class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
   List<UserModel> _members = [];
+  List<UserModel> _blockedMembers = [];
   bool _isLoading = true;
   bool _isRemoving = false;
 
@@ -40,9 +42,22 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
     setState(() => _isLoading = true);
     try {
       final members = await GroupMembersController.getGroupMembers(widget.group);
+      // Engellenen kullanıcıları da yükle
+      final blocked = <UserModel>[];
+      for (final userId in widget.group.blockedUserIds) {
+        try {
+          final doc = await FirebaseService.getDocumentSnapshot('users/$userId');
+          if (doc.exists) {
+            blocked.add(UserModel.fromJson(doc.data() as Map<String, dynamic>));
+          }
+        } catch (_) {
+          continue;
+        }
+      }
       if (mounted) {
         setState(() {
           _members = members;
+          _blockedMembers = blocked;
           _isLoading = false;
         });
       }
@@ -102,7 +117,7 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                   ),
                 ),
               )
-            else
+            else ...[
               ..._members.map(
                 (member) => GroupMemberItem(
                   member: member,
@@ -115,8 +130,77 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
                   onGiveAdmin: () => _giveAdminRole(member),
                 ),
               ),
+              if (isCurrentUserAdmin && _blockedMembers.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sectionMargin),
+                Text(
+                  'Engellenenler (${_blockedMembers.length})',
+                  style: AppTextStyles.bodyMedium.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: AppSpacing.textSpacing),
+                ..._blockedMembers.map((user) => _buildBlockedItem(user)),
+              ],
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBlockedItem(UserModel user) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.textSpacing),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
+            backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
+            child:
+                user.photoUrl == null
+                    ? Text(
+                      user.displayName.isNotEmpty ? user.displayName[0].toUpperCase() : '?',
+                      style: AppTextStyles.bodySmall.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
+                    )
+                    : null,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              user.displayName,
+              style: AppTextStyles.bodyMedium.copyWith(color: colorScheme.onSurface),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              try {
+                await FirebaseService.updateDocument(
+                  path: 'groups/${widget.group.id}',
+                  data: {
+                    'blockedUserIds': FieldValue.arrayRemove([user.id]),
+                    'updatedAt': DateTime.now().toIso8601String(),
+                  },
+                );
+                if (mounted) {
+                  ErrorSnackBar.showSuccess(context, '${user.displayName} engellenenlerden kaldırıldı.');
+                  _loadMembers();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ErrorSnackBar.show(context, e);
+                }
+              }
+            },
+            child: const Text('Engeli Kaldır'),
+          ),
+        ],
       ),
     );
   }
@@ -145,6 +229,55 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
         if (confirmed != true) return;
       }
 
+      // Eğer kullanıcı kendi isteğiyle ayrılıyorsa, onay + grubu engelle seçeneği sor
+      bool shouldBlockGroup = false;
+      if (isCurrentUser) {
+        if (!mounted) return;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) {
+            bool localBlock = false;
+            return StatefulBuilder(
+              builder: (context, setStateDialog) {
+                return AlertDialog(
+                  title: const Text('Gruptan Ayrıl'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Bu gruptan ayrılmak istediğinize emin misiniz?'),
+                      const SizedBox(height: AppSpacing.textSpacing),
+                      CheckboxListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Bu grubu engelle (tekrar eklenemesin)'),
+                        value: localBlock,
+                        onChanged: (value) {
+                          setStateDialog(() {
+                            localBlock = value ?? false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Vazgeç')),
+                    TextButton(
+                      onPressed: () {
+                        shouldBlockGroup = localBlock;
+                        Navigator.of(dialogContext).pop(true);
+                      },
+                      child: const Text('Ayrıl'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+
+        if (confirmed != true) return;
+      }
+
       setState(() => _isRemoving = true);
 
       // Eğer admin ayrılıyorsa ve başka admin yoksa, yetki devri yapılacak
@@ -168,11 +301,42 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
       }
 
       // Üyeyi çıkar
-      await RemoveMemberController.removeMemberFromGroup(ref, widget.group.id, member.id);
+      // Eğer kendisi çıkıyorsa blockAfterRemove = false (grup tarafından engellenmez),
+      // admin birini atıyorsa blockAfterRemove = true (grup tarafından engellenir)
+      final blockAfterRemove = !isCurrentUser;
+      await RemoveMemberController.removeMemberFromGroup(
+        ref,
+        widget.group.id,
+        member.id,
+        blockAfterRemove: blockAfterRemove,
+      );
 
       if (mounted) {
         if (isCurrentUser) {
           ErrorSnackBar.showSuccess(context, 'Gruptan ayrıldınız');
+
+          // Kullanıcı kendi isteğiyle ayrıldı ve grubu engellemek istiyorsa,
+          // kullanıcı dokümanına blockedGroupIds olarak ekle
+          if (shouldBlockGroup) {
+            try {
+              final userDocSnapshot =
+                  await FirebaseService.firestore.collection('users').where('id', isEqualTo: member.id).limit(1).get();
+
+              if (userDocSnapshot.docs.isNotEmpty) {
+                final userDocId = userDocSnapshot.docs.first.id;
+                await FirebaseService.updateDocument(
+                  path: 'users/$userDocId',
+                  data: {
+                    'blockedGroupIds': FieldValue.arrayUnion([widget.group.id]),
+                    'updatedAt': DateTime.now().toIso8601String(),
+                  },
+                );
+              }
+            } catch (_) {
+              // Engelleme yazılamasa da ayrılma işlemi başarılı kabul edilir.
+            }
+          }
+
           // Ana sayfaya dön
           Navigator.pop(context);
         } else {

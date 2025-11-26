@@ -31,6 +31,26 @@ final userGroupsProvider = StreamProvider<List<GroupModel>>((ref) {
   });
 });
 
+/// Kullanıcının engellediği gruplar
+final blockedGroupsProvider = FutureProvider<List<GroupModel>>((ref) async {
+  final userModel = await ref.watch(userModelProvider.future);
+  if (userModel == null || userModel.blockedGroupIds.isEmpty) return [];
+
+  final List<GroupModel> blockedGroups = [];
+  for (final groupId in userModel.blockedGroupIds) {
+    try {
+      final doc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        blockedGroups.add(GroupModel.fromJson({...data, 'id': doc.id}));
+      }
+    } catch (_) {
+      continue;
+    }
+  }
+  return blockedGroups;
+});
+
 // Kullanıcının doküman ID'sini al
 final userDocumentIdProvider = FutureProvider<String?>((ref) async {
   final user = ref.watch(currentUserProvider);
@@ -149,6 +169,11 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       // Middleware: Permission kontrolü
       PermissionMiddleware.requireCanAddMember(user, group);
 
+      // Kullanıcı grup tarafından engellenmişse eklemeye izin verme
+      if (group.isUserBlocked(userId)) {
+        throw const InvalidOperationException('Bu kullanıcı bu gruptan engellenmiş. Önce engeli kaldırmalısınız.');
+      }
+
       // 1. Groups koleksiyonunda memberIds ve memberRoles'e ekle
       final updatedGroup = group.addMember(userId, role: role);
       await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
@@ -158,9 +183,17 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
           await FirebaseService.firestore.collection('users').where('id', isEqualTo: userId).limit(1).get();
 
       if (userDocSnapshot.docs.isNotEmpty) {
-        final userDocId = userDocSnapshot.docs.first.id;
+        final userDoc = userDocSnapshot.docs.first;
+        final userData = userDoc.data();
+        final blockedGroups = List<String>.from(userData['blockedGroupIds'] ?? []);
+
+        // Kullanıcı grubu kendisi engellemişse eklemeye izin verme
+        if (blockedGroups.contains(groupId)) {
+          throw const InvalidOperationException('Bu kullanıcı bu grubu engellemiş. Tekrar eklenemez.');
+        }
+
         await FirebaseService.updateDocument(
-          path: 'users/$userDocId',
+          path: 'users/${userDoc.id}',
           data: {
             'groups': FieldValue.arrayUnion([groupId]),
             'updatedAt': DateTime.now().toIso8601String(),
@@ -381,6 +414,22 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         throw const InvalidOperationException('Bu grubun zaten üyesisiniz');
       }
 
+      // Grup tarafından engellenmiş mi?
+      if (group.isUserBlocked(user.uid)) {
+        throw const InvalidOperationException('Bu gruptan engellendiğiniz için tekrar katılamazsınız');
+      }
+
+      // Kullanıcı bu grubu kendisi engellemiş mi?
+      final joinUserDocSnapshot =
+          await FirebaseService.firestore.collection('users').where('id', isEqualTo: user.uid).limit(1).get();
+      if (joinUserDocSnapshot.docs.isNotEmpty) {
+        final joinUserData = joinUserDocSnapshot.docs.first.data();
+        final joinBlockedGroups = List<String>.from(joinUserData['blockedGroupIds'] ?? []);
+        if (joinBlockedGroups.contains(groupId)) {
+          throw const InvalidOperationException('Bu grubu engellediğiniz için tekrar katılamazsınız');
+        }
+      }
+
       // 1. Groups koleksiyonunda memberIds ve memberRoles'e ekle
       final updatedGroup = group.addMember(user.uid, role: 'user');
       await FirebaseService.updateDocument(path: 'groups/$groupId', data: updatedGroup.toJson());
@@ -441,6 +490,11 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
         throw const InvalidOperationException('Bu grubun zaten üyesisiniz');
       }
 
+      // Grup tarafından engellenmiş mi?
+      if (group.isUserBlocked(user.uid)) {
+        throw const InvalidOperationException('Bu gruptan engellendiğiniz için tekrar katılamazsınız');
+      }
+
       // 1. Groups koleksiyonunda memberIds ve memberRoles'e ekle
       final updatedGroup = group.addMember(user.uid, role: 'user');
       await FirebaseService.updateDocument(path: 'groups/${group.id}', data: updatedGroup.toJson());
@@ -450,9 +504,17 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
           await FirebaseService.firestore.collection('users').where('id', isEqualTo: user.uid).limit(1).get();
 
       if (userDocSnapshot.docs.isNotEmpty) {
-        final userDocId = userDocSnapshot.docs.first.id;
+        final userDoc = userDocSnapshot.docs.first;
+        final userData = userDoc.data();
+        final blockedGroups = List<String>.from(userData['blockedGroupIds'] ?? []);
+
+        // Kullanıcı bu grubu kendisi engellemiş mi?
+        if (blockedGroups.contains(group.id)) {
+          throw const InvalidOperationException('Bu grubu engellediğiniz için tekrar katılamazsınız');
+        }
+
         await FirebaseService.updateDocument(
-          path: 'users/$userDocId',
+          path: 'users/${userDoc.id}',
           data: {
             'groups': FieldValue.arrayUnion([group.id]),
             'updatedAt': DateTime.now().toIso8601String(),
@@ -521,7 +583,7 @@ final groupNotifierProvider = StateNotifierProvider<GroupNotifier, AsyncValue<Li
 final groupProvider = Provider.autoDispose.family<AsyncValue<GroupModel?>, String>((ref, groupId) {
   // Cache'i 5 dakika tut
   ref.keepAlive();
-  
+
   return ref
       .watch(groupNotifierProvider)
       .when(

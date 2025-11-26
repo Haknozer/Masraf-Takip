@@ -61,7 +61,9 @@ class RemoveMemberController {
   }
 
   /// Üyeyi gruptan çıkar ve masrafları güncelle
-  static Future<void> removeMemberFromGroup(WidgetRef ref, String groupId, String memberId) async {
+  /// [blockAfterRemove] true ise, çıkarılan kullanıcı grup tarafından engellenir.
+  static Future<void> removeMemberFromGroup(WidgetRef ref, String groupId, String memberId,
+      {bool blockAfterRemove = false}) async {
     // Grubu al
     final groupState = ref.read(groupProvider(groupId));
     final group = groupState.valueOrNull;
@@ -142,6 +144,17 @@ class RemoveMemberController {
 
     // 3. Grubu güncelle (üyeyi memberIds'den çıkar)
     await ref.read(groupNotifierProvider.notifier).removeMember(groupId, memberId);
+
+    // 3.1 Eğer admin tarafından çıkarılıyorsa ve blockAfterRemove true ise, engellenenler listesine ekle
+    if (blockAfterRemove) {
+      await FirebaseService.updateDocument(
+        path: 'groups/$groupId',
+        data: {
+          'blockedUserIds': FieldValue.arrayUnion([memberId]),
+          'updatedAt': DateTime.now().toIso8601String(),
+        },
+      );
+    }
 
     // 4. Kullanıcının users dokümanından grubu kaldır
     try {

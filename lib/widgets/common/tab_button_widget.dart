@@ -35,6 +35,9 @@ class TabButtonWidget extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
               style: AppTextStyles.bodySmall.copyWith(
                 color: isSelected ? AppColors.primary : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,

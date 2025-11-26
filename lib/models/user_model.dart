@@ -9,6 +9,7 @@ class UserModel {
   List<String> friends; // Arkadaş ID'leri (kabul edilmiş)
   List<String> friendRequests; // Gelen arkadaşlık istekleri
   List<String> sentRequests; // Gönderilen arkadaşlık istekleri
+  List<String> blockedGroupIds; // Kullanıcının engellediği grup ID'leri
 
   UserModel({
     required this.id,
@@ -21,9 +22,11 @@ class UserModel {
     List<String>? friends,
     List<String>? friendRequests,
     List<String>? sentRequests,
+    List<String>? blockedGroupIds,
   })  : friends = friends ?? [],
         friendRequests = friendRequests ?? [],
-        sentRequests = sentRequests ?? [];
+        sentRequests = sentRequests ?? [],
+        blockedGroupIds = blockedGroupIds ?? [];
 
   // JSON'dan UserModel oluştur
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -38,6 +41,7 @@ class UserModel {
       friends: List<String>.from(json['friends'] ?? []),
       friendRequests: List<String>.from(json['friendRequests'] ?? []),
       sentRequests: List<String>.from(json['sentRequests'] ?? []),
+      blockedGroupIds: List<String>.from(json['blockedGroupIds'] ?? []),
     );
   }
 
@@ -54,6 +58,7 @@ class UserModel {
       'friends': friends,
       'friendRequests': friendRequests,
       'sentRequests': sentRequests,
+      'blockedGroupIds': blockedGroupIds,
     };
   }
 
@@ -69,6 +74,7 @@ class UserModel {
     List<String>? friends,
     List<String>? friendRequests,
     List<String>? sentRequests,
+    List<String>? blockedGroupIds,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -81,6 +87,7 @@ class UserModel {
       friends: friends ?? this.friends,
       friendRequests: friendRequests ?? this.friendRequests,
       sentRequests: sentRequests ?? this.sentRequests,
+      blockedGroupIds: blockedGroupIds ?? this.blockedGroupIds,
     );
   }
 }

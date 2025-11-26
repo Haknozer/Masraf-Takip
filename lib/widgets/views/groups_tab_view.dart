@@ -8,6 +8,7 @@ class GroupsTabView extends StatelessWidget {
   final String emptyMessage;
   final bool isHistoryTab;
   final Future<void> Function()? onRefresh;
+  final void Function(GroupModel group)? onUnblock;
 
   const GroupsTabView({
     super.key,
@@ -16,6 +17,7 @@ class GroupsTabView extends StatelessWidget {
     required this.emptyMessage,
     required this.isHistoryTab,
     this.onRefresh,
+    this.onUnblock,
   });
 
   @override
@@ -55,6 +57,6 @@ class GroupsTabView extends StatelessWidget {
         ),
       );
     }
-    return GroupsList(groups: groups, onRefresh: onRefresh);
+    return GroupsList(groups: groups, onRefresh: onRefresh, onUnblock: onUnblock);
   }
 }

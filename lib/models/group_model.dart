@@ -11,8 +11,8 @@ class GroupModel {
   final String? imageUrl;
   final String inviteCode; // Davet kodu
   final DateTime inviteCodeExpiresAt; // Davet kodunun geçerlilik süresi
-  final Set<String>
-  settledUserIds; // "Kimseden alacağım yok" işaretleyen kullanıcılar
+  final Set<String> settledUserIds; // "Kimseden alacağım yok" işaretleyen kullanıcılar
+  final Set<String> blockedUserIds; // Engellenen kullanıcılar (gruba tekrar giremez)
 
   GroupModel({
     required this.id,
@@ -28,7 +28,9 @@ class GroupModel {
     required this.inviteCode,
     required this.inviteCodeExpiresAt,
     Set<String>? settledUserIds,
-  }) : settledUserIds = settledUserIds ?? {};
+    Set<String>? blockedUserIds,
+  })  : settledUserIds = settledUserIds ?? {},
+        blockedUserIds = blockedUserIds ?? {};
 
   // JSON'dan GroupModel oluştur
   factory GroupModel.fromJson(Map<String, dynamic> json) {
@@ -44,11 +46,11 @@ class GroupModel {
       isActive: json['isActive'] ?? true,
       imageUrl: json['imageUrl'],
       inviteCode: json['inviteCode'] ?? '',
-      inviteCodeExpiresAt:
-          json['inviteCodeExpiresAt'] != null
-              ? DateTime.parse(json['inviteCodeExpiresAt'])
-              : DateTime.now().add(const Duration(days: 7)),
+      inviteCodeExpiresAt: json['inviteCodeExpiresAt'] != null
+          ? DateTime.parse(json['inviteCodeExpiresAt'])
+          : DateTime.now().add(const Duration(days: 7)),
       settledUserIds: Set<String>.from(json['settledUserIds'] ?? []),
+      blockedUserIds: Set<String>.from(json['blockedUserIds'] ?? []),
     );
   }
 
@@ -68,6 +70,7 @@ class GroupModel {
       'inviteCode': inviteCode,
       'inviteCodeExpiresAt': inviteCodeExpiresAt.toIso8601String(),
       'settledUserIds': settledUserIds.toList(),
+      'blockedUserIds': blockedUserIds.toList(),
     };
   }
 
@@ -86,6 +89,7 @@ class GroupModel {
     String? inviteCode,
     DateTime? inviteCodeExpiresAt,
     Set<String>? settledUserIds,
+    Set<String>? blockedUserIds,
   }) {
     return GroupModel(
       id: id ?? this.id,
@@ -101,6 +105,7 @@ class GroupModel {
       inviteCode: inviteCode ?? this.inviteCode,
       inviteCodeExpiresAt: inviteCodeExpiresAt ?? this.inviteCodeExpiresAt,
       settledUserIds: settledUserIds ?? this.settledUserIds,
+      blockedUserIds: blockedUserIds ?? this.blockedUserIds,
     );
   }
 
@@ -160,6 +165,11 @@ class GroupModel {
   // Kullanıcı "kimseden alacağım yok" işaretledi mi?
   bool isUserSettled(String userId) {
     return settledUserIds.contains(userId);
+  }
+
+  // Kullanıcı engellenmiş mi?
+  bool isUserBlocked(String userId) {
+    return blockedUserIds.contains(userId);
   }
 
   // Tüm üyeler hesaplaşmayı tamamladı mı?

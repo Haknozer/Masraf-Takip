@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/group_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/firebase_service.dart';
 import '../../widgets/app_bars/group_list_app_bar.dart';
 import '../../widgets/states/error_state.dart';
 import '../../widgets/common/base_page.dart';
@@ -25,7 +28,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> with SingleTicker
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -56,6 +59,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> with SingleTicker
   @override
   Widget build(BuildContext context) {
     final groupsState = ref.watch(userGroupsProvider);
+    final blockedGroupsState = ref.watch(blockedGroupsProvider);
 
     return BasePage(
       appBar: GroupListAppBar(
@@ -83,7 +87,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> with SingleTicker
         },
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [Tab(text: 'Aktif Gruplarım'), Tab(text: 'Geçmiş Gruplarım')],
+          tabs: const [Tab(text: 'Aktif Gruplarım'), Tab(text: 'Geçmiş Gruplarım'), Tab(text: 'Engellediğim Gruplar')],
         ),
       ),
       useScrollView: false,
@@ -113,6 +117,28 @@ class _GroupListPageState extends ConsumerState<GroupListPage> with SingleTicker
                   // Refresh groups logic
                 },
               ),
+              // Engellediğim Gruplar sekmesi
+              blockedGroupsState.when(
+                data:
+                    (blockedGroups) => GroupsTabView(
+                      groups: _filterGroups(blockedGroups, _searchQuery),
+                      searchQuery: _searchQuery,
+                      emptyMessage: 'Engellediğiniz grup bulunamadı',
+                      isHistoryTab: true,
+                      onRefresh: () async {
+                        // Refresh logic
+                      },
+                      onUnblock: _unblockGroup,
+                    ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error:
+                    (error, stack) => ErrorState(
+                      error: error.toString(),
+                      onRetry: () {
+                        // Retry engellenenler
+                      },
+                    ),
+              ),
             ],
           );
         },
@@ -125,5 +151,33 @@ class _GroupListPageState extends ConsumerState<GroupListPage> with SingleTicker
             ),
       ),
     );
+  }
+
+  Future<void> _unblockGroup(GroupModel group) async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) return;
+
+    try {
+      final userDocSnapshot =
+          await FirebaseService.firestore.collection('users').where('id', isEqualTo: user.uid).limit(1).get();
+
+      if (userDocSnapshot.docs.isEmpty) return;
+
+      final userDocId = userDocSnapshot.docs.first.id;
+
+      await FirebaseService.updateDocument(
+        path: 'users/$userDocId',
+        data: {
+          'blockedGroupIds': FieldValue.arrayRemove([group.id]),
+          'updatedAt': DateTime.now().toIso8601String(),
+        },
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('"${group.name}" engellemesi kaldırıldı.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Engelleme kaldırılamadı: $e')));
+    }
   }
 }

@@ -6,8 +6,9 @@ import '../cards/group_card.dart';
 class GroupsList extends StatelessWidget {
   final List<GroupModel> groups;
   final Future<void> Function()? onRefresh;
+  final void Function(GroupModel group)? onUnblock;
 
-  const GroupsList({super.key, required this.groups, this.onRefresh});
+  const GroupsList({super.key, required this.groups, this.onRefresh, this.onUnblock});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +19,26 @@ class GroupsList extends StatelessWidget {
         itemCount: groups.length,
         itemBuilder: (context, index) {
           final group = groups[index];
-          return GroupCard(group: group);
+          final card = GroupCard(group: group);
+
+          if (onUnblock == null) {
+            return card;
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              card,
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => onUnblock!(group),
+                  child: const Text('Engellemeyi Kaldır'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.textSpacing),
+            ],
+          );
         },
       ),
     );
