@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
-import '../../constants/expense_categories.dart';
 import '../../models/user_model.dart';
-import '../../utils/date_utils.dart' as date_utils;
-import 'category_filter_chip.dart';
+import 'filters/category_filter_section.dart';
+import 'filters/amount_range_filter_section.dart';
+import 'filters/date_range_filter_section.dart';
+import 'filters/user_filter_section.dart';
 
 class RecentExpensesFilterBottomSheet extends StatefulWidget {
   final String? selectedCategoryId;
@@ -151,151 +152,24 @@ class _RecentExpensesFilterBottomSheetState extends State<RecentExpensesFilterBo
                   controller: scrollController,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    Text('Kategori', style: AppTextStyles.label),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        CategoryFilterChip(
-                          label: 'Tümü',
-                          isSelected: _tempCategoryId == null,
-                          onTap: () => setState(() => _tempCategoryId = null),
-                        ),
-                        ...ExpenseCategories.all.map(
-                          (category) => CategoryFilterChip(
-                            label: category.name,
-                            icon: category.icon,
-                            color: category.color,
-                            isSelected: _tempCategoryId == category.id,
-                            onTap: () => setState(() => _tempCategoryId = category.id),
-                          ),
-                        ),
-                      ],
+                    CategoryFilterSection(
+                      selectedCategoryId: _tempCategoryId,
+                      onCategorySelected: (categoryId) => setState(() => _tempCategoryId = categoryId),
                     ),
                     const SizedBox(height: 24),
-                    Text('Tutar Aralığı (₺)', style: AppTextStyles.label),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _minAmountController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              hintText: 'Min',
-                              filled: true,
-                              fillColor: AppColors.greyLight,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _maxAmountController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              hintText: 'Max',
-                              filled: true,
-                              fillColor: AppColors.greyLight,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            ),
-                          ),
-                        ),
-                      ],
+                    AmountRangeFilterSection(minController: _minAmountController, maxController: _maxAmountController),
+                    const SizedBox(height: 24),
+                    DateRangeFilterSection(
+                      startDate: _tempStartDate,
+                      endDate: _tempEndDate,
+                      onStartDateTap: _selectStartDate,
+                      onEndDateTap: _selectEndDate,
                     ),
                     const SizedBox(height: 24),
-                    Text('Tarih Aralığı', style: AppTextStyles.label),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: _selectStartDate,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: AppColors.greyLight,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.calendar_today, size: 18, color: AppColors.textSecondary),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    _tempStartDate != null
-                                        ? date_utils.AppDateUtils.formatDate(_tempStartDate!)
-                                        : 'Başlangıç',
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      color: _tempStartDate != null ? AppColors.textPrimary : AppColors.textHint,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: InkWell(
-                            onTap: _selectEndDate,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: AppColors.greyLight,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.calendar_today, size: 18, color: AppColors.textSecondary),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    _tempEndDate != null ? date_utils.AppDateUtils.formatDate(_tempEndDate!) : 'Bitiş',
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      color: _tempEndDate != null ? AppColors.textPrimary : AppColors.textHint,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Text('Kişi', style: AppTextStyles.label),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      initialValue: _tempUserId,
-                      decoration: InputDecoration(
-                        hintText: 'Tümü',
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                      items: [
-                        DropdownMenuItem<String>(value: null, child: Text('Tümü', style: AppTextStyles.bodyMedium)),
-                        ...widget.groupMembers.map(
-                          (member) => DropdownMenuItem<String>(
-                            value: member.id,
-                            child: Text(member.displayName, style: AppTextStyles.bodyMedium),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) => setState(() => _tempUserId = value),
+                    UserFilterSection(
+                      selectedUserId: _tempUserId,
+                      groupMembers: widget.groupMembers,
+                      onUserChanged: (userId) => setState(() => _tempUserId = userId),
                     ),
                     const SizedBox(height: 32),
                   ],

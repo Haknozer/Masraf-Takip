@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-
-import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/expense_categories.dart';
 import '../../models/expense_model.dart';
 import '../../models/user_model.dart';
-import '../../utils/date_utils.dart' as app_date_utils;
+import '../avatars/expense_item_avatar.dart';
+import 'expense_item_subtitle.dart';
+import 'expense_item_trailing.dart';
 
 /// Masraf item widget'ı
 class ExpenseItem extends StatelessWidget {
@@ -51,8 +51,7 @@ class ExpenseItem extends StatelessWidget {
       final name = _getUserName(expense.paidBy);
       return '$name ödedi';
     }
-    final sorted = payerMap.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final sorted = payerMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
     final firstName = _getUserName(sorted.first.key);
     if (sorted.length == 1) {
       return '$firstName ${sorted.first.value.toStringAsFixed(2)} ₺ ödedi';
@@ -64,8 +63,7 @@ class ExpenseItem extends StatelessWidget {
   bool _canCurrentUserDelete() {
     if (currentUserId == null) return false;
     if (expense.paidBy == currentUserId) return true;
-    if (expense.paidAmounts != null &&
-        expense.paidAmounts!.containsKey(currentUserId)) {
+    if (expense.paidAmounts != null && expense.paidAmounts!.containsKey(currentUserId)) {
       return true;
     }
     return false;
@@ -82,96 +80,18 @@ class ExpenseItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: ListTile(
-        leading: _buildLeading(context, icon, color),
+        leading: ExpenseItemAvatar(imageUrl: expense.imageUrl, icon: icon, color: color),
         title: Text(expense.description, style: AppTextStyles.bodyMedium, overflow: TextOverflow.ellipsis, maxLines: 1),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              app_date_utils.AppDateUtils.formatDate(expense.date),
-              style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 4),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.person, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        payerInfo,
-                        style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.people, size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '$participantCount kişi dahil',
-                        style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${expense.amount.toStringAsFixed(2)} ₺',
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
-            ),
-            if (showEditIcon && onTap != null) ...[
-              const SizedBox(width: 8),
-              Icon(Icons.edit, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ],
-            if (showDeleteIcon && onDelete != null && _canCurrentUserDelete()) ...[
-              const SizedBox(width: 8),
-              GestureDetector(onTap: onDelete, child: Icon(Icons.delete_outline, size: 18, color: AppColors.error)),
-            ],
-          ],
+        subtitle: ExpenseItemSubtitle(date: expense.date, payerInfo: payerInfo, participantCount: participantCount),
+        trailing: ExpenseItemTrailing(
+          amount: expense.amount,
+          showEditIcon: showEditIcon,
+          showDeleteIcon: showDeleteIcon,
+          canDelete: _canCurrentUserDelete(),
+          onTap: onTap,
+          onDelete: onDelete,
         ),
       ),
-    );
-  }
-
-  Widget _buildLeading(BuildContext context, IconData icon, Color fallbackColor) {
-    if (expense.imageUrl != null && expense.imageUrl!.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          expense.imageUrl!,
-          width: 48,
-          height: 48,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _buildIconAvatar(icon, fallbackColor),
-        ),
-      );
-    }
-    return _buildIconAvatar(icon, fallbackColor);
-  }
-
-  Widget _buildIconAvatar(IconData icon, Color color) {
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-      child: Icon(icon, color: color),
     );
   }
 }

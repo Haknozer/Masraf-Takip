@@ -9,6 +9,7 @@ import '../../widgets/forms/custom_button.dart';
 import '../../widgets/common/image_picker_widget.dart';
 import '../../widgets/common/image_source_dialog.dart';
 import '../../widgets/common/error_snackbar.dart';
+import '../../utils/validators/group_validator.dart';
 
 class CreateGroupForm extends ConsumerStatefulWidget {
   final VoidCallback onSuccess;
@@ -129,15 +130,7 @@ class _CreateGroupFormState extends ConsumerState<CreateGroupForm> {
             label: 'Grup Adı',
             hint: 'Örn: Ev Arkadaşları',
             prefixIcon: Icons.group,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Grup adı gereklidir';
-              }
-              if (value.length < 3) {
-                return 'Grup adı en az 3 karakter olmalıdır';
-              }
-              return null;
-            },
+            validator: GroupValidator.validateName,
             textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: AppSpacing.textSpacing * 2),

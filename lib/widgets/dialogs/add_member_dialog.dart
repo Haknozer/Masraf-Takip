@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/group_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/common/copy_button.dart';
-import '../../widgets/common/copyable_text_field.dart';
 import '../../widgets/common/tab_button_widget.dart';
 import '../../widgets/forms/custom_button.dart';
+import 'add_member/add_member_qr_tab.dart';
+import 'add_member/add_member_link_tab.dart';
+import 'add_member/add_member_code_tab.dart';
 
 class AddMemberDialog extends ConsumerStatefulWidget {
   final GroupModel group;
@@ -129,115 +129,16 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
   Widget _buildTabContent() {
     switch (_selectedTab) {
       case 0:
-        return _buildQRCodeTab();
+        return AddMemberQrTab(inviteCode: widget.group.inviteCode);
       case 1:
-        return _buildLinkTab();
+        return AddMemberLinkTab(inviteCode: widget.group.inviteCode);
       case 2:
-        return _buildCodeTab();
+        return AddMemberCodeTab(
+          inviteCode: widget.group.inviteCode,
+          inviteCodeExpiresAt: widget.group.inviteCodeExpiresAt,
+        );
       default:
         return const SizedBox.shrink();
     }
-  }
-
-  Widget _buildQRCodeTab() {
-    // QR kod verisi: Invite code (direkt kullan, şifreleme gerekmez)
-    final qrData = widget.group.inviteCode;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // QR Kod
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.greyLight),
-          ),
-          child: QrImageView(
-            data: qrData,
-            version: QrVersions.auto,
-            size: 200,
-            backgroundColor: Colors.white,
-            errorCorrectionLevel: QrErrorCorrectLevel.M,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sectionMargin),
-        Text('QR kodu taratın', style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
-        const SizedBox(height: 8),
-        Text(
-          'QR kod okutulduğunda kullanıcı direkt gruba katılacak',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLinkTab() {
-    // Web URL formatı: https://masraftakipuygulamasi.web.app/join?code={inviteCode}
-    // Bu link hem web'de hem uygulamada çalışır (App Links)
-    final webLink = 'https://masraftakipuygulamasi.web.app/join?code=${widget.group.inviteCode}';
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.link, size: 64, color: AppColors.primary),
-        const SizedBox(height: AppSpacing.sectionMargin),
-        Text('Linki paylaşın', style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
-        const SizedBox(height: 8),
-        Text(
-          'Bu link hem web tarayıcısında hem uygulamada çalışır',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        // Web Link gösterimi
-        CopyableTextField(text: webLink),
-        const SizedBox(height: 8),
-        CopyButton(text: webLink, buttonLabel: 'Linki Kopyala', successMessage: 'Link kopyalandı!'),
-      ],
-    );
-  }
-
-  Widget _buildCodeTab() {
-    final inviteCode = widget.group.inviteCode;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.code, size: 64, color: AppColors.primary),
-        const SizedBox(height: AppSpacing.sectionMargin),
-        Text('Davet Kodunu Paylaşın', style: AppTextStyles.bodyMedium, textAlign: TextAlign.center),
-        const SizedBox(height: 12),
-        // Kod gösterimi
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.primary, width: 2),
-          ),
-          child: Text(inviteCode, style: AppTextStyles.h1.copyWith(color: AppColors.primary, letterSpacing: 4)),
-        ),
-        const SizedBox(height: 12),
-        CopyButton(text: inviteCode, buttonLabel: 'Kodu Kopyala', successMessage: 'Kod kopyalandı!'),
-        const SizedBox(height: 8),
-        Text(
-          'Kod ${_getDaysUntilExpiry()} gün geçerli',
-          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-        ),
-      ],
-    );
-  }
-
-  String _getDaysUntilExpiry() {
-    final now = DateTime.now();
-    final expiresAt = widget.group.inviteCodeExpiresAt;
-    final difference = expiresAt.difference(now).inDays;
-    return difference.toString();
   }
 }

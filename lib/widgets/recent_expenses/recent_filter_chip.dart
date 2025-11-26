@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../../constants/app_text_styles.dart';
 
-import '../../constants/app_text_styles.dart';
-
-/// Removable pill used to display active filters.
 class RecentFilterChip extends StatelessWidget {
   final String label;
   final IconData icon;

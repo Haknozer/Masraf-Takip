@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../../constants/app_spacing.dart';
 import '../../models/group_model.dart';
 import '../../providers/expense_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/firebase_service.dart';
 import '../../widgets/forms/custom_text_field.dart';
 import '../../widgets/forms/custom_button.dart';
 import '../../widgets/common/category_selector.dart';
 import '../../widgets/common/payment_type_selector.dart';
+import '../../widgets/selectors/distribution_type_selector.dart';
 import '../../widgets/common/member_selector.dart';
-import '../../widgets/common/manual_distribution_input.dart';
 import '../../widgets/common/paid_amounts_input.dart';
 import '../../widgets/common/error_snackbar.dart';
+import '../../widgets/dialogs/expense/expense_receipt_section.dart';
+import '../../utils/validators/expense_validator.dart';
 import '../../utils/date_utils.dart' as app_date_utils;
+import 'sections/expense_distribution_section.dart';
 
 class CreateExpenseForm extends ConsumerStatefulWidget {
   final GroupModel group;
@@ -28,6 +34,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
+  XFile? _receiptImage;
 
   String? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
@@ -72,6 +79,33 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
     }
   }
 
+  Future<void> _pickReceiptImage() async {
+    final picker = ImagePicker();
+    final result = await picker.pickImage(source: ImageSource.gallery, imageQuality: 75);
+    if (result != null) {
+      setState(() => _receiptImage = result);
+    }
+  }
+
+  void _removeReceiptImage() {
+    setState(() => _receiptImage = null);
+  }
+
+  void _showImagePreview(ImageProvider provider) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.8),
+              alignment: Alignment.center,
+              child: InteractiveViewer(child: Image(image: provider)),
+            ),
+          ),
+    );
+  }
+
   Future<void> _createExpense() async {
     // Grup kapalı kontrolü
     if (!widget.group.isActive) {
@@ -81,7 +115,26 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
 
     if (!_formKey.currentState!.validate()) return;
 
-    // Validasyonlar
+    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+
+    // Temel validasyonlar (Validator sınıfı kullanılarak)
+    String? error = ExpenseValidator.validateForm(
+      amount: amount,
+      categoryId: _selectedCategoryId,
+      selectedMemberIds:
+          _paymentType == PaymentType.fullPayment
+              ? (_selectedPayerId != null ? [_selectedPayerId!] : []) // Tam ödemede sadece ödeyen kişi önemli
+              : _selectedMemberIds, // Paylaşımlı ödemede seçili üyeler
+      distributionType: _distributionType ?? DistributionType.equal, // Varsayılan equal
+      manualAmounts: _manualAmounts,
+    );
+
+    if (error != null) {
+      // Validator genel hataları yakaladıysa göster (Ancak PaymentType ve PaidAmounts özel durumları aşağıda)
+      // Burada özel durumları filtreleyip validator'a bırakmak daha doğru
+    }
+
+    // Özel Validasyonlar (Validator sınıfında olmayanlar)
     if (_selectedCategoryId == null) {
       ErrorSnackBar.showWarning(context, 'Lütfen bir kategori seçin');
       return;
@@ -92,7 +145,6 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
       return;
     }
 
-    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
     if (amount <= 0) {
       ErrorSnackBar.showWarning(context, 'Tutar 0\'dan büyük olmalıdır');
       return;
@@ -128,10 +180,12 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
       }
 
       if (_distributionType == DistributionType.manual) {
-        // Manuel dağılım: Toplam kontrolü
-        final total = _manualAmounts.values.fold(0.0, (sum, amt) => sum + amt);
-        if ((total - amount).abs() > 0.01) {
-          ErrorSnackBar.showWarning(context, 'Manuel dağılım toplamı tutara eşit olmalıdır');
+        final manualError = ExpenseValidator.validateManualDistribution(
+          totalAmount: amount,
+          manualAmounts: _manualAmounts,
+        );
+        if (manualError != null) {
+          ErrorSnackBar.showWarning(context, manualError);
           return;
         }
       }
@@ -145,13 +199,9 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
         ErrorSnackBar.showWarning(context, 'Lütfen ödeyen kişilerin tutarlarını girin');
         return;
       }
-      final paidTotal =
-          cleanedPaidAmounts.values.fold(0.0, (sum, value) => sum + value);
+      final paidTotal = cleanedPaidAmounts.values.fold(0.0, (sum, value) => sum + value);
       if ((paidTotal - amount).abs() > 0.01) {
-        ErrorSnackBar.showWarning(
-          context,
-          'Ödeme tutarlarının toplamı ${amount.toStringAsFixed(2)} TL olmalı',
-        );
+        ErrorSnackBar.showWarning(context, 'Ödeme tutarlarının toplamı ${amount.toStringAsFixed(2)} TL olmalı');
         return;
       }
       paidByAmounts = cleanedPaidAmounts;
@@ -160,6 +210,12 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
     setState(() => _isLoading = true);
 
     try {
+      String? imageUrl;
+      if (_receiptImage != null) {
+        final fileName = '${widget.group.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        imageUrl = await FirebaseService.uploadFile(path: 'expense_receipts/$fileName', file: _receiptImage!);
+      }
+
       // Manuel dağılım varsa manualAmounts'ı gönder
       Map<String, double>? manualAmounts;
       if (_paymentType == PaymentType.sharedPayment &&
@@ -172,17 +228,10 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
           .read(expenseNotifierProvider.notifier)
           .addExpense(
             groupId: widget.group.id,
-            paidBy: (_paymentType == PaymentType.fullPayment
+            paidBy:
+                (_paymentType == PaymentType.fullPayment
                     ? _selectedPayerId ?? currentUser.uid
-                    : (paidByAmounts?.entries
-                            .reduce(
-                              (a, b) =>
-                                  a.value >= b.value
-                                      ? a
-                                      : b,
-                            )
-                            .key ??
-                        currentUser.uid)),
+                    : (paidByAmounts?.entries.reduce((a, b) => a.value >= b.value ? a : b).key ?? currentUser.uid)),
             description: _descriptionController.text.trim(),
             amount: amount,
             category: _selectedCategoryId!,
@@ -190,6 +239,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
             sharedBy: sharedBy,
             manualAmounts: manualAmounts,
             paidAmounts: paidByAmounts,
+            imageUrl: imageUrl,
           );
 
       if (mounted) {
@@ -209,8 +259,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
 
   @override
   Widget build(BuildContext context) {
-    final totalAmount =
-        double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+    final totalAmount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
     return Form(
       key: _formKey,
       child: Column(
@@ -251,6 +300,15 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
               return null;
             },
             textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.textSpacing * 2),
+
+          // Fotoğraf
+          ExpenseReceiptSection(
+            receiptImage: _receiptImage,
+            onPickImage: _pickReceiptImage,
+            onRemoveImage: _removeReceiptImage,
+            onShowPreview: _showImagePreview,
           ),
           const SizedBox(height: AppSpacing.textSpacing * 2),
 
@@ -321,55 +379,17 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
             ),
             const SizedBox(height: AppSpacing.sectionMargin),
 
-            // Paylaşımlı ödeme: Üye seçimi
-            MemberSelector(
+            // Paylaşımlı ödeme: Dağılım Bölümü
+            ExpenseDistributionSection(
               selectedMemberIds: _selectedMemberIds,
-              onMembersChanged: (memberIds) {
-                setState(() {
-                  _selectedMemberIds = memberIds;
-                  if (_distributionType == DistributionType.manual) {
-                    // Manuel dağılım için yeni üyeler için 0.00 ekle
-                    for (final memberId in memberIds) {
-                      if (!_manualAmounts.containsKey(memberId)) {
-                        _manualAmounts[memberId] = 0.0;
-                      }
-                    }
-                    // Çıkarılan üyeleri temizle
-                    _manualAmounts.removeWhere((key, value) => !memberIds.contains(key));
-                  }
-                });
-              },
               availableMemberIds: widget.group.memberIds,
+              onMembersChanged: (memberIds) => setState(() => _selectedMemberIds = memberIds),
+              distributionType: _distributionType,
+              onDistributionTypeChanged: (type) => setState(() => _distributionType = type),
+              manualAmounts: _manualAmounts,
+              onManualAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
+              totalAmount: totalAmount,
             ),
-            const SizedBox(height: AppSpacing.sectionMargin),
-
-            // Dağılım Tipi
-            DistributionTypeSelector(
-              selectedType: _distributionType,
-              onTypeSelected: (type) {
-                setState(() {
-                  _distributionType = type;
-                  if (type == DistributionType.equal) {
-                    _manualAmounts.clear();
-                  } else {
-                    // Manuel dağılım için başlangıç değerleri
-                    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
-                    final perPerson = _selectedMemberIds.isNotEmpty ? amount / _selectedMemberIds.length : 0.0;
-                    _manualAmounts = {for (final memberId in _selectedMemberIds) memberId: perPerson};
-                  }
-                });
-              },
-            ),
-            const SizedBox(height: AppSpacing.sectionMargin),
-
-            // Manuel dağılım input'u
-            if (_distributionType == DistributionType.manual && _selectedMemberIds.isNotEmpty)
-              ManualDistributionInput(
-                selectedMemberIds: _selectedMemberIds,
-                totalAmount: totalAmount,
-                memberAmounts: _manualAmounts,
-                onAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
-              ),
           ],
 
           const SizedBox(height: AppSpacing.sectionMargin),

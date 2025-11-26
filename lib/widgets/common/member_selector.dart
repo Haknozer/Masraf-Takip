@@ -4,6 +4,7 @@ import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/user_model.dart';
 import '../../services/firebase_service.dart';
+import '../selectors/member_selector_item.dart';
 
 /// Grup üyeleri seçim widget'ı
 class MemberSelector extends ConsumerWidget {
@@ -49,12 +50,6 @@ class MemberSelector extends ConsumerWidget {
 
         final members = snapshot.data!;
 
-        final colorScheme = Theme.of(context).colorScheme;
-        final unselectedBg = colorScheme.surfaceContainerHighest.withValues(alpha: 0.4);
-        final unselectedBorder = colorScheme.outlineVariant.withValues(alpha: 0.5);
-        final unselectedText = colorScheme.onSurfaceVariant;
-        final selectedColor = colorScheme.primary;
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -64,49 +59,18 @@ class MemberSelector extends ConsumerWidget {
               children:
                   members.map((member) {
                     final isSelected = selectedMemberIds.contains(member.id);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: GestureDetector(
-                        onTap: () {
-                          final newSelection = List<String>.from(selectedMemberIds);
-                          if (isSelected) {
-                            newSelection.remove(member.id);
-                          } else {
-                            newSelection.add(member.id);
-                          }
-                          onMembersChanged(newSelection);
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isSelected ? selectedColor.withValues(alpha: 0.15) : unselectedBg,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected ? selectedColor : unselectedBorder,
-                              width: isSelected ? 2 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              if (isSelected)
-                                Icon(Icons.check_circle, color: selectedColor, size: 20)
-                              else
-                                Icon(Icons.circle_outlined, color: unselectedText, size: 20),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  member.displayName,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    color: isSelected ? selectedColor : unselectedText,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                    return MemberSelectorItem(
+                      member: member,
+                      isSelected: isSelected,
+                      onTap: () {
+                        final newSelection = List<String>.from(selectedMemberIds);
+                        if (isSelected) {
+                          newSelection.remove(member.id);
+                        } else {
+                          newSelection.add(member.id);
+                        }
+                        onMembersChanged(newSelection);
+                      },
                     );
                   }).toList(),
             ),

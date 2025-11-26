@@ -23,6 +23,8 @@ import '../../constants/app_colors.dart';
 import '../../constants/expense_categories.dart';
 import '../../services/firebase_service.dart';
 import '../recent_expenses/recent_expenses_filter_bottom_sheet.dart';
+import '../recent_expenses/recent_expenses_filters_toolbar.dart';
+import '../recent_expenses/recent_filter_chip.dart';
 
 class RecentExpensesSection extends ConsumerStatefulWidget {
   final String groupId;
@@ -209,7 +211,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
       final category = ExpenseCategories.getById(_selectedCategoryId!);
       if (category != null) {
         chips.add(
-          _FilterChip(
+          RecentFilterChip(
             label: category.name,
             icon: category.icon,
             color: category.color,
@@ -229,7 +231,12 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
         label = 'Max: ${_maxAmountController.text} ₺';
       }
       chips.add(
-        _FilterChip(label: label, icon: Icons.attach_money, color: AppColors.success, onRemove: _removeAmountFilter),
+        RecentFilterChip(
+          label: label,
+          icon: Icons.attach_money,
+          color: AppColors.success,
+          onRemove: _removeAmountFilter,
+        ),
       );
     }
 
@@ -244,7 +251,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
         label = 'Bitiş: ${app_date_utils.AppDateUtils.formatDate(_endDate!)}';
       }
       chips.add(
-        _FilterChip(label: label, icon: Icons.calendar_today, color: AppColors.info, onRemove: _removeDateFilter),
+        RecentFilterChip(label: label, icon: Icons.calendar_today, color: AppColors.info, onRemove: _removeDateFilter),
       );
     }
 
@@ -262,7 +269,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
             ),
       );
       chips.add(
-        _FilterChip(
+        RecentFilterChip(
           label: member.displayName,
           icon: Icons.person,
           color: AppColors.accent,
@@ -278,9 +285,6 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
   Widget build(BuildContext context) {
     final expensesState = ref.watch(groupExpensesProvider(widget.groupId));
     final activeFilters = _buildActiveFilterChips();
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final borderColor = colorScheme.outlineVariant.withValues(alpha: 0.5);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,89 +292,11 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
         Text('Son Masraflar', style: AppTextStyles.h3),
         const SizedBox(height: 12),
         // Arama ve Filtreleme yan yana
-        Row(
-          children: [
-            // Arama bar (küçültülmüş)
-            Expanded(
-              flex: 3,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: _searchController,
-                    builder: (context, value, child) {
-                      return TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Masraf ara...',
-                          hintStyle: AppTextStyles.bodySmall.copyWith(
-                            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                          ),
-                          prefixIcon: Icon(Icons.search, size: 18, color: colorScheme.onSurfaceVariant),
-                          suffixIcon:
-                              value.text.isNotEmpty
-                                  ? IconButton(
-                                    icon: Icon(Icons.clear, size: 18, color: colorScheme.onSurfaceVariant),
-                                    onPressed: _searchController.clear,
-                                  )
-                                  : null,
-                          filled: true,
-                          fillColor: colorScheme.surface,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: borderColor, width: 1),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: borderColor, width: 1),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        ),
-                        style: AppTextStyles.bodySmall,
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Filtreleme butonu
-            OutlinedButton.icon(
-              onPressed: _showFilterBottomSheet,
-              icon: Icon(
-                Icons.filter_list,
-                size: 18,
-                color: _filter.isActive ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              label: Text(
-                'Filtrele',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: _filter.isActive ? AppColors.primary : Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                side: BorderSide(
-                  color: _filter.isActive ? AppColors.primary : AppColors.grey,
-                  width: _filter.isActive ? 1.5 : 1,
-                ),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                backgroundColor: _filter.isActive ? AppColors.primary.withValues(alpha: 0.1) : null,
-              ),
-            ),
-            if (_filter.isActive)
-              IconButton(
-                icon: Icon(Icons.clear_all, size: 20, color: AppColors.error),
-                onPressed: _clearFilters,
-                tooltip: 'Tüm filtreleri temizle',
-                padding: const EdgeInsets.all(8),
-                constraints: const BoxConstraints(),
-              ),
-          ],
+        RecentExpensesFiltersToolbar(
+          searchController: _searchController,
+          onFilterTap: _showFilterBottomSheet,
+          onClearFilters: _clearFilters,
+          isFilterActive: _filter.isActive,
         ),
         // Aktif filtreler (varsa, ayrı satırda)
         if (activeFilters.isNotEmpty) ...[
@@ -435,8 +361,7 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
       return;
     }
 
-    final isPayer = expense.paidBy == currentUser.uid ||
-        (expense.paidAmounts?.containsKey(currentUser.uid) ?? false);
+    final isPayer = expense.paidBy == currentUser.uid || (expense.paidAmounts?.containsKey(currentUser.uid) ?? false);
     if (!isPayer) {
       ErrorSnackBar.show(context, 'Bu masrafı sadece masrafı ekleyen kişi silebilir');
       return;
@@ -461,441 +386,5 @@ class _RecentExpensesSectionState extends ConsumerState<RecentExpensesSection> {
         ErrorSnackBar.show(context, e);
       }
     }
-  }
-}
-
-// Filtre chip widget'ı
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onRemove;
-
-  const _FilterChip({required this.label, required this.icon, required this.color, required this.onRemove});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color, width: 1.5),
-      ),
-      child: InkWell(
-        onTap: onRemove,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 6),
-              Text(label, style: AppTextStyles.bodySmall.copyWith(color: color, fontWeight: FontWeight.w600)),
-              const SizedBox(width: 4),
-              Icon(Icons.close, size: 14, color: color),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Filtre bottom sheet widget'ı
-class _FilterBottomSheet extends StatefulWidget {
-  final String? selectedCategoryId;
-  final String minAmount;
-  final String maxAmount;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final String? selectedUserId;
-  final List<UserModel> groupMembers;
-  final Function(String?) onCategorySelected;
-  final Function(String, String) onAmountChanged;
-  final Function(DateTime?) onStartDateSelected;
-  final Function(DateTime?) onEndDateSelected;
-  final Function(String?) onUserSelected;
-
-  const _FilterBottomSheet({
-    required this.selectedCategoryId,
-    required this.minAmount,
-    required this.maxAmount,
-    required this.startDate,
-    required this.endDate,
-    required this.selectedUserId,
-    required this.groupMembers,
-    required this.onCategorySelected,
-    required this.onAmountChanged,
-    required this.onStartDateSelected,
-    required this.onEndDateSelected,
-    required this.onUserSelected,
-  });
-
-  @override
-  State<_FilterBottomSheet> createState() => _FilterBottomSheetState();
-}
-
-class _FilterBottomSheetState extends State<_FilterBottomSheet> {
-  late TextEditingController _minAmountController;
-  late TextEditingController _maxAmountController;
-  String? _tempCategoryId;
-  DateTime? _tempStartDate;
-  DateTime? _tempEndDate;
-  String? _tempUserId;
-
-  @override
-  void initState() {
-    super.initState();
-    _minAmountController = TextEditingController(text: widget.minAmount);
-    _maxAmountController = TextEditingController(text: widget.maxAmount);
-    _tempCategoryId = widget.selectedCategoryId;
-    _tempStartDate = widget.startDate;
-    _tempEndDate = widget.endDate;
-    _tempUserId = widget.selectedUserId;
-  }
-
-  @override
-  void dispose() {
-    _minAmountController.dispose();
-    _maxAmountController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectStartDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _tempStartDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null) {
-      setState(() {
-        _tempStartDate = picked;
-      });
-    }
-  }
-
-  Future<void> _selectEndDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _tempEndDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null) {
-      setState(() {
-        _tempEndDate = picked;
-      });
-    }
-  }
-
-  void _applyFilters() {
-    widget.onCategorySelected(_tempCategoryId);
-    widget.onAmountChanged(_minAmountController.text, _maxAmountController.text);
-    widget.onStartDateSelected(_tempStartDate);
-    widget.onEndDateSelected(_tempEndDate);
-    widget.onUserSelected(_tempUserId);
-    Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.9,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      builder:
-          (context, scrollController) => Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(color: AppColors.grey, borderRadius: BorderRadius.circular(2)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Filtrele', style: AppTextStyles.h3),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _tempCategoryId = null;
-                            _tempStartDate = null;
-                            _tempEndDate = null;
-                            _tempUserId = null;
-                            _minAmountController.clear();
-                            _maxAmountController.clear();
-                          });
-                        },
-                        child: Text('Temizle', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    children: [
-                      // Kategori
-                      Text('Kategori', style: AppTextStyles.label),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _CategoryChip(
-                            label: 'Tümü',
-                            isSelected: _tempCategoryId == null,
-                            onTap: () => setState(() => _tempCategoryId = null),
-                          ),
-                          ...ExpenseCategories.all.map((category) {
-                            return _CategoryChip(
-                              label: category.name,
-                              icon: category.icon,
-                              color: category.color,
-                              isSelected: _tempCategoryId == category.id,
-                              onTap: () => setState(() => _tempCategoryId = category.id),
-                            );
-                          }),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Tutar
-                      Text('Tutar Aralığı (₺)', style: AppTextStyles.label),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _minAmountController,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                hintText: 'Min',
-                                filled: true,
-                                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              controller: _maxAmountController,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                hintText: 'Max',
-                                filled: true,
-                                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Tarih
-                      Text('Tarih Aralığı', style: AppTextStyles.label),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: _selectStartDate,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today,
-                                      size: 18,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      _tempStartDate != null
-                                          ? app_date_utils.AppDateUtils.formatDate(_tempStartDate!)
-                                          : 'Başlangıç',
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color:
-                                            _tempStartDate != null
-                                                ? Theme.of(context).colorScheme.onSurface
-                                                : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: InkWell(
-                              onTap: _selectEndDate,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.calendar_today,
-                                      size: 18,
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      _tempEndDate != null
-                                          ? app_date_utils.AppDateUtils.formatDate(_tempEndDate!)
-                                          : 'Bitiş',
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        color:
-                                            _tempEndDate != null
-                                                ? Theme.of(context).colorScheme.onSurface
-                                                : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Kişi
-                      Text('Kişi', style: AppTextStyles.label),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        initialValue: _tempUserId,
-                        decoration: InputDecoration(
-                          hintText: 'Tümü',
-                          filled: true,
-                          fillColor: AppColors.greyLight,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                        items: [
-                          DropdownMenuItem<String>(value: null, child: Text('Tümü', style: AppTextStyles.bodyMedium)),
-                          ...widget.groupMembers.map((member) {
-                            return DropdownMenuItem<String>(
-                              value: member.id,
-                              child: Text(member.displayName, style: AppTextStyles.bodyMedium),
-                            );
-                          }),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _tempUserId = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 32),
-                    ],
-                  ),
-                ),
-                // Uygula butonu
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _applyFilters,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text('Uygula', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.white)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  final String label;
-  final IconData? icon;
-  final Color? color;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _CategoryChip({required this.label, this.icon, this.color, required this.isSelected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final chipColor = color ?? AppColors.primary;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? chipColor.withValues(alpha: 0.15) : Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? chipColor : Theme.of(context).colorScheme.surfaceContainerHighest,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 18, color: isSelected ? chipColor : Theme.of(context).colorScheme.onSurfaceVariant),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              label,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: isSelected ? chipColor : Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

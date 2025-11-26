@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../constants/app_colors.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/user_model.dart';
 import '../../services/firebase_service.dart';
-import '../../widgets/forms/custom_text_field.dart';
+import '../inputs/manual_distribution_member_input.dart';
+import '../inputs/manual_distribution_total.dart';
 
 /// Manuel dağılım için input widget'ı
 class ManualDistributionInput extends ConsumerStatefulWidget {
@@ -142,57 +142,19 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
             const SizedBox(height: AppSpacing.textSpacing),
             ...members.map((member) {
               final controller = _controllers[member.id];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.textSpacing * 2),
-                child: CustomTextField(
-                  controller: controller!,
-                  label: member.displayName,
-                  hint: '0.00',
-                  prefixIcon: Icons.person,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (value) => _updateAmount(member.id, value),
-                  validator: (value) {
-                    final amount = double.tryParse(value ?? '') ?? 0.0;
-                    if (amount < 0) {
-                      return 'Negatif olamaz';
-                    }
-                    return null;
-                  },
-                ),
+              return ManualDistributionMemberInput(
+                member: member,
+                controller: controller!,
+                onChanged: (value) => _updateAmount(member.id, value),
               );
             }),
             const SizedBox(height: AppSpacing.textSpacing),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isValid ? AppColors.success.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: isValid ? AppColors.success : AppColors.error, width: 1),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Toplam:', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-                  Text(
-                    '${total.toStringAsFixed(2)} TL / ${widget.totalAmount.toStringAsFixed(2)} TL',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: isValid ? AppColors.success : AppColors.error,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+            ManualDistributionTotal(
+              total: total,
+              targetTotal: widget.totalAmount,
+              isValid: isValid,
+              difference: difference,
             ),
-            if (!isValid)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  difference > 0
-                      ? 'Eksik: ${difference.toStringAsFixed(2)} TL'
-                      : 'Fazla: ${(-difference).toStringAsFixed(2)} TL',
-                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
-                ),
-              ),
           ],
         );
       },

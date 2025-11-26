@@ -1,36 +1,27 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-
 import '../../constants/app_spacing.dart';
-import '../../constants/app_text_styles.dart';
 import '../../models/expense_model.dart';
 import '../../models/group_model.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/expense_provider.dart';
-import '../../providers/group_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/firebase_service.dart';
-import '../../widgets/common/async_value_builder.dart';
-import '../../widgets/common/category_selector.dart';
-import '../../widgets/common/error_snackbar.dart';
-import '../../widgets/common/manual_distribution_input.dart';
-import '../../widgets/common/member_selector.dart';
-import '../../widgets/common/payment_type_selector.dart';
-import '../../widgets/common/paid_amounts_input.dart';
-import '../../widgets/dialogs/delete_expense_dialog.dart';
-import '../../widgets/forms/custom_button.dart';
 import '../../widgets/forms/custom_text_field.dart';
-import '../../controllers/expense_controller.dart';
-import '../../utils/date_utils.dart' as app_date_utils;
+import '../../widgets/forms/custom_button.dart';
+import '../../widgets/common/category_selector.dart';
+import '../../widgets/selectors/distribution_type_selector.dart';
+import '../../widgets/common/error_snackbar.dart';
+import '../../widgets/dialogs/expense/expense_receipt_section.dart';
+import '../../utils/validators/expense_validator.dart';
+import 'sections/expense_distribution_section.dart';
 
 class EditExpenseForm extends ConsumerStatefulWidget {
-  final String expenseId;
+  final ExpenseModel expense;
+  final GroupModel group;
   final VoidCallback onSuccess;
-  final VoidCallback? onDelete;
 
-  const EditExpenseForm({super.key, required this.expenseId, required this.onSuccess, this.onDelete});
+  const EditExpenseForm({super.key, required this.expense, required this.group, required this.onSuccess});
 
   @override
   ConsumerState<EditExpenseForm> createState() => _EditExpenseFormState();
@@ -40,82 +31,124 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _dateController = TextEditingController();
+  XFile? _receiptImage;
 
   String? _selectedCategoryId;
-  DateTime? _selectedDate;
-  PaymentType? _paymentType;
   DistributionType? _distributionType;
   List<String> _selectedMemberIds = [];
-  String? _selectedPayerId;
   Map<String, double> _manualAmounts = {};
-  Map<String, double> _paidAmounts = {};
+  bool _imageRemoved = false;
   bool _isLoading = false;
-  bool _isInitialized = false;
-  XFile? _receiptImage;
-  String? _existingImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeForm();
+  }
+
+  void _initializeForm() {
+    _amountController.text = widget.expense.amount.toStringAsFixed(2);
+    _descriptionController.text = widget.expense.description;
+    _selectedCategoryId = widget.expense.category;
+    _selectedMemberIds = List.from(widget.expense.sharedBy);
+    _imageRemoved = false;
+
+    // Dağılım tipini belirle
+    if (widget.expense.manualAmounts != null && widget.expense.manualAmounts!.isNotEmpty) {
+      _distributionType = DistributionType.manual;
+      _manualAmounts = Map.from(widget.expense.manualAmounts!);
+    } else {
+      _distributionType = DistributionType.equal;
+    }
+  }
 
   @override
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
-    _dateController.dispose();
     super.dispose();
   }
 
-  void _initializeForm(ExpenseModel expense, GroupModel group) {
-    if (_isInitialized) return;
+  Future<void> _updateExpense() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _amountController.text = expense.amount.toStringAsFixed(2);
-        _descriptionController.text = expense.description;
-        _selectedCategoryId = expense.category;
-        _selectedDate = expense.date;
-        _dateController.text = app_date_utils.AppDateUtils.formatDate(expense.date);
-        _selectedMemberIds = List.from(expense.sharedBy);
-        _existingImageUrl = expense.imageUrl;
-
-        // Ödeme tipini belirle
-        if (expense.sharedBy.length == 1) {
-          _paymentType = PaymentType.fullPayment;
-          _selectedPayerId = expense.sharedBy.first;
-        } else {
-          _paymentType = PaymentType.sharedPayment;
-          _selectedPayerId = expense.paidBy;
-
-          // Manuel dağılım kontrolü
-          if (expense.manualAmounts != null && expense.manualAmounts!.isNotEmpty) {
-            _distributionType = DistributionType.manual;
-            _manualAmounts = Map.from(expense.manualAmounts!);
-          } else {
-            _distributionType = DistributionType.equal;
-          }
-        }
-
-        if (expense.paidAmounts != null && expense.paidAmounts!.isNotEmpty) {
-          _paidAmounts = Map.from(expense.paidAmounts!);
-        } else {
-          _paidAmounts = {expense.paidBy: expense.amount};
-        }
-
-        setState(() => _isInitialized = true);
-      }
-    });
-  }
-
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+    // Validasyonlar
+    final error = ExpenseValidator.validateForm(
+      amount: double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
+      categoryId: _selectedCategoryId,
+      selectedMemberIds: _selectedMemberIds,
+      distributionType: _distributionType,
+      manualAmounts: _manualAmounts,
     );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _dateController.text = app_date_utils.AppDateUtils.formatDate(picked);
-      });
+
+    if (error != null) {
+      ErrorSnackBar.showWarning(context, error);
+      return;
+    }
+
+    final currentUser = ref.read(currentUserProvider);
+    if (currentUser == null) {
+      ErrorSnackBar.show(context, 'Giriş yapmanız gerekiyor');
+      return;
+    }
+
+    // Sadece masrafı ekleyen kişi düzenleyebilir
+    // Not: Bu kontrol zaten dialogda yapılıyor ama güvenlik için burada da kalabilir
+    final canEdit = widget.expense.paidBy == currentUser.uid;
+    if (!canEdit) {
+      ErrorSnackBar.show(context, 'Bu masrafı sadece masrafı ekleyen kişi düzenleyebilir');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+
+      // Manuel dağılım varsa manualAmounts'ı gönder
+      Map<String, double>? manualAmounts;
+      if (_distributionType == DistributionType.manual && _manualAmounts.isNotEmpty) {
+        manualAmounts = Map.from(_manualAmounts);
+      }
+
+      String? imageUrl = widget.expense.imageUrl;
+      bool imageUpdated = _imageRemoved;
+
+      if (_receiptImage != null) {
+        final fileName = '${widget.expense.groupId}_${widget.expense.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        imageUrl = await FirebaseService.uploadFile(path: 'expense_receipts/$fileName', file: _receiptImage!);
+        imageUpdated = true;
+      } else if (_imageRemoved) {
+        imageUrl = null;
+      }
+
+      await ref
+          .read(expenseNotifierProvider.notifier)
+          .updateExpense(
+            expenseId: widget.expense.id,
+            description: _descriptionController.text.trim(),
+            amount: amount,
+            category: _selectedCategoryId!,
+            date: widget.expense.date, // Tarih değiştirilemez
+            paidBy: widget.expense.paidBy, // Ödeyen kişi değiştirilemez
+            sharedBy: _selectedMemberIds,
+            manualAmounts: manualAmounts,
+            imageUrl: imageUrl,
+            imageUpdated: imageUpdated,
+          );
+
+      if (mounted) {
+        ErrorSnackBar.showSuccess(context, 'Masraf başarıyla güncellendi!');
+        widget.onSuccess();
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorSnackBar.show(context, e);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -125,15 +158,18 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
     if (result != null) {
       setState(() {
         _receiptImage = result;
-        _existingImageUrl = null;
+        _imageRemoved = false;
       });
     }
   }
 
   void _removeReceiptImage() {
     setState(() {
-      _receiptImage = null;
-      _existingImageUrl = null;
+      if (_receiptImage != null) {
+        _receiptImage = null;
+      } else if (widget.expense.imageUrl != null) {
+        _imageRemoved = true;
+      }
     });
   }
 
@@ -152,464 +188,102 @@ class _EditExpenseFormState extends ConsumerState<EditExpenseForm> {
     );
   }
 
-  Future<void> _updateExpense(ExpenseModel expense, GroupModel group) async {
-    if (!_formKey.currentState!.validate()) return;
-
-    // Validasyonlar
-    if (_selectedCategoryId == null) {
-      ErrorSnackBar.showWarning(context, 'Lütfen bir kategori seçin');
-      return;
-    }
-
-    if (_paymentType == null) {
-      ErrorSnackBar.showWarning(context, 'Lütfen ödeme tipini seçin');
-      return;
-    }
-
-    if (_selectedDate == null) {
-      ErrorSnackBar.showWarning(context, 'Lütfen bir tarih seçin');
-      return;
-    }
-
-    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
-    if (amount <= 0) {
-      ErrorSnackBar.showWarning(context, 'Tutar 0\'dan büyük olmalıdır');
-      return;
-    }
-
-    final currentUser = ref.read(currentUserProvider);
-    if (currentUser == null) {
-      ErrorSnackBar.show(context, 'Giriş yapmanız gerekiyor');
-      return;
-    }
-
-    // Paylaşım mantığına göre sharedBy listesini oluştur
-    List<String> sharedBy = [];
-    Map<String, double>? paidAmounts;
-
-    if (_paymentType == PaymentType.fullPayment) {
-      if (_selectedPayerId == null) {
-        ErrorSnackBar.showWarning(context, 'Lütfen ödeyen kişiyi seçin');
-        return;
-      }
-      sharedBy = [_selectedPayerId!];
-    } else {
-      if (_selectedMemberIds.isEmpty) {
-        ErrorSnackBar.showWarning(context, 'Lütfen en az bir kişi seçin');
-        return;
-      }
-
-      if (_distributionType == null) {
-        ErrorSnackBar.showWarning(context, 'Lütfen dağılım tipini seçin');
-        return;
-      }
-
-      if (_distributionType == DistributionType.manual) {
-        final total = _manualAmounts.values.fold(0.0, (sum, amt) => sum + amt);
-        if ((total - amount).abs() > 0.01) {
-          ErrorSnackBar.showWarning(context, 'Manuel dağılım toplamı tutara eşit olmalıdır');
-          return;
-        }
-      }
-
-      final cleanedPaidAmounts = Map<String, double>.fromEntries(
-        _paidAmounts.entries.where((entry) => entry.value > 0),
-      );
-      if (cleanedPaidAmounts.isEmpty) {
-        ErrorSnackBar.showWarning(context, 'Lütfen ödemeleri girin');
-        return;
-      }
-      final paidTotal = cleanedPaidAmounts.values.fold(0.0, (sum, value) => sum + value);
-      if ((paidTotal - amount).abs() > 0.01) {
-        ErrorSnackBar.showWarning(context, 'Ödenen tutarların toplamı ${amount.toStringAsFixed(2)} TL olmalı');
-        return;
-      }
-
-      sharedBy = List.from(_selectedMemberIds);
-      paidAmounts = cleanedPaidAmounts;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      String? imageUrl = _existingImageUrl;
-      if (_receiptImage != null) {
-        final fileName = '${expense.groupId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        imageUrl = await FirebaseService.uploadFile(path: 'expense_receipts/$fileName', file: _receiptImage!);
-      }
-
-      // Manuel dağılım varsa manualAmounts'ı gönder
-      Map<String, double>? manualAmounts;
-      if (_paymentType == PaymentType.sharedPayment &&
-          _distributionType == DistributionType.manual &&
-          _manualAmounts.isNotEmpty) {
-        manualAmounts = Map.from(_manualAmounts);
-      }
-
-      // paidBy'ı belirle
-      String paidBy;
-      if (_paymentType == PaymentType.fullPayment) {
-        paidBy = _selectedPayerId ?? currentUser.uid;
-      } else {
-        final entries = paidAmounts!.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-        paidBy = entries.first.key;
-      }
-
-      await ref
-          .read(expenseNotifierProvider.notifier)
-          .updateExpense(
-            expenseId: widget.expenseId,
-            description: _descriptionController.text.trim(),
-            amount: amount,
-            category: _selectedCategoryId!,
-            date: _selectedDate!,
-            sharedBy: sharedBy,
-            paidBy: paidBy,
-            manualAmounts: manualAmounts,
-            paidAmounts: paidAmounts,
-            imageUrl: imageUrl,
-            imageUpdated: true,
-          );
-
-      if (mounted) {
-        ErrorSnackBar.showSuccess(context, 'Masraf başarıyla güncellendi!');
-        widget.onSuccess();
-      }
-    } catch (e) {
-      if (mounted) {
-        ErrorSnackBar.show(context, e);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final expenseState = ref.watch(expenseProvider(widget.expenseId));
+    final currentUser = ref.watch(currentUserProvider);
+    final canEdit = currentUser != null && widget.expense.paidBy == currentUser.uid;
 
-    return AsyncValueBuilder<ExpenseModel?>(
-      value: expenseState,
-      dataBuilder: (context, expense) {
-        if (expense == null) {
-          return const Center(child: Text('Masraf bulunamadı'));
-        }
-
-        final groupState = ref.watch(groupProvider(expense.groupId));
-
-        return AsyncValueBuilder<GroupModel?>(
-          value: groupState,
-          dataBuilder: (context, group) {
-            if (group == null) {
-              return const Center(child: Text('Grup bulunamadı'));
-            }
-
-            _initializeForm(expense, group);
-
-            final totalAmount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
-
-            return Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Tutar
-                  CustomTextField(
-                    controller: _amountController,
-                    label: 'Tutar (TL)',
-                    hint: '0.00',
-                    prefixIcon: Icons.currency_lira,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Tutar gereklidir';
-                      }
-                      final amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
-                      if (amount <= 0) {
-                        return 'Tutar 0\'dan büyük olmalıdır';
-                      }
-                      return null;
-                    },
-                    textInputAction: TextInputAction.next,
-                  ),
-                  const SizedBox(height: AppSpacing.textSpacing * 2),
-
-                  // Açıklama
-                  CustomTextField(
-                    controller: _descriptionController,
-                    label: 'Açıklama',
-                    hint: 'Masraf açıklaması',
-                    prefixIcon: Icons.description,
-                    maxLines: 3,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Açıklama gereklidir';
-                      }
-                      return null;
-                    },
-                    textInputAction: TextInputAction.next,
-                  ),
-                  const SizedBox(height: AppSpacing.textSpacing * 2),
-
-                  _buildReceiptSection(Theme.of(context).colorScheme),
-                  const SizedBox(height: AppSpacing.textSpacing * 2),
-
-                  // Kategori
-                  CategorySelector(
-                    selectedCategoryId: _selectedCategoryId,
-                    onCategorySelected: (categoryId) => setState(() => _selectedCategoryId = categoryId),
-                  ),
-                  const SizedBox(height: AppSpacing.sectionMargin),
-
-                  // Tarih
-                  GestureDetector(
-                    onTap: _selectDate,
-                    child: CustomTextField(
-                      controller: _dateController,
-                      label: 'Tarih',
-                      hint: 'Tarih seçin',
-                      prefixIcon: Icons.calendar_today,
-                      readOnly: true,
-                      onTap: _selectDate,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.textSpacing * 2),
-
-                  // Ödeme Tipi
-                  PaymentTypeSelector(
-                    selectedType: _paymentType,
-                    onTypeSelected: (type) {
-                      setState(() {
-                        _paymentType = type;
-                        if (type == PaymentType.fullPayment) {
-                          _distributionType = null;
-                          _manualAmounts.clear();
-                          _paidAmounts.clear();
-                        } else {
-                          _distributionType = DistributionType.equal;
-                          if (_paidAmounts.isEmpty) {
-                            final currentUser = ref.read(currentUserProvider);
-                            if (currentUser != null) {
-                              _paidAmounts[currentUser.uid] =
-                                  double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
-                            }
-                          }
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.sectionMargin),
-
-                  // Ödeme tipine göre içerik
-                  if (_paymentType == PaymentType.fullPayment) ...[
-                    MemberSelector(
-                      selectedMemberIds: _selectedPayerId != null ? [_selectedPayerId!] : [],
-                      onMembersChanged: (memberIds) {
-                        setState(() => _selectedPayerId = memberIds.isNotEmpty ? memberIds.first : null);
-                      },
-                      availableMemberIds: group.memberIds,
-                    ),
-                  ] else if (_paymentType == PaymentType.sharedPayment) ...[
-                    PaidAmountsInput(
-                      memberIds: group.memberIds,
-                      totalAmount: totalAmount,
-                      paidAmounts: _paidAmounts,
-                      onChanged: (amounts) => setState(() => _paidAmounts = amounts),
-                    ),
-                    const SizedBox(height: AppSpacing.sectionMargin),
-
-                    MemberSelector(
-                      selectedMemberIds: _selectedMemberIds,
-                      onMembersChanged: (memberIds) {
-                        setState(() {
-                          _selectedMemberIds = memberIds;
-                          if (_distributionType == DistributionType.manual) {
-                            for (final memberId in memberIds) {
-                              if (!_manualAmounts.containsKey(memberId)) {
-                                _manualAmounts[memberId] = 0.0;
-                              }
-                            }
-                            _manualAmounts.removeWhere((key, value) => !memberIds.contains(key));
-                          }
-                        });
-                      },
-                      availableMemberIds: group.memberIds,
-                    ),
-                    const SizedBox(height: AppSpacing.sectionMargin),
-
-                    DistributionTypeSelector(
-                      selectedType: _distributionType,
-                      onTypeSelected: (type) {
-                        setState(() {
-                          _distributionType = type;
-                          if (type == DistributionType.equal) {
-                            _manualAmounts.clear();
-                          } else {
-                            final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
-                            final perPerson = _selectedMemberIds.isNotEmpty ? amount / _selectedMemberIds.length : 0.0;
-                            _manualAmounts = {for (final memberId in _selectedMemberIds) memberId: perPerson};
-                          }
-                        });
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.sectionMargin),
-
-                    if (_distributionType == DistributionType.manual && _selectedMemberIds.isNotEmpty)
-                      ManualDistributionInput(
-                        selectedMemberIds: _selectedMemberIds,
-                        totalAmount: totalAmount,
-                        memberAmounts: _manualAmounts,
-                        onAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
-                      ),
-                  ],
-
-                  const SizedBox(height: AppSpacing.sectionMargin),
-
-                  // Güncelle Butonu
-                  CustomButton(
-                    text: 'Masrafı Güncelle',
-                    onPressed: _isLoading ? null : () => _updateExpense(expense, group),
-                    isLoading: _isLoading,
-                  ),
-                  const SizedBox(height: AppSpacing.textSpacing),
-
-                  // Sil Butonu
-                  CustomButton(
-                    text: 'Masrafı Sil',
-                    onPressed: _isLoading ? null : () => _deleteExpense(expense),
-                    isLoading: false,
-                    isSecondary: true,
-                    icon: Icons.delete,
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _deleteExpense(ExpenseModel expense) async {
-    // Silme onay dialogu göster
-    final confirmed = await DeleteExpenseDialog.show(
-      context,
-      expenseDescription: expense.description,
-      expenseAmount: expense.amount,
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      await ExpenseController.deleteExpense(ref, widget.expenseId);
-
-      if (mounted) {
-        ErrorSnackBar.showSuccess(context, 'Masraf başarıyla silindi!');
-        if (widget.onDelete != null) {
-          widget.onDelete!();
-        } else {
-          widget.onSuccess();
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ErrorSnackBar.show(context, e);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Widget _buildReceiptSection(ColorScheme colorScheme) {
-    final hasLocal = _receiptImage != null;
-    final hasRemote = _existingImageUrl != null && _existingImageUrl!.isNotEmpty;
-
-    if (!hasLocal && !hasRemote) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Fiş / Fotoğraf (Opsiyonel)', style: AppTextStyles.label),
-          const SizedBox(height: AppSpacing.textSpacing),
-          OutlinedButton.icon(
-            onPressed: _pickReceiptImage,
-            icon: const Icon(Icons.photo_camera),
-            label: const Text('Fotoğraf Ekle'),
-            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          // Tutar
+          CustomTextField(
+            controller: _amountController,
+            label: 'Tutar (TL)',
+            hint: '0.00',
+            prefixIcon: Icons.currency_lira,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Tutar gereklidir';
+              }
+              final amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
+              if (amount <= 0) {
+                return 'Tutar 0\'dan büyük olmalıdır';
+              }
+              return null;
+            },
+            readOnly: !canEdit,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.textSpacing * 2),
+
+          // Açıklama
+          CustomTextField(
+            controller: _descriptionController,
+            label: 'Açıklama',
+            hint: 'Masraf açıklaması',
+            prefixIcon: Icons.description,
+            maxLines: 3,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Açıklama gereklidir';
+              }
+              return null;
+            },
+            readOnly: !canEdit,
+            textInputAction: TextInputAction.next,
+          ),
+          const SizedBox(height: AppSpacing.textSpacing * 2),
+
+          // Fotoğraf
+          ExpenseReceiptSection(
+            receiptImage: _receiptImage,
+            imageUrl: _imageRemoved ? null : widget.expense.imageUrl,
+            onPickImage: _pickReceiptImage,
+            onRemoveImage: _removeReceiptImage,
+            onShowPreview: _showImagePreview,
+            canEdit: canEdit,
+          ),
+          const SizedBox(height: AppSpacing.textSpacing * 2),
+
+          // Kategori
+          IgnorePointer(
+            ignoring: !canEdit,
+            child: CategorySelector(
+              selectedCategoryId: _selectedCategoryId,
+              onCategorySelected: (categoryId) => setState(() => _selectedCategoryId = categoryId),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sectionMargin),
+
+          // Dağılım Bölümü
+          IgnorePointer(
+            ignoring: !canEdit,
+            child: ExpenseDistributionSection(
+              selectedMemberIds: _selectedMemberIds,
+              availableMemberIds: widget.group.memberIds,
+              onMembersChanged: (memberIds) => setState(() => _selectedMemberIds = memberIds),
+              distributionType: _distributionType,
+              onDistributionTypeChanged: (type) => setState(() => _distributionType = type),
+              manualAmounts: _manualAmounts,
+              onManualAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
+              totalAmount: double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.sectionMargin),
+
+          // Güncelle Butonu
+          CustomButton(
+            text: 'Masrafı Güncelle',
+            onPressed: (!canEdit || _isLoading) ? null : _updateExpense,
+            isLoading: _isLoading,
           ),
         ],
-      );
-    }
-
-    Widget buildPreview(Widget child) {
-      return Stack(
-        children: [
-          ClipRRect(borderRadius: BorderRadius.circular(12), child: child),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: CircleAvatar(
-              backgroundColor: colorScheme.surface,
-              child: IconButton(
-                icon: const Icon(Icons.close),
-                color: colorScheme.error,
-                onPressed: _removeReceiptImage,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Fiş / Fotoğraf', style: AppTextStyles.label),
-        const SizedBox(height: AppSpacing.textSpacing),
-        if (hasLocal)
-          buildPreview(
-            GestureDetector(
-              onTap: () => _showImagePreview(Image.file(File(_receiptImage!.path)).image),
-              child: Image.file(File(_receiptImage!.path), height: 180, width: double.infinity, fit: BoxFit.cover),
-            ),
-          )
-        else if (hasRemote)
-          buildPreview(
-            GestureDetector(
-              onTap: () => _showImagePreview(NetworkImage(_existingImageUrl!)),
-              child: Image.network(_existingImageUrl!, height: 180, width: double.infinity, fit: BoxFit.cover),
-            ),
-          ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: CustomButton(
-                text: hasLocal ? 'Fotoğrafı Değiştir' : 'Yeni Fotoğraf Seç',
-                icon: Icons.photo_library,
-                onPressed: _pickReceiptImage,
-                height: 48,
-              ),
-            ),
-            if (hasLocal || hasRemote) ...[
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _removeReceiptImage,
-                  icon: const Icon(Icons.delete_forever),
-                  label: const Text('Kaldır'),
-                  style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ],
+      ),
     );
   }
 }

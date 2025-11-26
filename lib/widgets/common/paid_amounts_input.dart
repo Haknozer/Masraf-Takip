@@ -6,7 +6,8 @@ import '../../constants/app_spacing.dart';
 import '../../constants/app_text_styles.dart';
 import '../../models/user_model.dart';
 import '../../services/firebase_service.dart';
-import '../forms/custom_text_field.dart';
+import '../inputs/paid_amount_member_item.dart';
+import '../inputs/paid_amount_summary.dart';
 
 /// Bir masrafta kim ne kadar ödedi bilgisini girmek için widget
 class PaidAmountsInput extends ConsumerStatefulWidget {
@@ -127,101 +128,19 @@ class _PaidAmountsInputState extends ConsumerState<PaidAmountsInput> {
               children: [
                 ...members.map((member) {
                   final controller = _controllers[member.id]!;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.textSpacing * 2),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          backgroundImage: member.photoUrl != null ? NetworkImage(member.photoUrl!) : null,
-                          child:
-                              member.photoUrl == null
-                                  ? Text(member.displayName.isNotEmpty ? member.displayName[0].toUpperCase() : '?')
-                                  : null,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                member.displayName,
-                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              Text(
-                                member.email,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          width: 120,
-                          child: CustomTextField(
-                            controller: controller,
-                            label: 'Ödenen',
-                            hint: '0.00',
-                            prefixIcon: Icons.currency_lira,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            onChanged: (value) => _onAmountChanged(member.id, value),
-                          ),
-                        ),
-                      ],
-                    ),
+                  return PaidAmountMemberItem(
+                    member: member,
+                    controller: controller,
+                    onChanged: (value) => _onAmountChanged(member.id, value),
                   );
                 }),
                 const SizedBox(height: 4),
-                _buildSummary(context),
+                PaidAmountSummary(totalPaid: _sumPaid(), targetTotal: widget.totalAmount),
               ],
             );
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildSummary(BuildContext context) {
-    final totalPaid = _sumPaid();
-    final difference = widget.totalAmount - totalPaid;
-    final isValid = difference.abs() < 0.01;
-    final color = isValid ? AppColors.success : AppColors.error;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Ödenen Toplam', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-              Text(
-                '${totalPaid.toStringAsFixed(2)} ₺',
-                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: color),
-              ),
-            ],
-          ),
-          if (!isValid)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                difference > 0
-                    ? 'Eksik: ${difference.toStringAsFixed(2)} ₺'
-                    : 'Fazla: ${(-difference).toStringAsFixed(2)} ₺',
-                style: AppTextStyles.bodySmall.copyWith(color: color),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }
