@@ -22,20 +22,29 @@ class ExpenseItemTrailing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
           '${amount.toStringAsFixed(2)} ₺',
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.success, fontWeight: FontWeight.bold),
         ),
-        if (showEditIcon && onTap != null) ...[
-          const SizedBox(width: 8),
-          Icon(Icons.edit, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ],
-        if (showDeleteIcon && onDelete != null && canDelete) ...[
-          const SizedBox(width: 8),
-          GestureDetector(onTap: onDelete, child: Icon(Icons.delete_outline, size: 18, color: AppColors.error)),
+        if (showEditIcon || (showDeleteIcon && canDelete)) ...[
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (showEditIcon && onTap != null)
+                Icon(Icons.edit, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              if (showEditIcon && showDeleteIcon && canDelete && onDelete != null) const SizedBox(width: 8),
+              if (showDeleteIcon && onDelete != null && canDelete)
+                GestureDetector(
+                  onTap: onDelete,
+                  child: Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+                ),
+            ],
+          ),
         ],
       ],
     );

@@ -76,22 +76,184 @@ class ExpenseItem extends StatelessWidget {
     final color = category?.color ?? Theme.of(context).colorScheme.primary;
     final participantCount = expense.sharedBy.length;
     final payerInfo = _buildPayerInfo();
+    final canDelete = _canCurrentUserDelete();
 
-    return InkWell(
+    final content = InkWell(
       onTap: onTap,
-      child: ListTile(
-        leading: ExpenseItemAvatar(imageUrl: expense.imageUrl, icon: icon, color: color),
-        title: Text(expense.description, style: AppTextStyles.bodyMedium, overflow: TextOverflow.ellipsis, maxLines: 1),
-        subtitle: ExpenseItemSubtitle(date: expense.date, payerInfo: payerInfo, participantCount: participantCount),
-        trailing: ExpenseItemTrailing(
-          amount: expense.amount,
-          showEditIcon: showEditIcon,
-          showDeleteIcon: showDeleteIcon,
-          canDelete: _canCurrentUserDelete(),
-          onTap: onTap,
-          onDelete: onDelete,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            // Avatar
+            ExpenseItemAvatar(imageUrl: expense.imageUrl, icon: icon, color: color),
+            const SizedBox(width: 12),
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    expense.description,
+                    style: AppTextStyles.bodyMedium,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 4),
+                  ExpenseItemSubtitle(
+                    date: expense.date,
+                    payerInfo: payerInfo,
+                    participantCount: participantCount,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Trailing
+            ExpenseItemTrailing(
+              amount: expense.amount,
+              showEditIcon: showEditIcon,
+              showDeleteIcon: false, // Artık buton olarak göstermeyelim
+              canDelete: canDelete,
+              onTap: onTap,
+              onDelete: onDelete,
+            ),
+          ],
         ),
       ),
     );
+
+    // Eğer silme özelliği varsa ve kullanıcı silebiliyorsa, Dismissible ile sarmalayalım
+    if (showDeleteIcon && canDelete && onDelete != null) {
+      return Dismissible(
+        key: Key(expense.id),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 20),
+          color: Theme.of(context).colorScheme.error,
+          child: const Icon(Icons.delete, color: Colors.white, size: 28),
+        ),
+        confirmDismiss: (direction) async {
+          return await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Text('Masrafı Sil')),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${expense.description} masrafını silmek istediğinizden emin misiniz?',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Tutar:',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${expense.amount.toStringAsFixed(2)} ₺',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: Theme.of(context).colorScheme.error,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Bu işlem geri alınamaz',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text(
+                    'İptal',
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Sil'),
+                ),
+              ],
+            ),
+          );
+        },
+        onDismissed: (direction) => onDelete!(),
+        child: content,
+      );
+    }
+
+    return content;
   }
 }

@@ -1,7 +1,12 @@
+import 'package:expense_tracker_app/utils/date_utils.dart' as app_date_utils;
+import 'package:expense_tracker_app/widgets/common/category_selector.dart';
+import 'package:expense_tracker_app/widgets/common/member_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../constants/app_colors.dart';
+import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/group_model.dart';
 import '../../providers/expense_provider.dart';
@@ -9,16 +14,12 @@ import '../../providers/auth_provider.dart';
 import '../../services/firebase_service.dart';
 import '../../widgets/forms/custom_text_field.dart';
 import '../../widgets/forms/custom_button.dart';
-import '../../widgets/common/category_selector.dart';
-import '../../widgets/common/payment_type_selector.dart';
 import '../../widgets/selectors/distribution_type_selector.dart';
-import '../../widgets/common/member_selector.dart';
+import '../../widgets/common/manual_distribution_input.dart';
 import '../../widgets/common/paid_amounts_input.dart';
 import '../../widgets/common/error_snackbar.dart';
 import '../../widgets/dialogs/expense/expense_receipt_section.dart';
 import '../../utils/validators/expense_validator.dart';
-import '../../utils/date_utils.dart' as app_date_utils;
-import 'sections/expense_distribution_section.dart';
 
 class CreateExpenseForm extends ConsumerStatefulWidget {
   final GroupModel group;
@@ -38,25 +39,28 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
 
   String? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
-  PaymentType? _paymentType;
-  DistributionType? _distributionType;
-  List<String> _selectedMemberIds = [];
-  String? _selectedPayerId; // Tamamını ödeyen kişi
-  Map<String, double> _manualAmounts = {}; // Manuel dağılım için
-  Map<String, double> _paidAmounts = {}; // Paylaşımlı ödemede kim ne kadar ödedi
+
+  // Tab State
+  List<String> _selectedMemberIds = []; // Kimlere Ait (SharedBy)
+  List<String> _payingMemberIds = []; // Kimler Ödedi (Payers)
+  Map<String, double> _paidAmounts = {}; // Ne Kadar Ödedi (Amounts)
+
+  // Distribution State
+  DistributionType _distributionType = DistributionType.equal;
+  Map<String, double> _manualAmounts = {}; // Manuel dağılım için (Kimlere Ait sekmesi için)
 
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Varsayılan olarak tüm grup üyelerini seç
+    // Varsayılan olarak tüm grup üyelerini seç (Kimlere Ait)
     _selectedMemberIds = List.from(widget.group.memberIds);
-    // Varsayılan olarak mevcut kullanıcıyı ödeyen olarak seç
+
+    // Varsayılan olarak mevcut kullanıcıyı ödeyen olarak seç (Kimler Ödedi)
     final currentUser = ref.read(currentUserProvider);
     if (currentUser != null) {
-      _selectedPayerId = currentUser.uid;
-      _paidAmounts[currentUser.uid] = 0.0;
+      _payingMemberIds = [currentUser.uid];
     }
   }
 
@@ -113,40 +117,28 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
       return;
     }
 
+    // Açıklama kontrolü
+    if (_descriptionController.text.trim().isEmpty) {
+      _showWarningDialog('Lütfen masraf açıklaması giriniz.');
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
 
     // Temel validasyonlar (Validator sınıfı kullanılarak)
-    String? error = ExpenseValidator.validateForm(
-      amount: amount,
-      categoryId: _selectedCategoryId,
-      selectedMemberIds:
-          _paymentType == PaymentType.fullPayment
-              ? (_selectedPayerId != null ? [_selectedPayerId!] : []) // Tam ödemede sadece ödeyen kişi önemli
-              : _selectedMemberIds, // Paylaşımlı ödemede seçili üyeler
-      distributionType: _distributionType ?? DistributionType.equal, // Varsayılan equal
-      manualAmounts: _manualAmounts,
-    );
+    // Not: Artık sadece amount ve category kullanıcı tarafından giriliyor, diğerleri otomatik.
+    // Bu yüzden ExpenseValidator.validateForm'u basitleştirilmiş parametrelerle çağıracağız veya manuel kontrol edeceğiz.
 
-    if (error != null) {
-      // Validator genel hataları yakaladıysa göster (Ancak PaymentType ve PaidAmounts özel durumları aşağıda)
-      // Burada özel durumları filtreleyip validator'a bırakmak daha doğru
-    }
-
-    // Özel Validasyonlar (Validator sınıfında olmayanlar)
+    // Özel Validasyonlar
     if (_selectedCategoryId == null) {
-      ErrorSnackBar.showWarning(context, 'Lütfen bir kategori seçin');
-      return;
-    }
-
-    if (_paymentType == null) {
-      ErrorSnackBar.showWarning(context, 'Lütfen ödeme tipini seçin');
+      _showWarningDialog('Lütfen bir kategori seçin');
       return;
     }
 
     if (amount <= 0) {
-      ErrorSnackBar.showWarning(context, 'Tutar 0\'dan büyük olmalıdır');
+      _showWarningDialog('Tutar 0\'dan büyük olmalıdır');
       return;
     }
 
@@ -156,55 +148,62 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
       return;
     }
 
-    // Paylaşım mantığına göre sharedBy listesini oluştur
-    List<String> sharedBy = [];
-    Map<String, double>? paidByAmounts;
+    // Otomatik değerler:
+    // Ödeyenler: _payingMemberIds
+    // Paylaşılanlar: _selectedMemberIds
 
-    if (_paymentType == PaymentType.fullPayment) {
-      // Tamamını ödeyen: Sadece ödeyen kişi
-      if (_selectedPayerId == null) {
-        ErrorSnackBar.showWarning(context, 'Lütfen ödeyen kişiyi seçin');
-        return;
-      }
-      sharedBy = [_selectedPayerId!];
-    } else {
-      // Paylaşımlı ödeme
-      if (_selectedMemberIds.isEmpty) {
-        ErrorSnackBar.showWarning(context, 'Lütfen en az bir kişi seçin');
-        return;
-      }
+    if (_payingMemberIds.isEmpty) {
+      _showWarningDialog('Lütfen en az bir ödeyen kişi seçin');
+      return;
+    }
 
-      if (_distributionType == null) {
-        ErrorSnackBar.showWarning(context, 'Lütfen dağılım tipini seçin');
-        return;
-      }
+    if (_selectedMemberIds.isEmpty) {
+      _showWarningDialog('Lütfen masrafın kime ait olduğunu seçiniz');
+      return;
+    }
 
-      if (_distributionType == DistributionType.manual) {
-        final manualError = ExpenseValidator.validateManualDistribution(
-          totalAmount: amount,
-          manualAmounts: _manualAmounts,
-        );
-        if (manualError != null) {
-          ErrorSnackBar.showWarning(context, manualError);
-          return;
-        }
-      }
-
-      sharedBy = List.from(_selectedMemberIds);
-
-      final cleanedPaidAmounts = Map<String, double>.fromEntries(
-        _paidAmounts.entries.where((entry) => entry.value > 0),
+    // Manuel dağılım kontrolü
+    if (_distributionType == DistributionType.manual) {
+      final manualError = ExpenseValidator.validateManualDistribution(
+        totalAmount: amount,
+        manualAmounts: _manualAmounts,
       );
-      if (cleanedPaidAmounts.isEmpty) {
-        ErrorSnackBar.showWarning(context, 'Lütfen ödeyen kişilerin tutarlarını girin');
+      if (manualError != null) {
+        _showWarningDialog(manualError);
         return;
       }
-      final paidTotal = cleanedPaidAmounts.values.fold(0.0, (sum, value) => sum + value);
-      if ((paidTotal - amount).abs() > 0.01) {
-        ErrorSnackBar.showWarning(context, 'Ödeme tutarlarının toplamı ${amount.toStringAsFixed(2)} TL olmalı');
+    }
+
+    // Ödeme tutarlarını kontrol et ve hazırla
+    Map<String, double> finalPaidAmounts = {};
+
+    if (_payingMemberIds.length == 1) {
+      // Tek ödeyen varsa tüm tutarı ona yaz
+      finalPaidAmounts[_payingMemberIds.first] = amount;
+    } else {
+      // Çoklu ödeyen varsa girilen tutarları kontrol et
+      // _paidAmounts map'ini _payingMemberIds ile filtrele
+      final filteredPaidAmounts = Map<String, double>.fromEntries(
+        _paidAmounts.entries.where((e) => _payingMemberIds.contains(e.key) && e.value > 0),
+      );
+
+      final totalPaid = filteredPaidAmounts.values.fold(0.0, (sum, val) => sum + val);
+
+      // Hiç tutar girilmemiş mi kontrol et
+      if (totalPaid == 0.0) {
+        _showWarningDialog(
+          'Birden fazla ödeyen seçtiniz. Lütfen "Ne Kadar" sekmesinden her ödeyenin ne kadar ödediğini giriniz.',
+        );
         return;
       }
-      paidByAmounts = cleanedPaidAmounts;
+
+      if ((totalPaid - amount).abs() > 0.01) {
+        _showWarningDialog(
+          'Girilen ödeme tutarları toplamı (${totalPaid.toStringAsFixed(2)}) ana tutara (${amount.toStringAsFixed(2)}) eşit olmalıdır.',
+        );
+        return;
+      }
+      finalPaidAmounts = filteredPaidAmounts;
     }
 
     setState(() => _isLoading = true);
@@ -216,29 +215,20 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
         imageUrl = await FirebaseService.uploadFile(path: 'expense_receipts/$fileName', file: _receiptImage!);
       }
 
-      // Manuel dağılım varsa manualAmounts'ı gönder
-      Map<String, double>? manualAmounts;
-      if (_paymentType == PaymentType.sharedPayment &&
-          _distributionType == DistributionType.manual &&
-          _manualAmounts.isNotEmpty) {
-        manualAmounts = Map.from(_manualAmounts);
-      }
-
       await ref
           .read(expenseNotifierProvider.notifier)
           .addExpense(
             groupId: widget.group.id,
             paidBy:
-                (_paymentType == PaymentType.fullPayment
-                    ? _selectedPayerId ?? currentUser.uid
-                    : (paidByAmounts?.entries.reduce((a, b) => a.value >= b.value ? a : b).key ?? currentUser.uid)),
+                _payingMemberIds
+                    .first, // Ana ödeyen (ilk kişi) - Backend çoklu ödeme destekliyorsa paidAmounts kullanılır
             description: _descriptionController.text.trim(),
             amount: amount,
             category: _selectedCategoryId!,
             date: _selectedDate,
-            sharedBy: sharedBy,
-            manualAmounts: manualAmounts,
-            paidAmounts: paidByAmounts,
+            sharedBy: _selectedMemberIds,
+            manualAmounts: _distributionType == DistributionType.manual ? _manualAmounts : null,
+            paidAmounts: finalPaidAmounts,
             imageUrl: imageUrl,
           );
 
@@ -259,7 +249,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
 
   @override
   Widget build(BuildContext context) {
-    final totalAmount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+    // final totalAmount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
     return Form(
       key: _formKey,
       child: Column(
@@ -272,6 +262,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
             hint: '0.00',
             prefixIcon: Icons.currency_lira,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            clearOnTap: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Tutar gereklidir';
@@ -293,6 +284,7 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
             hint: 'Masraf açıklaması',
             prefixIcon: Icons.description,
             maxLines: 3,
+            clearOnTap: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Açıklama gereklidir';
@@ -331,72 +323,176 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
               onTap: _selectDate,
             ),
           ),
-          const SizedBox(height: AppSpacing.textSpacing * 2),
-
-          // Ödeme Tipi
-          PaymentTypeSelector(
-            selectedType: _paymentType,
-            onTypeSelected: (type) {
-              setState(() {
-                _paymentType = type;
-                if (type == PaymentType.fullPayment) {
-                  _distributionType = null;
-                  _manualAmounts.clear();
-                  _paidAmounts.clear();
-                } else {
-                  // Paylaşımlı ödeme için varsayılan olarak eşit dağılım
-                  _distributionType = DistributionType.equal;
-                  if (_paidAmounts.isEmpty) {
-                    final currentUser = ref.read(currentUserProvider);
-                    if (currentUser != null) {
-                      _paidAmounts[currentUser.uid] =
-                          double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
-                    }
-                  }
-                }
-              });
-            },
-          ),
           const SizedBox(height: AppSpacing.sectionMargin),
 
-          // Ödeme tipine göre içerik
-          if (_paymentType == PaymentType.fullPayment) ...[
-            // Tamamını ödeyen: Kişi seçimi
-            MemberSelector(
-              selectedMemberIds: _selectedPayerId != null ? [_selectedPayerId!] : [],
-              onMembersChanged: (memberIds) {
-                setState(() => _selectedPayerId = memberIds.isNotEmpty ? memberIds.first : null);
-              },
-              availableMemberIds: widget.group.memberIds,
-            ),
-          ] else if (_paymentType == PaymentType.sharedPayment) ...[
-            // Ödeyenlerin girişi
-            PaidAmountsInput(
-              memberIds: widget.group.memberIds,
-              totalAmount: totalAmount,
-              paidAmounts: _paidAmounts,
-              onChanged: (amounts) => setState(() => _paidAmounts = amounts),
-            ),
-            const SizedBox(height: AppSpacing.sectionMargin),
+          // Tabs Section
+          DefaultTabController(
+            length: 3,
+            child: Column(
+              children: [
+                TabBar(
+                  labelColor: Theme.of(context).colorScheme.primary,
+                  unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                  indicatorColor: Theme.of(context).colorScheme.primary,
+                  tabs: const [Tab(text: 'Kimlere Ait'), Tab(text: 'Ödeme'), Tab(text: 'Ne Kadar')],
+                ),
+                const SizedBox(height: AppSpacing.textSpacing),
+                SizedBox(
+                  height: 300, // Fixed height for tab content
+                  child: TabBarView(
+                    children: [
+                      // Tab 1: Masraf Kimlere Ait (SharedBy)
+                      SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                              child: Text(
+                                'Masrafın kimlere ait olduğunu seçiniz',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                                textAlign: TextAlign.left,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
 
-            // Paylaşımlı ödeme: Dağılım Bölümü
-            ExpenseDistributionSection(
-              selectedMemberIds: _selectedMemberIds,
-              availableMemberIds: widget.group.memberIds,
-              onMembersChanged: (memberIds) => setState(() => _selectedMemberIds = memberIds),
-              distributionType: _distributionType,
-              onDistributionTypeChanged: (type) => setState(() => _distributionType = type),
-              manualAmounts: _manualAmounts,
-              onManualAmountsChanged: (amounts) => setState(() => _manualAmounts = amounts),
-              totalAmount: totalAmount,
+                            // Dağılım Tipi Seçici
+                            DistributionTypeSelector(
+                              selectedType: _distributionType,
+                              onTypeSelected: (type) => setState(() => _distributionType = type),
+                            ),
+                            const SizedBox(height: 16),
+
+                            if (_distributionType == DistributionType.equal)
+                              MemberSelector(
+                                selectedMemberIds: _selectedMemberIds,
+                                onMembersChanged: (ids) => setState(() => _selectedMemberIds = ids),
+                                availableMemberIds: widget.group.memberIds,
+                              )
+                            else
+                              ManualDistributionInput(
+                                memberIds: widget.group.memberIds,
+                                totalAmount: double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
+                                manualAmounts: _manualAmounts,
+                                onChanged: (amounts) {
+                                  setState(() {
+                                    _manualAmounts = amounts;
+                                    // Tutarı > 0 olanları seçili üye yap
+                                    _selectedMemberIds =
+                                        amounts.entries.where((e) => e.value > 0).map((e) => e.key).toList();
+                                  });
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      // Tab 2: Ödeme (Payers)
+                      SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                              child: Text(
+                                'Ödemeyi kimin yaptığını seçiniz',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                                textAlign: TextAlign.left,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            MemberSelector(
+                              selectedMemberIds: _payingMemberIds,
+                              onMembersChanged: (ids) {
+                                setState(() {
+                                  _payingMemberIds = ids;
+                                  // Eğer tek kişi seçildiyse, tüm tutarı ona ata (otomatik)
+                                  if (ids.length == 1) {
+                                    final total = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0;
+                                    _paidAmounts = {ids.first: total};
+                                  }
+                                });
+                              },
+                              availableMemberIds: widget.group.memberIds,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Tab 3: Ne Kadar Ödedi (Amounts)
+                      SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 8),
+                            if (_payingMemberIds.isEmpty)
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'Lütfen önce "Kimler Ödedi" sekmesinden ödeyen kişileri seçin.',
+                                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              )
+                            else if (_payingMemberIds.length == 1)
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'Tek kişi ödediği için tutar otomatik olarak ayarlandı.',
+                                    style: AppTextStyles.bodyMedium,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              )
+                            else
+                              PaidAmountsInput(
+                                memberIds: _payingMemberIds,
+                                totalAmount: double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0.0,
+                                paidAmounts: _paidAmounts,
+                                onChanged: (amounts) => setState(() => _paidAmounts = amounts),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
 
           const SizedBox(height: AppSpacing.sectionMargin),
 
           // Masraf Ekle Butonu
           CustomButton(text: 'Masraf Ekle', onPressed: _isLoading ? null : _createExpense, isLoading: _isLoading),
         ],
+      ),
+    );
+  }
+
+  void _showWarningDialog(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.white, size: 24),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message, style: const TextStyle(color: Colors.white))),
+          ],
+        ),
+        backgroundColor: AppColors.warning,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

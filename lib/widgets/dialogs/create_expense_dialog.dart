@@ -24,11 +24,9 @@ class CreateExpenseDialog extends ConsumerStatefulWidget {
       return;
     }
 
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => CreateExpenseDialog(group: group),
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CreateExpenseDialog(group: group), fullscreenDialog: true),
     );
   }
 
@@ -41,61 +39,23 @@ class _CreateExpenseDialogState extends ConsumerState<CreateExpenseDialog> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        elevation: 0,
+        title: const Text('Masraf Ekle'),
+        centerTitle: true,
+        leading: IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
       ),
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder:
-            (context, scrollController) => Column(
-              children: [
-                // Handle bar
-                Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Masraf Ekle',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.headlineSmall?.copyWith(color: colorScheme.onSurface, fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                ),
-                // Form
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: scrollController,
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                    ),
-                    child: CreateExpenseForm(group: widget.group, onSuccess: () => Navigator.pop(context)),
-                  ),
-                ),
-              ],
-            ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: MediaQuery.of(context).viewInsets.bottom + 16),
+          child: CreateExpenseForm(group: widget.group, onSuccess: () => Navigator.pop(context)),
+        ),
       ),
     );
   }

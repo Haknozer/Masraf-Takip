@@ -13,7 +13,7 @@ class HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.sectionPadding,
+        8,
         AppSpacing.sectionPadding + 8,
         AppSpacing.sectionPadding,
         AppSpacing.sectionPadding,
@@ -25,11 +25,7 @@ class HomeHeader extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 2)),
         ],
       ),
       child: SafeArea(
@@ -37,15 +33,19 @@ class HomeHeader extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Masraf Takip',
-              style: AppTextStyles.h3.copyWith(color: AppColors.white, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Image.asset('assets/images/logo.png', height: 60, width: 60),
+                Text(
+                  'Masraf Takip',
+                  style: AppTextStyles.h3.copyWith(color: AppColors.white, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
             CustomButton(
               text: 'Yeni Grup',
               onPressed: onNewGroupPressed,
-              icon: Icons.add,
-              height: 40,
+              height: 30,
               backgroundColor: Theme.of(context).colorScheme.surface,
             ),
           ],
@@ -54,4 +54,3 @@ class HomeHeader extends StatelessWidget {
     );
   }
 }
-

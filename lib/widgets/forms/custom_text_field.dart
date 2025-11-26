@@ -18,6 +18,8 @@ class CustomTextField extends StatelessWidget {
   final int maxLines;
   final int? maxLength;
   final TextCapitalization textCapitalization;
+  final bool clearOnTap;
+  final FocusNode? focusNode;
 
   const CustomTextField({
     super.key,
@@ -36,6 +38,8 @@ class CustomTextField extends StatelessWidget {
     this.maxLines = 1,
     this.maxLength,
     this.textCapitalization = TextCapitalization.none,
+    this.clearOnTap = false,
+    this.focusNode,
   });
 
   @override
@@ -51,13 +55,19 @@ class CustomTextField extends StatelessWidget {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
+          focusNode: focusNode,
           obscureText: obscureText,
           keyboardType: keyboardType,
           textInputAction: textInputAction,
           textCapitalization: textCapitalization,
           validator: validator,
           onChanged: onChanged,
-          onTap: onTap,
+          onTap: () {
+            if (clearOnTap) {
+              controller.clear();
+            }
+            onTap?.call();
+          },
           readOnly: readOnly,
           maxLines: maxLines,
           maxLength: maxLength,

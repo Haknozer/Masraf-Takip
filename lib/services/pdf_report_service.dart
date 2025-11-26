@@ -24,7 +24,6 @@ class PdfReportService {
   static Future<void> generateGroupSummary({
     required BuildContext context,
     required GroupModel group,
-    int recentExpenseLimit = 5,
   }) async {
     final navigator = Navigator.of(context, rootNavigator: true);
     bool loadingDialogVisible = false;
@@ -55,7 +54,6 @@ class PdfReportService {
       final totalExpense = expenses.fold<double>(0, (sum, expense) => sum + expense.amount);
       final memberCount = group.memberIds.length;
       final averagePerMember = memberCount == 0 ? 0.0 : totalExpense / memberCount;
-      final recentExpenses = expenses.take(recentExpenseLimit).toList();
 
       final memberSummaries = _buildMemberSummaries(group: group, expenses: expenses, membersMap: membersMap);
 
@@ -67,7 +65,7 @@ class PdfReportService {
         totalExpense: totalExpense,
         averagePerMember: averagePerMember,
         memberSummaries: memberSummaries,
-        recentExpenses: recentExpenses,
+        recentExpenses: expenses, // Tüm masrafları dahil et
         membersMap: membersMap,
         baseFont: baseFont,
         boldFont: boldFont,
@@ -273,7 +271,7 @@ class PdfReportService {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text('Son Masraflar', style: pw.TextStyle(font: boldFont, fontSize: 14)),
+        pw.Text('Tüm Masraflar (${recentExpenses.length} adet)', style: pw.TextStyle(font: boldFont, fontSize: 14)),
         pw.SizedBox(height: 8),
         if (recentExpenses.isEmpty)
           pw.Text('Masraf bulunamadı', style: pw.TextStyle(font: baseFont))

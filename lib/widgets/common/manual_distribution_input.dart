@@ -9,17 +9,17 @@ import '../inputs/manual_distribution_total.dart';
 
 /// Manuel dağılım için input widget'ı
 class ManualDistributionInput extends ConsumerStatefulWidget {
-  final List<String> selectedMemberIds;
+  final List<String> memberIds;
   final double totalAmount;
-  final Map<String, double> memberAmounts;
-  final Function(Map<String, double> amounts) onAmountsChanged;
+  final Map<String, double> manualAmounts;
+  final Function(Map<String, double> amounts) onChanged;
 
   const ManualDistributionInput({
     super.key,
-    required this.selectedMemberIds,
+    required this.memberIds,
     required this.totalAmount,
-    required this.memberAmounts,
-    required this.onAmountsChanged,
+    required this.manualAmounts,
+    required this.onChanged,
   });
 
   @override
@@ -38,9 +38,9 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
   }
 
   void _initializeControllers() {
-    for (final memberId in widget.selectedMemberIds) {
+    for (final memberId in widget.memberIds) {
       _controllers[memberId] = TextEditingController(
-        text: widget.memberAmounts[memberId]?.toStringAsFixed(2) ?? '0.00',
+        text: widget.manualAmounts[memberId]?.toStringAsFixed(2) ?? '0.00',
       );
     }
   }
@@ -48,18 +48,18 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
   @override
   void didUpdateWidget(ManualDistributionInput oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedMemberIds != widget.selectedMemberIds) {
+    if (oldWidget.memberIds != widget.memberIds) {
       // Yeni üyeler eklendi veya çıkarıldı
-      for (final memberId in oldWidget.selectedMemberIds) {
-        if (!widget.selectedMemberIds.contains(memberId)) {
+      for (final memberId in oldWidget.memberIds) {
+        if (!widget.memberIds.contains(memberId)) {
           _controllers[memberId]?.dispose();
           _controllers.remove(memberId);
         }
       }
-      for (final memberId in widget.selectedMemberIds) {
+      for (final memberId in widget.memberIds) {
         if (!_controllers.containsKey(memberId)) {
           _controllers[memberId] = TextEditingController(
-            text: widget.memberAmounts[memberId]?.toStringAsFixed(2) ?? '0.00',
+            text: widget.manualAmounts[memberId]?.toStringAsFixed(2) ?? '0.00',
           );
         }
       }
@@ -78,7 +78,7 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
 
   Future<List<UserModel>> _getMembers() async {
     final members = <UserModel>[];
-    for (final memberId in widget.selectedMemberIds) {
+    for (final memberId in widget.memberIds) {
       try {
         final userDoc = await FirebaseService.getDocumentSnapshot('users/$memberId');
         if (userDoc.exists) {
@@ -102,19 +102,19 @@ class _ManualDistributionInputState extends ConsumerState<ManualDistributionInpu
       amount = double.tryParse(value.replaceAll(',', '.')) ?? 0.0;
     }
 
-    final newAmounts = Map<String, double>.from(widget.memberAmounts);
+    final newAmounts = Map<String, double>.from(widget.manualAmounts);
     newAmounts[memberId] = amount;
 
     // Focus kaybını önlemek için callback'i bir sonraki frame'de çağır
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        widget.onAmountsChanged(newAmounts);
+        widget.onChanged(newAmounts);
       }
     });
   }
 
   double _calculateTotal() {
-    return widget.memberAmounts.values.fold(0.0, (sum, amount) => sum + amount);
+    return widget.manualAmounts.values.fold(0.0, (sum, amount) => sum + amount);
   }
 
   @override

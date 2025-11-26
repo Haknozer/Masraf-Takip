@@ -79,10 +79,10 @@ class ExpenseDistributionSection extends StatelessWidget {
         // Manuel dağılım input'u
         if (distributionType == DistributionType.manual && selectedMemberIds.isNotEmpty)
           ManualDistributionInput(
-            selectedMemberIds: selectedMemberIds,
+            memberIds: selectedMemberIds,
             totalAmount: totalAmount,
-            memberAmounts: manualAmounts,
-            onAmountsChanged: onManualAmountsChanged,
+            manualAmounts: manualAmounts,
+            onChanged: onManualAmountsChanged,
           ),
       ],
     );

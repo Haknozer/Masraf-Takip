@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../constants/app_text_styles.dart';
-import '../../constants/app_spacing.dart';
 import '../../models/user_model.dart';
 import '../../services/firebase_service.dart';
 import '../selectors/member_selector_item.dart';
@@ -52,29 +50,23 @@ class MemberSelector extends ConsumerWidget {
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Paylaşan Kişiler', style: AppTextStyles.label),
-            const SizedBox(height: AppSpacing.textSpacing),
-            Column(
-              children:
-                  members.map((member) {
-                    final isSelected = selectedMemberIds.contains(member.id);
-                    return MemberSelectorItem(
-                      member: member,
-                      isSelected: isSelected,
-                      onTap: () {
-                        final newSelection = List<String>.from(selectedMemberIds);
-                        if (isSelected) {
-                          newSelection.remove(member.id);
-                        } else {
-                          newSelection.add(member.id);
-                        }
-                        onMembersChanged(newSelection);
-                      },
-                    );
-                  }).toList(),
-            ),
-          ],
+          children:
+              members.map((member) {
+                final isSelected = selectedMemberIds.contains(member.id);
+                return MemberSelectorItem(
+                  member: member,
+                  isSelected: isSelected,
+                  onTap: () {
+                    final newSelection = List<String>.from(selectedMemberIds);
+                    if (isSelected) {
+                      newSelection.remove(member.id);
+                    } else {
+                      newSelection.add(member.id);
+                    }
+                    onMembersChanged(newSelection);
+                  },
+                );
+              }).toList(),
         );
       },
     );

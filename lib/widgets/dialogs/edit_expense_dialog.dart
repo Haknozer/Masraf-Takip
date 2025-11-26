@@ -16,11 +16,12 @@ class EditExpenseDialog extends ConsumerStatefulWidget {
   const EditExpenseDialog({super.key, required this.expenseId});
 
   static Future<void> show(BuildContext context, String expenseId) async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => EditExpenseDialog(expenseId: expenseId),
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditExpenseDialog(expenseId: expenseId),
+        fullscreenDialog: true,
+      ),
     );
   }
 
@@ -35,94 +36,89 @@ class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
     final currentUser = ref.watch(currentUserProvider);
     final theme = Theme.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        title: const Text('Masraf Düzenle'),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder:
-            (context, scrollController) => AsyncValueBuilder<ExpenseModel?>(
-              value: expenseState,
-              dataBuilder: (context, expense) {
-                if (expense == null) {
-                  return const Center(child: Text('Masraf bulunamadı'));
+      body: SafeArea(
+        child: AsyncValueBuilder<ExpenseModel?>(
+          value: expenseState,
+          dataBuilder: (context, expense) {
+            if (expense == null) {
+              return const Center(child: Text('Masraf bulunamadı'));
+            }
+
+            final groupState = ref.watch(groupProvider(expense.groupId));
+            return groupState.when(
+              data: (group) {
+                if (group == null) {
+                  return const Center(child: Text('Grup bulunamadı'));
                 }
 
-                final groupState = ref.watch(groupProvider(expense.groupId));
-                return groupState.when(
-                  data: (group) {
-                    if (group == null) {
-                      return const Center(child: Text('Grup bulunamadı'));
-                    }
+                // Sadece masrafı ekleyen kişi düzenleyebilir
+                final canEdit = currentUser != null && expense.paidBy == currentUser.uid;
 
-                    // Sadece masrafı ekleyen kişi düzenleyebilir
-                    final canEdit = currentUser != null && expense.paidBy == currentUser.uid;
-
-                    return Column(
-                      children: [
-                        // Handle bar
-                        Container(
-                          margin: const EdgeInsets.only(top: 12),
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+                return Column(
+                  children: [
+                    if (!canEdit)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                         ),
-                        // Header
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Masraf Düzenle', style: AppTextStyles.h3.copyWith(color: theme.colorScheme.onSurface)),
-                              IconButton(
-                                icon: Icon(Icons.close, color: theme.colorScheme.onSurfaceVariant),
-                                onPressed: () => Navigator.pop(context),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, color: AppColors.warning, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Bu masrafı sadece masrafı ekleyen kişi düzenleyebilir. Bilgileri görüntüleyebilirsiniz.',
+                                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        if (!canEdit)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              'Bu masrafı sadece masrafı ekleyen kişi düzenleyebilir. Bilgileri görüntüleyebilirsiniz.',
-                              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                            ),
-                          ),
-
-                        // Form
-                        Expanded(
-                          child: SingleChildScrollView(
-                            controller: scrollController,
-                            padding: EdgeInsets.only(
-                              left: 16,
-                              right: 16,
-                              bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                            ),
-                            child: EditExpenseForm(
-                              expense: expense,
-                              group: group,
-                              onSuccess: () => Navigator.pop(context),
-                            ),
-                          ),
+                      ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          top: canEdit ? 16 : 0,
+                          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
                         ),
-                      ],
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Center(child: Text('Hata: $e')),
+                        child: EditExpenseForm(
+                          expense: expense,
+                          group: group,
+                          onSuccess: () => Navigator.pop(context),
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               },
-              loadingBuilder: (context) => const Center(child: CircularProgressIndicator()),
-              errorBuilder: (context, error, stack) => Center(child: Text('Hata: $error')),
-            ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, s) => Center(child: Text('Hata: $e')),
+            );
+          },
+          loadingBuilder: (context) => const Center(child: CircularProgressIndicator()),
+          errorBuilder: (context, error, stack) => Center(child: Text('Hata: $error')),
+        ),
       ),
     );
   }

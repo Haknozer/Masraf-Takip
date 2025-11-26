@@ -4,17 +4,40 @@ import '../../constants/app_text_styles.dart';
 import '../../models/user_model.dart';
 import '../../widgets/forms/custom_text_field.dart';
 
-class PaidAmountMemberItem extends StatelessWidget {
+class PaidAmountMemberItem extends StatefulWidget {
   final UserModel member;
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
 
-  const PaidAmountMemberItem({
-    super.key,
-    required this.member,
-    required this.controller,
-    required this.onChanged,
-  });
+  const PaidAmountMemberItem({super.key, required this.member, required this.controller, required this.onChanged});
+
+  @override
+  State<PaidAmountMemberItem> createState() => _PaidAmountMemberItemState();
+}
+
+class _PaidAmountMemberItemState extends State<PaidAmountMemberItem> {
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (_focusNode.hasFocus) {
+      // Focus alındığında tüm metni seç
+      widget.controller.selection = TextSelection(baseOffset: 0, extentOffset: widget.controller.text.length);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +48,10 @@ class PaidAmountMemberItem extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-            backgroundImage: member.photoUrl != null ? NetworkImage(member.photoUrl!) : null,
+            backgroundImage: widget.member.photoUrl != null ? NetworkImage(widget.member.photoUrl!) : null,
             child:
-                member.photoUrl == null
-                    ? Text(member.displayName.isNotEmpty ? member.displayName[0].toUpperCase() : '?')
+                widget.member.photoUrl == null
+                    ? Text(widget.member.displayName.isNotEmpty ? widget.member.displayName[0].toUpperCase() : '?')
                     : null,
           ),
           const SizedBox(width: 12),
@@ -36,15 +59,10 @@ class PaidAmountMemberItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(widget.member.displayName, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                 Text(
-                  member.displayName,
-                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  member.email,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  widget.member.email,
+                  style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -52,12 +70,17 @@ class PaidAmountMemberItem extends StatelessWidget {
           SizedBox(
             width: 120,
             child: CustomTextField(
-              controller: controller,
+              controller: widget.controller,
+              focusNode: _focusNode,
               label: 'Ödenen',
               hint: '0.00',
               prefixIcon: Icons.currency_lira,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onChanged: onChanged,
+              onChanged: widget.onChanged,
+              onTap: () {
+                // Tıklandığında da tüm metni seç
+                widget.controller.selection = TextSelection(baseOffset: 0, extentOffset: widget.controller.text.length);
+              },
             ),
           ),
         ],
@@ -65,4 +88,3 @@ class PaidAmountMemberItem extends StatelessWidget {
     );
   }
 }
-
