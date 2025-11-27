@@ -88,61 +88,6 @@ class RemoveMemberController {
       throw Exception('Grup bulunamadı');
     }
 
-    // Masrafları al
-    final expensesState = ref.read(groupExpensesProvider(groupId));
-    final expenses = expensesState.valueOrNull ?? [];
-
-    // 1. Masrafları güncelle (o üyeyi sharedBy ve paidBy'dan çıkar)
-    for (final expense in expenses) {
-      final updatedSharedBy = expense.sharedBy.where((id) => id != memberId).toList();
-      String updatedPaidBy = expense.paidBy;
-      Map<String, double>? updatedPaidAmounts;
-      if (expense.paidAmounts != null && expense.paidAmounts!.isNotEmpty) {
-        updatedPaidAmounts = Map<String, double>.from(expense.paidAmounts!);
-        updatedPaidAmounts.remove(memberId);
-        if (updatedPaidAmounts.isEmpty) {
-          updatedPaidBy = group.memberIds.firstWhere((id) => id != memberId, orElse: () => group.createdBy);
-          updatedPaidAmounts = null;
-        } else {
-          updatedPaidBy = updatedPaidAmounts.entries.first.key;
-        }
-      } else if (expense.paidBy == memberId) {
-        updatedPaidBy = group.memberIds.firstWhere((id) => id != memberId, orElse: () => group.createdBy);
-      }
-
-      // Manuel dağılım varsa, o üyenin tutarını kaldır
-      Map<String, double>? updatedManualAmounts;
-      if (expense.manualAmounts != null) {
-        updatedManualAmounts = Map<String, double>.from(expense.manualAmounts!);
-        updatedManualAmounts.remove(memberId);
-        if (updatedManualAmounts.isEmpty) {
-          updatedManualAmounts = null;
-        }
-      }
-
-      // Eğer sharedBy boşaldıysa, masrafı sil
-      if (updatedSharedBy.isEmpty) {
-        await FirebaseService.deleteDocument('expenses/${expense.id}');
-      } else {
-        // Masrafı güncelle
-        final updateData = <String, dynamic>{
-          'sharedBy': updatedSharedBy,
-          'paidBy': updatedPaidBy,
-          'updatedAt': DateTime.now().toIso8601String(),
-        };
-
-        if (updatedManualAmounts != null) {
-          updateData['manualAmounts'] = updatedManualAmounts;
-        } else {
-          updateData['manualAmounts'] = null;
-        }
-
-        updateData['paidAmounts'] = updatedPaidAmounts;
-
-        await FirebaseService.updateDocument(path: 'expenses/${expense.id}', data: updateData);
-      }
-    }
-
     // 2. Eğer ayrılan kişi admin ise, başka birine admin yetkisi devret
     final isLeavingAdmin = group.isGroupAdmin(memberId);
     if (isLeavingAdmin) {

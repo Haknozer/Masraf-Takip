@@ -27,6 +27,22 @@ class InvitationController {
       throw Exception('Kullanıcı zaten grubun üyesi');
     }
 
+    // Grup tarafından engellenmiş mi?
+    if (group.isUserBlocked(toUserId)) {
+      throw Exception('Bu kullanıcı grup tarafından engellenmiş.');
+    }
+
+    // Kullanıcı grubu engellemiş mi?
+    final toUserDoc =
+        await FirebaseService.firestore.collection('users').where('id', isEqualTo: toUserId).limit(1).get();
+    if (toUserDoc.docs.isNotEmpty) {
+      final userData = toUserDoc.docs.first.data();
+      final blockedGroupIds = List<String>.from(userData['blockedGroupIds'] ?? []);
+      if (blockedGroupIds.contains(groupId)) {
+        throw Exception('Bu kullanıcı bu grubu engellemiş.');
+      }
+    }
+
     // Zaten davet var mı?
     final existingInvitations = await FirebaseService.firestore
         .collection('invitations')

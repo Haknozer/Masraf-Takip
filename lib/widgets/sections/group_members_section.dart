@@ -250,40 +250,20 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
       }
 
       // Eğer kullanıcı kendi isteğiyle ayrılıyorsa, onay + grubu engelle seçeneği sor
-      bool shouldBlockGroup = false;
       if (isCurrentUser) {
         if (!mounted) return;
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) {
-            bool localBlock = false;
             return StatefulBuilder(
               builder: (context, setStateDialog) {
                 return AlertDialog(
                   title: const Text('Gruptan Ayrıl'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Bu gruptan ayrılmak istediğinize emin misiniz?'),
-                      const SizedBox(height: AppSpacing.textSpacing),
-                      CheckboxListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Bu grubu engelle (tekrar eklenemesin)'),
-                        value: localBlock,
-                        onChanged: (value) {
-                          setStateDialog(() {
-                            localBlock = value ?? false;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
+                  content: const Text('Bu gruptan ayrılmak istediğinize emin misiniz?'),
                   actions: [
                     TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Vazgeç')),
                     TextButton(
                       onPressed: () {
-                        shouldBlockGroup = localBlock;
                         Navigator.of(dialogContext).pop(true);
                       },
                       child: const Text('Ayrıl'),
@@ -322,28 +302,8 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
 
       // Üyeyi çıkar
       // Eğer kendisi çıkıyorsa blockAfterRemove = false (grup tarafından engellenmez),
-      // admin birini atıyorsa kullanıcıya sor
-      bool blockAfterRemove = false;
-      if (!isCurrentUser) {
-        if (!mounted) return;
-        final blockChoice = await showDialog<bool>(
-          context: context,
-          builder:
-              (dialogContext) => AlertDialog(
-                title: const Text('Üyeyi Çıkar'),
-                content: const Text('Bu üyeyi gruptan çıkardıktan sonra yeniden katılmasını engellemek ister misiniz?'),
-                actions: [
-                  TextButton(onPressed: () => Navigator.of(dialogContext).pop(null), child: const Text('Vazgeç')),
-                  TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Engelleme')),
-                  ElevatedButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Engelle')),
-                ],
-              ),
-        );
-
-        if (blockChoice == null) return; // İşlem iptal edildi
-        blockAfterRemove = blockChoice;
-      }
-
+      // admin birini atıyorsa varsayılan olarak engelle (eski davranış)
+      final blockAfterRemove = !isCurrentUser;
       await RemoveMemberController.removeMemberFromGroup(
         ref,
         widget.group.id,
@@ -354,28 +314,6 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
       if (mounted) {
         if (isCurrentUser) {
           ErrorSnackBar.showSuccess(context, 'Gruptan ayrıldınız');
-
-          // Kullanıcı kendi isteğiyle ayrıldı ve grubu engellemek istiyorsa,
-          // kullanıcı dokümanına blockedGroupIds olarak ekle
-          if (shouldBlockGroup) {
-            try {
-              final userDocSnapshot =
-                  await FirebaseService.firestore.collection('users').where('id', isEqualTo: member.id).limit(1).get();
-
-              if (userDocSnapshot.docs.isNotEmpty) {
-                final userDocId = userDocSnapshot.docs.first.id;
-                await FirebaseService.updateDocument(
-                  path: 'users/$userDocId',
-                  data: {
-                    'blockedGroupIds': FieldValue.arrayUnion([widget.group.id]),
-                    'updatedAt': DateTime.now().toIso8601String(),
-                  },
-                );
-              }
-            } catch (_) {
-              // Engelleme yazılamasa da ayrılma işlemi başarılı kabul edilir.
-            }
-          }
 
           // Ana sayfaya dön (tüm stack'i temizle)
           Navigator.of(context).popUntil((route) => route.isFirst);
