@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Bu satırı ekleyin
@@ -77,6 +78,7 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
   }
 
   final Ref ref;
+  StreamSubscription<QuerySnapshot>? _groupsSubscription;
 
   void _loadGroups() {
     final user = ref.read(currentUserProvider);
@@ -85,7 +87,7 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
       return;
     }
 
-    FirebaseService.listenToCollection('groups').listen((snapshot) {
+    _groupsSubscription = FirebaseService.listenToCollection('groups').listen((snapshot) {
       final groups =
           snapshot.docs
               .where((doc) {
@@ -100,6 +102,12 @@ class GroupNotifier extends StateNotifier<AsyncValue<List<GroupModel>>> {
               .toList();
       state = AsyncValue.data(groups);
     });
+  }
+
+  @override
+  void dispose() {
+    _groupsSubscription?.cancel();
+    super.dispose();
   }
 
   // Grup oluştur
