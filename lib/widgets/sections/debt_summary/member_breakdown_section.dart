@@ -16,7 +16,7 @@ class MemberBreakdownSection extends StatelessWidget {
       children: [
         if (data.receivables.isNotEmpty) ...[
           Text(
-            'Senden alacaklı olduğun kişiler',
+            'Alacaklı olduğun kişiler',
             style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
