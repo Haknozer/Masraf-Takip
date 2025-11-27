@@ -5,7 +5,6 @@ import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/group_model.dart';
 import '../../models/user_model.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/friend_provider.dart';
 import '../../controllers/invitation_controller.dart';
 import '../../services/firebase_service.dart';
@@ -30,9 +29,6 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = ref.watch(currentUserProvider);
-    final isCurrentUserAdmin =
-        currentUser != null && widget.group.isGroupAdmin(currentUser.uid);
     // Grup kapalıysa uyarı göster
     if (!widget.group.isActive) {
       return Dialog(
@@ -81,12 +77,12 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
               const SizedBox(height: AppSpacing.sectionMargin),
 
               // Tab Bar
-              _buildTabBar(isCurrentUserAdmin),
+              _buildTabBar(),
 
               const SizedBox(height: AppSpacing.sectionMargin),
 
               // Tab Content
-              _buildTabContent(isCurrentUserAdmin),
+              _buildTabContent(),
             ],
           ),
         ),
@@ -94,7 +90,7 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
     );
   }
 
-  Widget _buildTabBar(bool isCurrentUserAdmin) {
+  Widget _buildTabBar() {
     return Row(
       children: [
         Expanded(
@@ -123,22 +119,20 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
             onTap: () => setState(() => _selectedTab = 2),
           ),
         ),
-        if (isCurrentUserAdmin) ...[
-          const SizedBox(width: 8),
-          Expanded(
-            child: TabButtonWidget(
+        const SizedBox(width: 8),
+        Expanded(
+          child: TabButtonWidget(
             label: 'Ark.',
-              icon: Icons.person_add_alt_1,
-              isSelected: _selectedTab == 3,
-              onTap: () => setState(() => _selectedTab = 3),
-            ),
+            icon: Icons.person_add_alt_1,
+            isSelected: _selectedTab == 3,
+            onTap: () => setState(() => _selectedTab = 3),
           ),
-        ],
+        ),
       ],
     );
   }
 
-  Widget _buildTabContent(bool isCurrentUserAdmin) {
+  Widget _buildTabContent() {
     switch (_selectedTab) {
       case 0:
         return AddMemberQrTab(inviteCode: widget.group.inviteCode);
@@ -150,7 +144,6 @@ class _AddMemberDialogState extends ConsumerState<AddMemberDialog> {
           inviteCodeExpiresAt: widget.group.inviteCodeExpiresAt,
         );
       case 3:
-        if (!isCurrentUserAdmin) return const SizedBox.shrink();
         return _AddMemberFriendsTab(group: widget.group);
       default:
         return const SizedBox.shrink();
@@ -172,9 +165,7 @@ class _AddMemberFriendsTab extends ConsumerWidget {
     return friendIdsAsync.when(
       data: (friendIds) {
         // Zaten grupta olan veya engellenmiş olanları filtrele
-        final filteredIds = friendIds
-            .where((id) => !group.memberIds.contains(id) && !group.isUserBlocked(id))
-            .toList();
+        final filteredIds = friendIds.where((id) => !group.memberIds.contains(id) && !group.isUserBlocked(id)).toList();
 
         if (filteredIds.isEmpty) {
           return Padding(
@@ -209,13 +200,14 @@ class _AddMemberFriendsTab extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Padding(
-        padding: const EdgeInsets.all(AppSpacing.sectionPadding),
-        child: Text(
-          'Arkadaşlar yüklenemedi: $error',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
-        ),
-      ),
+      error:
+          (error, stack) => Padding(
+            padding: const EdgeInsets.all(AppSpacing.sectionPadding),
+            child: Text(
+              'Arkadaşlar yüklenemedi: $error',
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
+            ),
+          ),
     );
   }
 }
@@ -271,10 +263,10 @@ class _FriendToAddListItemState extends ConsumerState<_FriendToAddListItem> {
     } catch (e) {
       if (mounted) {
         if (e.toString().contains('bekleyen bir davet var')) {
-           setState(() => _isInvited = true);
-           ErrorSnackBar.showWarning(context, 'Zaten bekleyen bir davet var.');
+          setState(() => _isInvited = true);
+          ErrorSnackBar.showWarning(context, 'Zaten bekleyen bir davet var.');
         } else {
-           ErrorSnackBar.show(context, e);
+          ErrorSnackBar.show(context, e);
         }
       }
     } finally {
@@ -294,10 +286,7 @@ class _FriendToAddListItemState extends ConsumerState<_FriendToAddListItem> {
         title: Container(
           height: 12,
           width: 80,
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(4),
-          ),
+          decoration: BoxDecoration(color: colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(4)),
         ),
       );
     }
@@ -308,17 +297,15 @@ class _FriendToAddListItemState extends ConsumerState<_FriendToAddListItem> {
       leading: CircleAvatar(
         backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
         backgroundImage: _friendUser!.photoUrl != null ? NetworkImage(_friendUser!.photoUrl!) : null,
-        child: _friendUser!.photoUrl == null
-            ? Text(
-                _friendUser!.displayName[0].toUpperCase(),
-                style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.bold),
-              )
-            : null,
+        child:
+            _friendUser!.photoUrl == null
+                ? Text(
+                  _friendUser!.displayName[0].toUpperCase(),
+                  style: TextStyle(color: colorScheme.primary, fontWeight: FontWeight.bold),
+                )
+                : null,
       ),
-      title: Text(
-        _friendUser!.displayName,
-        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-      ),
+      title: Text(_friendUser!.displayName, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
       trailing: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 64),
         child: ElevatedButton(
@@ -333,13 +320,10 @@ class _FriendToAddListItemState extends ConsumerState<_FriendToAddListItem> {
             disabledBackgroundColor: _isInvited ? AppColors.success.withValues(alpha: 0.2) : null,
             disabledForegroundColor: _isInvited ? AppColors.success : null,
           ),
-          child: _isProcessing
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(_isInvited ? 'Davet Edildi' : 'Davet Et'),
+          child:
+              _isProcessing
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text(_isInvited ? 'Davet Edildi' : 'Davet Et'),
         ),
       ),
     );

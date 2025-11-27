@@ -61,21 +61,19 @@ class _HomePageState extends ConsumerState<HomePage> {
                   children: [
                     // Davetler Bölümü
                     const InvitationsSection(),
-                    
+
                     // Borç Özeti Bölümü
                     const DebtSummarySection(),
-                    
+
                     const SizedBox(height: AppSpacing.sectionMargin),
-                    
+
                     // Gruplarım Bölümü
                     const GroupsSectionHeader(),
                     const SizedBox(height: AppSpacing.textSpacing),
-                    
+
                     // Grup Listesi
                     const GroupsListSection(),
-                    
-                    const SizedBox(height: AppSpacing.sectionMargin),
-                    
+
                     // Arkadaşlarım Bölümü
                     const FriendsSection(),
                   ],

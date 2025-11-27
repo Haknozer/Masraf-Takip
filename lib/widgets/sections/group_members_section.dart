@@ -302,8 +302,28 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
 
       // Üyeyi çıkar
       // Eğer kendisi çıkıyorsa blockAfterRemove = false (grup tarafından engellenmez),
-      // admin birini atıyorsa blockAfterRemove = true (grup tarafından engellenir)
-      final blockAfterRemove = !isCurrentUser;
+      // admin birini atıyorsa kullanıcıya sor
+      bool blockAfterRemove = false;
+      if (!isCurrentUser) {
+        if (!mounted) return;
+        final blockChoice = await showDialog<bool>(
+          context: context,
+          builder:
+              (dialogContext) => AlertDialog(
+                title: const Text('Üyeyi Çıkar'),
+                content: const Text('Bu üyeyi gruptan çıkardıktan sonra yeniden katılmasını engellemek ister misiniz?'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.of(dialogContext).pop(null), child: const Text('Vazgeç')),
+                  TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Engelleme')),
+                  ElevatedButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Engelle')),
+                ],
+              ),
+        );
+
+        if (blockChoice == null) return; // İşlem iptal edildi
+        blockAfterRemove = blockChoice;
+      }
+
       await RemoveMemberController.removeMemberFromGroup(
         ref,
         widget.group.id,
@@ -337,8 +357,8 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
             }
           }
 
-          // Ana sayfaya dön
-          Navigator.pop(context);
+          // Ana sayfaya dön (tüm stack'i temizle)
+          Navigator.of(context).popUntil((route) => route.isFirst);
         } else {
           if (isLeavingAdmin && newAdminName != null) {
             ErrorSnackBar.showSuccess(
