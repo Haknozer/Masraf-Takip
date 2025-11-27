@@ -7,7 +7,7 @@ import '../../models/group_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/friend_provider.dart';
-import '../../providers/group_provider.dart';
+import '../../controllers/invitation_controller.dart';
 import '../../services/firebase_service.dart';
 import '../../widgets/common/error_snackbar.dart';
 import '../../widgets/common/tab_button_widget.dart';
@@ -234,7 +234,8 @@ class _FriendToAddListItem extends ConsumerStatefulWidget {
 class _FriendToAddListItemState extends ConsumerState<_FriendToAddListItem> {
   UserModel? _friendUser;
   bool _isLoading = true;
-  bool _isAdding = false;
+  bool _isProcessing = false;
+  bool _isInvited = false; // Basit bir client-side kontrol için
 
   @override
   void initState() {
@@ -258,21 +259,27 @@ class _FriendToAddListItemState extends ConsumerState<_FriendToAddListItem> {
     }
   }
 
-  Future<void> _addToGroup() async {
+  Future<void> _sendInvitation() async {
     if (_friendUser == null) return;
-    setState(() => _isAdding = true);
+    setState(() => _isProcessing = true);
     try {
-      await ref.read(groupNotifierProvider.notifier).addMember(widget.groupId, widget.friendId);
+      await ref.read(invitationControllerProvider).sendInvitation(widget.groupId, widget.friendId);
       if (mounted) {
-        ErrorSnackBar.showSuccess(context, '${_friendUser!.displayName} gruba eklendi.');
+        setState(() => _isInvited = true);
+        ErrorSnackBar.showSuccess(context, '${_friendUser!.displayName} kişisine davet gönderildi.');
       }
     } catch (e) {
       if (mounted) {
-        ErrorSnackBar.show(context, e);
+        if (e.toString().contains('bekleyen bir davet var')) {
+           setState(() => _isInvited = true);
+           ErrorSnackBar.showWarning(context, 'Zaten bekleyen bir davet var.');
+        } else {
+           ErrorSnackBar.show(context, e);
+        }
       }
     } finally {
       if (mounted) {
-        setState(() => _isAdding = false);
+        setState(() => _isProcessing = false);
       }
     }
   }
@@ -315,7 +322,7 @@ class _FriendToAddListItemState extends ConsumerState<_FriendToAddListItem> {
       trailing: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 64),
         child: ElevatedButton(
-          onPressed: _isAdding ? null : _addToGroup,
+          onPressed: _isProcessing || _isInvited ? null : _sendInvitation,
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             minimumSize: const Size(64, 32),
@@ -323,14 +330,16 @@ class _FriendToAddListItemState extends ConsumerState<_FriendToAddListItem> {
             backgroundColor: colorScheme.primary,
             foregroundColor: colorScheme.onPrimary,
             textStyle: AppTextStyles.bodySmall,
+            disabledBackgroundColor: _isInvited ? AppColors.success.withValues(alpha: 0.2) : null,
+            disabledForegroundColor: _isInvited ? AppColors.success : null,
           ),
-          child: _isAdding
+          child: _isProcessing
               ? const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Ekle'),
+              : Text(_isInvited ? 'Davet Edildi' : 'Davet Et'),
         ),
       ),
     );
