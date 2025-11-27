@@ -54,11 +54,17 @@ class _CreateExpenseFormState extends ConsumerState<CreateExpenseForm> {
   @override
   void initState() {
     super.initState();
-    // Varsayılan olarak tüm grup üyelerini seç (Kimlere Ait)
-    _selectedMemberIds = List.from(widget.group.memberIds);
+    final currentUser = ref.read(currentUserProvider);
+    // Varsayılan olarak masraf sadece mevcut kullanıcıya ait olsun (yanlış hesaplanmaları önlemek için)
+    if (currentUser != null && widget.group.memberIds.contains(currentUser.uid)) {
+      _selectedMemberIds = [currentUser.uid];
+    } else if (widget.group.memberIds.isNotEmpty) {
+      _selectedMemberIds = [widget.group.memberIds.first];
+    } else {
+      _selectedMemberIds = [];
+    }
 
     // Varsayılan olarak mevcut kullanıcıyı ödeyen olarak seç (Kimler Ödedi)
-    final currentUser = ref.read(currentUserProvider);
     if (currentUser != null) {
       _payingMemberIds = [currentUser.uid];
     }

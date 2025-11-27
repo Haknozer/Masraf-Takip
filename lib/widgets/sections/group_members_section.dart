@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
@@ -36,6 +37,25 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
   void initState() {
     super.initState();
     _loadMembers();
+  }
+
+  @override
+  void didUpdateWidget(covariant GroupMembersSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldMembers = List<String>.from(oldWidget.group.memberIds);
+    final newMembers = List<String>.from(widget.group.memberIds);
+    final membersChanged = !_areListsEqual(oldMembers, newMembers);
+    final blockedChanged = !setEquals(oldWidget.group.blockedUserIds, widget.group.blockedUserIds);
+    if (membersChanged || blockedChanged) {
+      _loadMembers();
+    }
+  }
+
+  bool _areListsEqual(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    final setA = Set<String>.from(a);
+    final setB = Set<String>.from(b);
+    return setA.length == setB.length && setA.containsAll(setB);
   }
 
   Future<void> _loadMembers() async {

@@ -145,7 +145,13 @@ class _GroupDetailPageState extends ConsumerState<GroupDetailPage> {
       case 0: // Üyeler
         final currentUser = ref.watch(currentUserProvider);
         final isMember = currentUser != null && group.isGroupMember(currentUser.uid);
-        return GroupMembersTab(group: group, isMember: isMember);
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(groupProvider(group.id));
+            await Future.delayed(const Duration(milliseconds: 300));
+          },
+          child: GroupMembersTab(group: group, isMember: isMember),
+        );
       case 1: // Masraflar
         return GroupExpensesTab(group: group);
       case 2: // Hesaplaşma
