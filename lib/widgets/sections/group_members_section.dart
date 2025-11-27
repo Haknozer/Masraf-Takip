@@ -5,6 +5,8 @@ import '../../constants/app_text_styles.dart';
 import '../../constants/app_spacing.dart';
 import '../../models/group_model.dart';
 import '../../models/user_model.dart';
+import '../../models/debt_model.dart';
+import '../../models/settlement_model.dart';
 import '../../controllers/group_members_controller.dart';
 import '../../controllers/remove_member_controller.dart';
 import '../../widgets/dialogs/remove_member_dialog.dart';
@@ -247,6 +249,9 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
         final confirmed = await RemoveMemberDialog.show(context, member: member, debts: debts);
 
         if (confirmed != true) return;
+
+        // Borçları sil (admin onaylarsa borç kapatılır)
+        await _forgiveMemberDebts(member.id, debts);
       }
 
       // Eğer kullanıcı kendi isteğiyle ayrılıyorsa, onay + grubu engelle seçeneği sor
@@ -369,6 +374,29 @@ class _GroupMembersSectionState extends ConsumerState<GroupMembersSection> {
     } finally {
       if (mounted) {
         setState(() => _isRemoving = false);
+      }
+    }
+  }
+
+  Future<void> _forgiveMemberDebts(String memberId, List<DebtBetweenUsers> debts) async {
+    if (debts.isEmpty) return;
+
+    for (final debt in debts) {
+      try {
+        final paymentId = FirebaseService.firestore.collection('settlements').doc().id;
+        final payment = SettlementPayment(
+          id: paymentId,
+          groupId: widget.group.id,
+          fromUserId: memberId,
+          toUserId: debt.toUserId,
+          amount: debt.amount,
+          paidAt: DateTime.now(),
+          note: 'Üye gruptan çıkarıldığı için borç kapatıldı',
+        );
+
+        await FirebaseService.firestore.collection('settlements').doc(paymentId).set(payment.toJson());
+      } catch (e) {
+        debugPrint('Debt forgiveness failed: $e');
       }
     }
   }
