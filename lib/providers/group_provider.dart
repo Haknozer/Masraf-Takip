@@ -33,23 +33,32 @@ final userGroupsProvider = StreamProvider<List<GroupModel>>((ref) {
 });
 
 /// Kullanıcının engellediği gruplar
-final blockedGroupsProvider = FutureProvider<List<GroupModel>>((ref) async {
-  final userModel = await ref.watch(userModelProvider.future);
-  if (userModel == null || userModel.blockedGroupIds.isEmpty) return [];
-
-  final List<GroupModel> blockedGroups = [];
-  for (final groupId in userModel.blockedGroupIds) {
-    try {
-      final doc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
-      if (doc.exists) {
-        final data = doc.data() as Map<String, dynamic>;
-        blockedGroups.add(GroupModel.fromJson({...data, 'id': doc.id}));
-      }
-    } catch (_) {
-      continue;
-    }
+final blockedGroupsProvider = StreamProvider<List<GroupModel>>((ref) {
+  final user = ref.watch(currentUserProvider);
+  if (user == null) {
+    return Stream.value([]);
   }
-  return blockedGroups;
+
+  return FirebaseService.listenToDocument('users/${user.uid}').asyncMap((snapshot) async {
+    if (!snapshot.exists) return [];
+    final data = snapshot.data() as Map<String, dynamic>;
+    final blockedIds = List<String>.from(data['blockedGroupIds'] ?? []);
+    if (blockedIds.isEmpty) return [];
+
+    final blockedGroups = <GroupModel>[];
+    for (final groupId in blockedIds) {
+      try {
+        final doc = await FirebaseService.getDocumentSnapshot('groups/$groupId');
+        if (doc.exists) {
+          final groupData = doc.data() as Map<String, dynamic>;
+          blockedGroups.add(GroupModel.fromJson({...groupData, 'id': doc.id}));
+        }
+      } catch (_) {
+        continue;
+      }
+    }
+    return blockedGroups;
+  });
 });
 
 // Kullanıcının doküman ID'sini al
