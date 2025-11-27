@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../models/debt_model.dart';
+import '../models/settlement_model.dart';
 import '../utils/debt_calculator.dart';
 import '../services/firebase_service.dart';
 import '../providers/group_provider.dart';
@@ -48,12 +49,28 @@ class RemoveMemberController {
       }
     }
 
+    // Settlement payment'ları al
+    final settlements = <SettlementPayment>[];
+    try {
+      final settlementsSnapshot =
+          await FirebaseService.firestore.collection('settlements').where('groupId', isEqualTo: groupId).get();
+
+      settlements.addAll(
+        settlementsSnapshot.docs.map(
+          (doc) => SettlementPayment.fromJson({'id': doc.id, ...doc.data()}),
+        ),
+      );
+    } catch (e) {
+      // Hata durumunda settlement'lar olmadan devam et
+    }
+
     // Üyenin borçlarını hesapla
     final debtSummary = DebtCalculator.calculateGroupDebts(
       userId: memberId,
       group: group,
       expenses: expenses,
       usersMap: usersMap,
+      settlements: settlements,
     );
 
     // Üyenin borçlu olduğu borçları filtrele (sadece başka üyelere olan borçlar)
