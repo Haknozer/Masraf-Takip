@@ -24,6 +24,8 @@ class ErrorUtils {
         return 'Bu email adresi farklı bir giriş yöntemi ile kayıtlı.';
       case 'requires-recent-login':
         return 'Bu işlem için tekrar giriş yapmanız gerekiyor.';
+      case 'network-request-failed':
+        return 'İnternet bağlantısı hatası. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.';
       default:
         return 'Bir hata oluştu. Lütfen tekrar deneyin.';
     }

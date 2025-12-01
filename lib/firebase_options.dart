@@ -2,6 +2,7 @@
 // ignore_for_file: lines_longer_than_80_chars, avoid_classes_with_only_static_members
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -37,29 +38,29 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDc4L7j_i9O9901LMWdhfji3VSKqjUeTes',
-    appId: '1:747516182629:android:4b6c8c6f85bf9fc53a868c',
-    messagingSenderId: '747516182629',
-    projectId: 'masraftakipuygulamasi',
-    storageBucket: 'masraftakipuygulamasi.firebasestorage.app',
+  static FirebaseOptions get android => FirebaseOptions(
+    apiKey: dotenv.get('FIREBASE_ANDROID_API_KEY'),
+    appId: dotenv.get('FIREBASE_ANDROID_APP_ID'),
+    messagingSenderId: dotenv.get('FIREBASE_MESSAGING_SENDER_ID'),
+    projectId: dotenv.get('FIREBASE_PROJECT_ID'),
+    storageBucket: dotenv.get('FIREBASE_STORAGE_BUCKET'),
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBI3Cn0merqQcfi8-_EGqAGAFNJqMSFRFs',
-    appId: '1:747516182629:ios:1e16e637f0ef86533a868c',
-    messagingSenderId: '747516182629',
-    projectId: 'masraftakipuygulamasi',
-    storageBucket: 'masraftakipuygulamasi.firebasestorage.app',
-    iosBundleId: 'com.expensetracker.app.expenseTrackerApp',
+  static FirebaseOptions get ios => FirebaseOptions(
+    apiKey: dotenv.get('FIREBASE_IOS_API_KEY'),
+    appId: dotenv.get('FIREBASE_IOS_APP_ID'),
+    messagingSenderId: dotenv.get('FIREBASE_MESSAGING_SENDER_ID'),
+    projectId: dotenv.get('FIREBASE_PROJECT_ID'),
+    storageBucket: dotenv.get('FIREBASE_STORAGE_BUCKET'),
+    iosBundleId: dotenv.get('FIREBASE_IOS_BUNDLE_ID'),
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBI3Cn0merqQcfi8-_EGqAGAFNJqMSFRFs',
-    appId: '1:747516182629:ios:1e16e637f0ef86533a868c',
-    messagingSenderId: '747516182629',
-    projectId: 'masraftakipuygulamasi',
-    storageBucket: 'masraftakipuygulamasi.firebasestorage.app',
-    iosBundleId: 'com.expensetracker.app.expenseTrackerApp',
+  static FirebaseOptions get macos => FirebaseOptions(
+    apiKey: dotenv.get('FIREBASE_IOS_API_KEY'),
+    appId: dotenv.get('FIREBASE_IOS_APP_ID'),
+    messagingSenderId: dotenv.get('FIREBASE_MESSAGING_SENDER_ID'),
+    projectId: dotenv.get('FIREBASE_PROJECT_ID'),
+    storageBucket: dotenv.get('FIREBASE_STORAGE_BUCKET'),
+    iosBundleId: dotenv.get('FIREBASE_IOS_BUNDLE_ID'),
   );
 }
